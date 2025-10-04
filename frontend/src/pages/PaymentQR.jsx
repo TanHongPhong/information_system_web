@@ -1,13 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function PaymentQR() {
   const KEY_UNLOCK = "orderTrackingUnlocked";
+  const navigate = useNavigate();
 
   const handleCloseToHome = () => {
     try {
       localStorage.setItem(KEY_UNLOCK, "1");
     } catch (_) {}
-    window.location.href = "demo5.html"; // Giữ nguyên hành vi như file gốc
+    // Điều hướng SPA về trang chính (map từ demo5.html cũ)
+    navigate("/", { replace: true });
   };
 
   return (
@@ -95,8 +98,8 @@ export default function PaymentQR() {
               <div>
                 <div className="text-slate-500 text-sm">Mô tả</div>
                 <p className="mt-1 text-base leading-6 font-medium">
-                  Xe container 4000kg, lộ trình từ TP.HCM → Hà Nội, ngày tới
-                  lấy hàng: 17/10/2025
+                  Xe container 4000kg, lộ trình từ TP.HCM → Hà Nội, ngày tới lấy
+                  hàng: 17/10/2025
                 </p>
               </div>
 
@@ -132,14 +135,13 @@ export default function PaymentQR() {
                   src="/qr.jpg"
                   alt="QR Code"
                   className="block w-full h-auto mx-auto"
-                  decoding="sync"
                   loading="eager"
                 />
               </div>
 
               <p className="text-center text-slate-600 mt-4 text-sm">
-                Sử dụng <span className="font-semibold">App Momo</span> hoặc
-                ứng dụng camera hỗ trợ QR để quét mã
+                Sử dụng <span className="font-semibold">App Momo</span> hoặc ứng
+                dụng camera hỗ trợ QR để quét mã
               </p>
             </div>
           </div>

@@ -5,6 +5,7 @@ import VehicleList from "./pages/VehicleList";
 import TransportCompanies from "./pages/TransportCompanies";
 import PaymentQR from "./pages/Payment";
 import PaymentHistory from "./pages/PaymentHistory";
+import CommodityForm from "./components/CommodityForm";
 
 function App() {
   return (
@@ -15,8 +16,9 @@ function App() {
           <Route path="*" element={<NotFound />} />
           <Route path="/vehicle_list" element={<VehicleList />} />
           <Route path="/transport_companies" element={<TransportCompanies />} />
-          <Route path="/payment" element={<PaymentQR />} />
+          <Route path="/payment_qr" element={<PaymentQR />} />
           <Route path="/payment_history" element={<PaymentHistory />} />
+          <Route path="/commodityform" element={<CommodityForm />} />
         </Routes>
       </BrowserRouter>
     </>
