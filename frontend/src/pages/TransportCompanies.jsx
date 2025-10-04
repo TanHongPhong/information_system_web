@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import feather from "feather-icons";
+import { Link } from "react-router-dom";
 
 const companies = [
   {
@@ -297,12 +298,14 @@ export default function TransportCompanies() {
                       {fmtVND(c.cost)}/KM
                     </div>
                     <div className="text-center">
-                      <button
-                        type="button"
-                        className="h-9 px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                      {/* Link SPA sang trang danh sách xe */}
+                      <Link
+                        to="/vehicle_list"
+                        className="inline-flex items-center justify-center h-9 px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                        aria-label={`Xem đội xe của ${c.name}`}
                       >
                         Xem chi tiết
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 ))}
