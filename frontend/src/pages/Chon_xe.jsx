@@ -28,7 +28,10 @@ function VehicleCard({ percent, departDate, gradient, imgSrc }) {
 
   return (
     <article className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 flex flex-col items-center text-center">
-      <div className="relative w-full max-w-[700px] truck-wrap" style={wrapStyle}>
+      <div
+        className="relative w-full max-w-[700px] truck-wrap"
+        style={wrapStyle}
+      >
         <a href="donhang.html">
           <img
             src={imgSrc}
@@ -40,10 +43,7 @@ function VehicleCard({ percent, departDate, gradient, imgSrc }) {
 
         <div className="trailer-overlay">
           <div className="trailer-frame">
-            <div
-              className="trailer-fill"
-              style={{ background: gradient }}
-            />
+            <div className="trailer-fill" style={{ background: gradient }} />
             <div className="trailer-center">
               <div className="percent-display">{percent} %</div>
             </div>
@@ -55,7 +55,9 @@ function VehicleCard({ percent, departDate, gradient, imgSrc }) {
       <h3 className="mt-5 font-semibold">
         Phần trăm hàng trong xe: <span className="font-bold">{percent}</span>%
       </h3>
-      <p className="mt-2 text-sm text-slate-600">Ngày khởi hành: {departDate}</p>
+      <p className="mt-2 text-sm text-slate-600">
+        Ngày khởi hành: {departDate}
+      </p>
       <a
         href="donhang.html"
         className="mt-5 rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2"
@@ -233,7 +235,10 @@ export default function VehicleList() {
             />
             <span className="font-semibold">Khách hàng A</span>
             <span className="text-slate-300">•</span>
-            <i data-feather="chevron-down" className="w-4 h-4 opacity-80 group-hover:opacity-100" />
+            <i
+              data-feather="chevron-down"
+              className="w-4 h-4 opacity-80 group-hover:opacity-100"
+            />
           </button>
         </div>
 
@@ -251,7 +256,8 @@ export default function VehicleList() {
               List of transportation vehicles
             </h1>
             <p className="mt-2 text-sm sm:text-base text-white/90 max-w-4xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-              Đây là danh sách các phương tiện của công ty đã sẵn sàng đáp ứng nhu cầu vận chuyển của khách hàng.
+              Đây là danh sách các phương tiện của công ty đã sẵn sàng đáp ứng
+              nhu cầu vận chuyển của khách hàng.
             </p>
             <p className="text-sm sm:text-base text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
               Vui lòng chọn phương tiện phù hợp nhất với nhu cầu của bạn!
