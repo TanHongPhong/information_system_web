@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Danh sách công ty vận tải</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Tailwind CDN config (optional)
+      tailwind = window.tailwind || {};
+      tailwind.config = {
+        theme: {
+          extend: { boxShadow: { soft: "0 8px 30px rgba(15,23,42,.08)" } },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Feather Icons (đồng bộ màu qua currentColor) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <style>
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI,
+          Roboto, Helvetica, Arial;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <!-- Sidebar -->
+    <aside
+      class="fixed inset-y-0 left-0 w-24 bg-white border-r border-slate-200 flex flex-col items-center gap-4 p-4"
+    >
+      <div class="flex flex-col items-center gap-4 text-blue-600">
+        <!-- Trang chủ -->
+        <button
+          class="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Trang chủ"
+          aria-label="Trang chủ"
+        >
+          <i data-feather="home" aria-hidden="true"></i>
+        </button>
+
+        <!-- (ĐÃ XOÁ nút Đặt xe - truck) -->
+
+        <!-- Theo dõi vị trí -->
+        <button
+          class="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Theo dõi vị trí"
+          aria-label="Theo dõi vị trí"
+        >
+          <i data-feather="map" aria-hidden="true"></i>
+        </button>
+
+        <!-- Lịch sử giao dịch -->
+        <button
+          class="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Lịch sử giao dịch"
+          aria-label="Lịch sử giao dịch"
+        >
+          <i data-feather="file-text" aria-hidden="true"></i>
+        </button>
+
+        <!-- Thông báo -->
+        <button
+          class="relative w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Thông báo"
+          aria-label="Thông báo"
+        >
+          <i data-feather="bell" aria-hidden="true"></i>
+          <span
+            class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full"
+          ></span>
+        </button>
+
+        <!-- Người dùng -->
+        <button
+          class="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Người dùng"
+          aria-label="Người dùng"
+        >
+          <i data-feather="user" aria-hidden="true"></i>
+        </button>
+
+        <!-- Cài đặt -->
+        <button
+          class="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
+          title="Cài đặt"
+          aria-label="Cài đặt"
+        >
+          <i data-feather="settings" aria-hidden="true"></i>
+        </button>
+      </div>
+    </aside>
+
+    <main class="ml-24">
+      <!-- Topbar (sticky) -->
+      <div
+        id="topbar"
+        class="sticky top-0 z-50 flex items-center justify-end p-3 bg-white/90 backdrop-blur-sm border-b border-slate-200"
+      >
+        <button
+          type="button"
+          class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-blue-50 text-slate-900 ring-1 ring-blue-100 shadow-sm hover:bg-blue-100 transition"
+        >
+          <!-- Avatar tròn -->
+          <img
+            src="https://i.pravatar.cc/40?img=8"
+            alt="Avatar"
+            class="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
+          />
+          <!-- Tên khách hàng -->
+          <span class="font-semibold">Khách hàng A</span>
+          <!-- Dấu chấm ngăn cách (giống hình) -->
+          <span class="text-slate-300">•</span>
+          <!-- Mũi tên dropdown (Feather Icons) -->
+          <i
+            data-feather="chevron-down"
+            class="w-4 h-4 opacity-80 group-hover:opacity-100"
+          ></i>
+        </button>
+      </div>
+
+      <!-- Hero (sticky ngay dưới topbar) -->
+      <section
+        id="hero"
+        class="relative h-52 sticky z-40"
+        style="top: var(--topbar-h, 56px)"
+      >
+        <div
+          class="absolute inset-0 bg-[url('https://png.pngtree.com/background/20250103/original/pngtree-d-rendering-and-illustration-of-container-cargo-ship-and-cargo-plane-picture-image_13280377.jpg')] bg-cover bg-center"
+        ></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50"
+        ></div>
+      </section>
+
+      <!-- Content -->
+      <section class="p-6">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-soft">
+          <!-- Header -->
+          <div class="p-5">
+            <h1 class="text-2xl font-bold">
+              Danh sách công ty vận tải được đề xuất
+            </h1>
+            <p class="text-blue-600">List of recommended transport companies</p>
+          </div>
+
+          <!-- Filters -->
+          <div class="flex flex-wrap gap-2 p-5 pt-2">
+            <input
+              id="from"
+              class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Chọn điểm lấy hàng"
+            />
+            <button
+              id="swap"
+              class="size-10 rounded-xl border border-slate-200 grid place-items-center"
+            >
+              ⇄
+            </button>
+            <input
+              id="to"
+              class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Chọn điểm đến"
+            />
+            <select
+              id="size"
+              class="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200 focus:outline-none"
+            >
+              <option value="">Chọn kích thước</option>
+              <option>≤ 2 tấn</option>
+              <option>≤ 4 tấn</option>
+              <option>Container 20ft</option>
+              <option>Container 40ft</option>
+              <option>Xe lạnh</option>
+            </select>
+            <button
+              id="search"
+              class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Tìm kiếm
+            </button>
+          </div>
+
+          <!-- Table -->
+          <div
+            class="border-t border-slate-200"
+            role="table"
+            aria-label="Danh sách công ty"
+          >
+            <div
+              class="hidden md:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_140px] gap-4 items-center px-5 pt-3 pb-2 text-slate-500 font-semibold"
+              role="row"
+            >
+              <div class="min-w-0">Transport company</div>
+              <div class="min-w-0">Service area</div>
+              <div class="text-center">Cost</div>
+              <div class="text-center">Information</div>
+            </div>
+            <div id="rows"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // ===== Data =====
+      const companies = [
+        {
+          name: "Công ty Gemadept",
+          serviceArea: "Toàn quốc",
+          cost: 200000,
+          sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+        },
+        {
+          name: "Công ty CP vận tải dầu khí Bình Dương",
+          serviceArea: "Miền Nam, Bắc–Nam",
+          cost: 140000,
+          sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+        },
+        {
+          name: "Công ty CP Transimex",
+          serviceArea: "Nội thành HCM, Liên tỉnh",
+          cost: 170000,
+          sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"],
+        },
+        {
+          name: "Công ty giao nhận toàn cầu DHL",
+          serviceArea: "Toàn quốc",
+          cost: 185000,
+          sizes: ["≤ 2 tấn", "≤ 4 tấn"],
+        },
+      ];
+
+      // Helpers
+      const fmtVND = (n) =>
+        new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+          maximumFractionDigits: 0,
+        }).format(n);
+      const strip = (s) =>
+        (s || "")
+          .toString()
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .toLowerCase();
+
+      const rowsEl = document.getElementById("rows");
+      const fromEl = document.getElementById("from");
+      const toEl = document.getElementById("to");
+      const sizeEl = document.getElementById("size");
+
+      function render(list) {
+        rowsEl.innerHTML = "";
+        list.forEach((c) => {
+          const row = document.createElement("div");
+          row.className =
+            "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_140px] gap-4 items-center px-5 py-4 border-t border-slate-200";
+          row.innerHTML = `
+          <div class="font-medium">${c.name}</div>
+          <div class="min-w-0 font-medium truncate">${c.serviceArea}</div>
+          <div class="font-medium text-center">${fmtVND(c.cost)}/KM</div>
+          <div class="text-center">
+            <button type="button" class="h-9 px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">
+              Xem chi tiết
+            </button>
+          </div>
+        `;
+          rowsEl.appendChild(row);
+        });
+      }
+
+      function search() {
+        const f = strip(fromEl.value),
+          t = strip(toEl.value),
+          s = strip(sizeEl.value);
+        const term = `${f} ${t}`.trim();
+
+        const list = companies.filter((c) => {
+          const area = strip(c.serviceArea);
+          const areaOK =
+            area.includes("toan quoc") ||
+            (term &&
+              (area.includes("mien") ||
+                area.includes("lien tinh") ||
+                (area.includes("noi thanh hcm") &&
+                  (term.includes("hcm") ||
+                    term.includes("ho chi minh") ||
+                    term.includes("sai gon"))))) ||
+            !term;
+
+          const sizeOK = !s || c.sizes.some((x) => strip(x).includes(s));
+          return areaOK && sizeOK;
+        });
+
+        render(list);
+      }
+
+      // Sticky offset: đo chiều cao topbar để hero dính ngay dưới
+      function setTopbarHeight() {
+        const topbar = document.getElementById("topbar");
+        document.documentElement.style.setProperty(
+          "--topbar-h",
+          topbar.offsetHeight + "px"
+        );
+      }
+      window.addEventListener("load", () => {
+        setTopbarHeight();
+        // Render feather icons
+        feather.replace({ width: 24, height: 24 });
+      });
+      window.addEventListener("resize", setTopbarHeight);
+
+      // Events
+      document.getElementById("search").addEventListener("click", search);
+      document.getElementById("swap").addEventListener("click", () => {
+        const a = fromEl.value;
+        fromEl.value = toEl.value;
+        toEl.value = a;
+      });
+      [fromEl, toEl].forEach((el) =>
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") search();
+        })
+      );
+
+      // Init
+      render(companies);
+    </script>
+  </body>
+</html>
