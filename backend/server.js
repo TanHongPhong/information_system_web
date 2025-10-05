@@ -1,12 +1,11 @@
 import express from "express";
-import taskRoute from "./routes/taskRouters.js";
-import { connectDB } from "./config/db.js";
+import taskRoute from "./src/routes/taskRouters.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import testRouter from "./src/routes/testRouter.js";
 
 dotenv.config();
-
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
@@ -14,6 +13,8 @@ const app = express();
 
 // middlewares
 app.use(express.json());
+
+app.use("/api/test", testRouter);
 
 if (process.env.NODE_ENV !== "production") {
   app.use(cors({ origin: "http://localhost:5173" }));
@@ -28,8 +29,6 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`server bắt đầu trên cổng ${PORT}`);
-  });
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
