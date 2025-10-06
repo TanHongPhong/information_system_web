@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách xe — Gemadept Logistics | HCM → Hà Nội</title>
+
+  <!-- Fonts + Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui"] },
+          boxShadow: { soft: "0 8px 30px rgba(2,6,23,.08)" },
+          keyframes:{ in:{from:{transform:"translateY(8px)",opacity:0},to:{transform:"translateY(0)",opacity:1}} },
+          animation:{ in:"in .25s ease-out both" }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    body { font-family: Inter, ui-sans-serif, system-ui; }
+    /* Overlay phần trăm trong thùng xe */
+    .truck-wrap{ --p:.5; --radius:14px; --frame-inset:clamp(6px,3.5%,14px) }
+    .trailer-overlay{ position:absolute; left:19%; top:26.2%; width:44%; height:27%; display:grid; place-items:center; overflow:hidden }
+    .trailer-frame{ position:absolute; inset:var(--frame-inset); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,.18); background:linear-gradient(0deg,rgba(255,255,255,.06),rgba(255,255,255,.06)); backdrop-filter:blur(1px); box-shadow:0 8px 24px rgba(0,0,0,.24) }
+    .trailer-fill{ position:absolute; inset:0; width:calc(var(--p)*100%); border-top-left-radius:var(--radius); border-bottom-left-radius:var(--radius); transition:width .45s cubic-bezier(.22,.61,.36,1) }
+    .percent-display{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.35) }
+
+    /* Hero title giống style trước */
+    #hero .title{
+      color:#1E66FF;
+      -webkit-text-stroke:1px rgba(255,255,255,.18);
+      text-shadow:0 3px 14px rgba(0,0,0,.85), 0 1px 0 rgba(0,0,0,.35)
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <!-- SIDEBAR (giữ nguyên như Payment) -->
+  <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+    <div class="mt-1 mb-1 text-center">
+      <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+        <i data-feather="shield" class="w-6 h-6"></i>
+      </span>
+      <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+    </div>
+
+    <div class="flex flex-col items-center gap-4">
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></button>
+      <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+        <i data-feather="bell"></i>
+        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-20 min-h-screen flex flex-col">
+    <!-- HEADER (copy y nguyên từ Payment, KHÔNG ĐỤNG CHẠM) -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
+      <div class="flex items-center justify-between px-4 md:px-5 py-2.5">
+        <div class="flex-1 max-w-2xl mr-3 md:mr-6">
+          <div class="relative">
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+            <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Search by route, plate, driver..." />
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+              <i data-feather="filter" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-3">
+          <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4"></i></button>
+          <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+            <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+            <div class="text-left leading-tight hidden sm:block">
+              <div class="text-[13px] font-semibold">Harsh Vani</div>
+              <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+            </div>
+            <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section id="hero" class="relative h-[220px] sm:h-[260px] md:h-[300px] overflow-hidden">
+      <style>
+        #hero{ --hero-img:url('https://png.pngtree.com/background/20220720/original/pngtree-road-photography-in-grassland-scenic-area-picture-image_1688712.jpg'); }
+        #hero .hero-bg{ background-image:var(--hero-img); background-size:cover; background-position:center; filter:saturate(1.05) contrast(1.05) }
+      </style>
+
+      <div class="hero-bg absolute inset-0"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/70"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,.35)_0%,rgba(0,0,0,0)_60%)]"></div>
+
+      <div class="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
+        <h1 class="title text-2xl sm:text-3xl md:text-[34px] font-extrabold tracking-tight">
+          List of transportation vehicles
+        </h1>
+        <div class="mt-2 h-[6px] w-40 relative">
+          <span class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-white/60 rounded-full"></span>
+          <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-[6px] w-24 bg-[#1E66FF] rounded-full shadow-[0_2px_10px_rgba(30,102,255,0.5)]"></span>
+        </div>
+        <p class="mt-3 max-w-4xl text-sm sm:text-base text-white/90 leading-relaxed">
+          Đây là danh sách các phương tiện sẵn sàng đáp ứng nhu cầu vận chuyển của bạn.
+        </p>
+      </div>
+    </section>
+
+    <!-- FILTER BAR (đồng bộ padding với Payment) -->
+    <section class="sticky top-[56px] z-40 bg-white/95 backdrop-blur border-y border-slate-200">
+      <div class="w-full px-4 md:px-6 py-3 flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+          <i data-feather="filter" class="w-4 h-4 text-slate-500"></i>
+          <span class="text-sm font-semibold">Bộ lọc</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button data-filter="all"   class="flt px-3 py-1.5 text-sm rounded-full ring-1 ring-slate-200 bg-slate-900 text-white">Tất cả</button>
+          <button data-filter="lt50"  class="flt px-3 py-1.5 text-sm rounded-full ring-1 ring-slate-200 hover:bg-slate-50">&lt; 50%</button>
+          <button data-filter="50-80" class="flt px-3 py-1.5 text-sm rounded-full ring-1 ring-slate-200 hover:bg-slate-50">50–80%</button>
+          <button data-filter="gt80"  class="flt px-3 py-1.5 text-sm rounded-full ring-1 ring-slate-200 hover:bg-slate-50">&gt; 80%</button>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <i data-feather="sliders" class="w-4 h-4 text-slate-500"></i>
+          <select id="sort" class="px-3 py-1.5 text-sm rounded-lg ring-1 ring-slate-200 bg-white">
+            <option value="depart-asc">Sắp xếp: Khởi hành sớm → trễ</option>
+            <option value="load-asc">% tải tăng dần</option>
+            <option value="load-desc">% tải giảm dần</option>
+            <option value="plate">Theo biển số (A→Z)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section class="w-full px-4 md:px-6 py-8 md:py-10">
+      <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-7"></div>
+
+      <div class="mt-12 text-center">
+        <a href="#" class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-red-600 font-semibold ring-1 ring-red-300 hover:bg-red-50 shadow-soft focus:outline-none focus:ring-2 focus:ring-red-200">
+  <i data-feather="x-circle" class="w-5 h-5"></i> Hủy yêu cầu
+</a>
+
+        <p class="mt-3 text-sm text-slate-500">Không thấy xe phù hợp? Gửi yêu cầu để hệ thống gợi ý hoặc mở thêm chuyến.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- JS -->
+  <script>
+    // Data demo
+    const COMPANY = "Gemadept Logistics";
+    const ROUTE   = "HCM → Hà Nội";
+    const data = [
+      { id:1, percent:50, depart:"2025-10-17", plate:"51C-123.45", driver:"T. Minh", status:"Sẵn sàng" },
+      { id:2, percent:70, depart:"2025-10-20", plate:"51D-678.90", driver:"N. Hòa",  status:"Còn chỗ" },
+      { id:3, percent:20, depart:"2025-10-19", plate:"63C-555.88", driver:"Q. Vũ",   status:"Trống nhiều" },
+      { id:4, percent:82, depart:"2025-10-18", plate:"15C-456.12", driver:"M. Quân", status:"Gần đầy" },
+      { id:5, percent:35, depart:"2025-10-16", plate:"79C-912.34", driver:"Đ. Nam",  status:"Trống" },
+      { id:6, percent:58, depart:"2025-10-21", plate:"43C-101.22", driver:"K. Sơn",  status:"Còn chỗ" },
+      { id:7, percent:12, depart:"2025-10-15", plate:"61C-222.33", driver:"B. Lộc",  status:"Trống nhiều" },
+      { id:8, percent:88, depart:"2025-10-22", plate:"29C-909.10", driver:"P. Hậu",  status:"Gần đầy" },
+    ];
+
+    const grid = document.getElementById('grid');
+
+    function tagColor(p){
+      if (p < 40) return {bg:'bg-emerald-50', ring:'ring-emerald-100', text:'text-emerald-700', fill:'linear-gradient(90deg,#22c55e 0%,#86efac 100%)'};
+      if (p < 80) return {bg:'bg-yellow-50',  ring:'ring-yellow-100',  text:'text-yellow-700',  fill:'linear-gradient(90deg,#f59e0b 0%,#fde68a 100%)'};
+      return            {bg:'bg-rose-50',     ring:'ring-rose-100',    text:'text-rose-700',    fill:'linear-gradient(90deg,#ef4444 0%,#fca5a5 100%)'};
+    }
+    const icon = (name, cls='w-4 h-4') => `<i data-feather="${name}" class="${cls}"></i>`;
+    const fmtDate = (iso) => new Date(iso+"T00:00:00").toLocaleDateString("vi-VN");
+
+    function cardTpl(item){
+      const c = tagColor(item.percent);
+      return `
+      <article class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 md:p-6 flex flex-col animate-in">
+        <div class="flex items-center justify-between">
+          <div class="inline-flex items-center gap-2 text-xs text-slate-500">
+            <span class="font-semibold text-slate-700">${COMPANY}</span>
+            <span class="text-slate-300">•</span>
+            <span>${ROUTE}</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-md ${c.bg} ${c.text} ring-1 ${c.ring}">${item.status}</span>
+        </div>
+
+        <div class="relative w-full max-w-[700px] mx-auto mt-4 truck-wrap" style="--p:${item.percent/100}">
+          <img src="https://png.pngtree.com/thumb_back/fh260/background/20231007/pngtree-d-rendering-of-an-isolated-white-truck-seen-from-the-side-image_13518507.png" alt="Xe tải" class="w-full h-auto select-none"/>
+          <div class="trailer-overlay">
+            <div class="trailer-frame">
+              <div class="trailer-fill" style="background:${c.fill}"></div>
+              <div class="percent-display">${item.percent} %</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 h-0.5 w-56 mx-auto bg-[#1E66FF]"></div>
+
+        <ul class="mt-4 space-y-1.5 text-sm text-slate-600">
+          <li class="flex items-center gap-2">${icon('calendar')}<span>Khởi hành: <b>${fmtDate(item.depart)}</b></span></li>
+          <li class="flex items-center gap-2">${icon('hash')}    <span>Biển số: <b>${item.plate}</b></span></li>
+          <li class="flex items-center gap-2">${icon('user')}    <span>Tài xế: <b>${item.driver}</b></span></li>
+        </ul>
+
+        <button class="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2">
+          Chọn xe
+        </button>
+      </article>`;
+    }
+
+    // Render grid
+    function render(){
+      grid.innerHTML = data.map(cardTpl).join('');
+      // Giống Payment: lần đầu set 21 cho icon chung (header), sau đó set 18 cho icon trong content
+      if (window.feather) feather.replace({ width: 18, height: 18 });
+    }
+
+    window.addEventListener('load', () => {
+      if (window.feather) feather.replace({ width: 21, height: 21 }); // header/sidebar
+      render();
+    });
+
+    // Filter + sort
+    const sort = document.getElementById('sort');
+    document.querySelectorAll('.flt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.flt').forEach(b=>b.classList.remove('bg-slate-900','text-white'));
+        btn.classList.add('bg-slate-900','text-white');
+        applyFilter(btn.dataset.filter);
+      });
+    });
+    sort.addEventListener('change', applyFilter);
+
+    let filtered = [...data];
+    function applyFilter(){
+      const active = document.querySelector('.flt.bg-slate-900')?.dataset.filter || 'all';
+      filtered = data.filter(x=>{
+        if(active==='lt50')  return x.percent < 50;
+        if(active==='50-80') return x.percent >= 50 && x.percent <= 80;
+        if(active==='gt80')  return x.percent > 80;
+        return true;
+      });
+      const s = sort.value;
+      if(s==='depart-asc') filtered.sort((a,b)=>a.depart.localeCompare(b.depart));
+      if(s==='load-asc')   filtered.sort((a,b)=>a.percent-b.percent);
+      if(s==='load-desc')  filtered.sort((a,b)=>b.percent-a.percent);
+      if(s==='plate')      filtered.sort((a,b)=>a.plate.localeCompare(b.plate));
+
+      // render lại theo filtered
+      grid.innerHTML = filtered.map(cardTpl).join('');
+      if (window.feather) feather.replace({ width: 18, height: 18 });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thanh toán QR – Gemadept (Fixed)</title>
+
+    <!-- Fonts & Tailwind -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = window.tailwind || {};
+      tailwind.config = {
+        theme: {
+          extend: {
+            boxShadow: { soft: "0 8px 30px rgba(15,23,42,.08)" },
+            keyframes: { in: { from: { transform: "translateY(8px)", opacity: 0 }, to: { transform: "translateY(0)", opacity: 1 } } },
+            animation: { in: "in .25s ease-out both" },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <style>
+      html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+      :is(button, a, select, input, details, summary):focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+      .card-line { height:1px; background: linear-gradient(90deg,#e8e8e8,#f6f6f6 60%,#ffffff); }
+      .qr-grad { background: linear-gradient(150deg,#7dd3fc 0%, #e0e7ff 40%, #ffffff 100%); }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+#order-id {
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  line-height: 1.45;
+}
+
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+      <div class="mt-1 mb-1 text-center">
+        <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+          <i data-feather="shield" class="w-6 h-6"></i>
+        </span>
+        <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+      </div>
+      <div class="flex flex-col items-center gap-4">
+        <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></a>
+        <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></a>
+        <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></a>
+        <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+          <i data-feather="bell"></i>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></a>
+        <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></a>
+      </div>
+    </aside>
+
+    <main class="ml-20">
+      <!-- ===== HEADER ===== -->
+      <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
+        <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
+          <div class="flex-1 max-w-2xl mr-3 md:mr-6">
+            <div class="relative">
+              <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Tìm giao dịch, mã đơn, số tiền…" />
+              <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+                <i data-feather="filter" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 md:gap-3">
+            <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+            <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4"></i></button>
+            <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4"></i></button>
+            <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+              <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+              <div class="text-left leading-tight hidden sm:block">
+                <div class="text-[13px] font-semibold">Harsh Vani</div>
+                <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+              </div>
+              <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===== CONTENT ===== -->
+      <section class="p-6 md:p-8 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Thanh toán QR</h1>
+            <p class="text-slate-600">Quét mã để hoàn tất giao dịch an toàn, nhanh chóng.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
+          <!-- Left: QR & status -->
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden">
+            <div class="qr-grad px-5 md:px-7 py-5 border-b border-slate-200">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <span class="inline-grid place-items-center w-10 h-10 rounded-xl bg-white/90 ring-1 ring-slate-200"><i data-feather="smartphone" class="w-5 h-5 text-blue-700"></i></span>
+                  <div>
+                    <div class="text-sm text-slate-600">Thanh toán cho</div>
+                    <div class="font-bold">Công ty Gemadept</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm text-slate-600">Số tiền</div>
+                  <div class="text-2xl font-extrabold">10.000.000 VNĐ</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 md:p-7 grid lg:grid-cols-[minmax(280px,360px)_1fr] gap-6 items-start">
+              <!-- QR card -->
+              <div class="bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 text-slate-500 text-sm">
+                    <i data-feather="clock" class="w-4 h-4"></i>
+                    Hết hạn trong <span id="timer" class="font-semibold text-slate-900 ml-1">15:00</span>
+                  </div>
+                  <div class="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 flex items-center gap-1"><i data-feather="shield" class="w-3.5 h-3.5"></i> VIETQR / NAPAS 24/7</div>
+                </div>
+                <div class="rounded-xl overflow-hidden ring-1 ring-slate-200 p-3 bg-white">
+                  <img
+                    id="qr-img"
+                    src="qr.jpg"
+                    alt="QR Code"
+                    class="block w-full h-auto mx-auto"
+                    decoding="sync"
+                    loading="eager"
+                    onerror="this.onerror=null; this.alt='Không tải được ảnh qr.jpg';"
+                  />
+                </div>
+                <div class="grid grid-cols-3 gap-2 mt-4 text-sm">
+                  <button id="btn-dl" class="h-9 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2"><i data-feather="download" class="w-4 h-4"></i>Tải QR</button>
+                  <button id="btn-copy" class="h-9 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2"><i data-feather="copy" class="w-4 h-4"></i>Copy nội dung</button>
+                  <button id="btn-refresh" class="h-9 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2"><i data-feather="refresh-cw" class="w-4 h-4"></i>Làm mới</button>
+                </div>
+                <p class="text-[12px] text-slate-500 mt-3">* Không chia sẻ mã QR cho người lạ. Mã sẽ tự vô hiệu khi hết thời gian.</p>
+              </div>
+
+              <!-- Status & instructions -->
+              <div class="space-y-4">
+                <div class="rounded-2xl border border-slate-200 p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold">Trạng thái thanh toán</h3>
+                    <span id="pill-status" class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200">Đang chờ</span>
+                  </div>
+                  <div id="status-box" class="flex items-center gap-3 text-slate-700">
+                    <i data-feather="loader" class="w-4 h-4 animate-spin"></i>
+                    Hệ thống đang chờ nhận tiền từ ngân hàng.
+                  </div>
+                  <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div class="rounded-xl bg-slate-50 border border-slate-200 px-2 py-2.5">
+                      <div class="text-[11px] text-slate-500">Mã đơn</div>
+                      <div class="font-mono font-semibold text-[12px] md:text-[13px] leading-6 tracking-normal overflow-x-auto no-scrollbar"><span id="order-id" class="whitespace-nowrap">322138483848</span></div>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 border border-slate-200 px-2 py-2.5">
+                      <div class="text-[11px] text-slate-500">Thời gian</div>
+                      <div class="font-semibold" id="order-time">—</div>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 border border-slate-200 px-2 py-2.5">
+                      <div class="text-[11px] text-slate-500">Kênh</div>
+                      <div class="font-semibold">MoMo / Banking</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 p-4">
+                  <h3 class="font-semibold mb-2">Hướng dẫn nhanh</h3>
+                  <ol class="list-decimal pl-5 text-sm space-y-1 text-slate-700">
+                    <li>Mở <span class="font-medium">MoMo</span> hoặc app ngân hàng (Vietcombank, Techcombank, v.v.).</li>
+                    <li>Chọn <span class="font-medium">Quét QR</span> và đưa camera vào vùng mã.</li>
+                    <li>Kiểm tra đúng <span class="font-medium">tên người nhận: Công ty Gemadept</span> và số tiền.</li>
+                    <li>Xác nhận và hoàn tất. Hệ thống sẽ tự động cập nhật trạng thái.</li>
+                  </ol>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 p-4">
+                  <h3 class="font-semibold mb-2">Phương thức</h3>
+                  <div class="flex flex-wrap gap-2">
+                    <button data-method="momo" class="method-btn h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">MoMo</button>
+                    <button data-method="vietqr" class="method-btn h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">VietQR</button>
+                    <button data-method="zalo" class="method-btn h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">ZaloPay</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Order details -->
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-soft p-5 md:p-7">
+            <h2 class="text-xl font-bold">Thông tin đơn hàng</h2>
+            <div class="card-line my-5"></div>
+            <div class="space-y-5 text-sm">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <div class="text-slate-500">Nhà cung cấp</div>
+                  <div class="mt-1 font-medium">Công ty Gemadept</div>
+                </div>
+                <div>
+                  <div class="text-slate-500">Mã đơn hàng</div>
+                  <div class="mt-1 font-mono font-semibold text-[13px] md:text-[14px] leading-5 tracking-normal overflow-x-auto no-scrollbar"><span id="order-code" class="whitespace-nowrap">322138483848</span></div>
+                </div>
+              </div>
+              <div>
+                <div class="text-slate-500">Mô tả</div>
+                <p class="mt-1 font-medium">Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025</p>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <div class="text-slate-500">Số tiền</div>
+                  <div class="mt-1 text-2xl font-extrabold">10.000.000 VNĐ</div>
+                </div>
+                <div>
+                  <div class="text-slate-500">Phí giao dịch</div>
+                  <div class="mt-1 font-medium">Miễn phí</div>
+                </div>
+              </div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                <div class="text-slate-500">Ghi chú chuyển khoản</div>
+                <div class="mt-1 flex items-center gap-2">
+                  <code id="note" class="px-2 py-1 rounded-lg bg-white border border-slate-200">GMD-322138483848</code>
+                  <button id="btn-copy-note" class="h-8 px-2 rounded-lg border border-slate-200 hover:bg-white flex items-center gap-1 text-xs"><i data-feather="copy" class="w-3.5 h-3.5"></i>Copy</button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <button id="btn-cancel" class="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">Huỷ thanh toán</button>
+                <button id="btn-support" class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Liên hệ hỗ trợ</button>
+              </div>
+              <p class="text-[12px] text-slate-500">* Giá, điều khoản có thể thay đổi theo mùa vụ và tải trọng.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success banner -->
+        <div id="success-bar" class="hidden animate-in">
+          <div class="max-w-3xl mx-auto">
+            <div class="inline-flex items-center gap-3 bg-emerald-500 text-white px-5 py-3 rounded-2xl shadow-sm">
+              <i data-feather="check-circle" class="w-6 h-6"></i>
+              <span class="font-semibold">Giao dịch thành công</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-center text-slate-400 text-xs mt-4 mb-6">© 2025 Gemadept – Mẫu giao diện demo thanh toán QR.</footer>
+    </main>
+
+    <script>
+      feather.replace({ width: 21, height: 21 });
+
+      // Countdown timer 15 minutes
+      const timerEl = document.getElementById('timer');
+      let remain = 15 * 60;
+      const tick = () => {
+        const m = String(Math.floor(remain / 60)).padStart(2,'0');
+        const s = String(remain % 60).padStart(2,'0');
+        timerEl.textContent = `${m}:${s}`;
+        if (remain <= 0) {
+          clearInterval(iv);
+          document.getElementById('pill-status').textContent = 'Hết hạn';
+          document.getElementById('pill-status').className = 'text-xs px-2 py-1 rounded-full bg-rose-50 text-rose-700 ring-1 ring-rose-200';
+          document.getElementById('status-box').innerHTML = '<i data-feather("x-circle") class="w-4 h-4 text-rose-600"></i> Mã QR đã hết hạn, vui lòng bấm <b>Làm mới</b> để tạo lại.';
+          feather.replace();
+        }
+        remain--;
+      };
+      const iv = setInterval(tick, 1000); tick();
+
+      // Fake payment -> success after 9s
+      setTimeout(() => {
+        const pill = document.getElementById('pill-status');
+        pill.textContent = 'Thành công';
+        pill.className = 'text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200';
+        const box = document.getElementById('status-box');
+        box.innerHTML = '<i data-feather("check") class="w-4 h-4 text-emerald-600"></i> Đã nhận tiền. Đang phát hành e-invoice…';
+        document.getElementById('success-bar').classList.remove('hidden');
+        document.getElementById('order-time').textContent = new Date().toLocaleString('vi-VN');
+        feather.replace();
+      }, 9000);
+
+      // Download QR (same image path next to HTML)
+      document.getElementById('btn-dl')?.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = 'qr.jpg';
+        a.download = 'gemadept-vietqr.jpg';
+        a.click();
+      });
+
+      // Copy helpers
+      const copy = async (text) => { try { await navigator.clipboard.writeText(text); toast('Đã copy vào clipboard'); } catch(e) { alert('Không copy được.'); } };
+      document.getElementById('btn-copy')?.addEventListener('click', () => copy('VIETQR|GEMADEPT|10000000|GMD-322138483848'));
+      document.getElementById('btn-copy-note')?.addEventListener('click', () => copy(document.getElementById('note').textContent));
+
+      // Refresh -> reset timer + status
+      document.getElementById('btn-refresh')?.addEventListener('click', () => {
+        remain = 15*60; tick();
+        const pill = document.getElementById('pill-status');
+        pill.textContent = 'Đang chờ';
+        pill.className = 'text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200';
+        document.getElementById('status-box').innerHTML = '<i data-feather("loader") class="w-4 h-4 animate-spin"></i> Hệ thống đang chờ nhận tiền từ ngân hàng.';
+        feather.replace();
+      });
+
+      // Method styling
+      const methodBtns = document.querySelectorAll('.method-btn');
+      methodBtns.forEach(btn => btn.addEventListener('click', () => {
+        methodBtns.forEach(b => b.classList.remove('ring-2','ring-blue-200','bg-blue-50'));
+        btn.classList.add('ring-2','ring-blue-200','bg-blue-50');
+      }));
+
+      // Tiny toast
+      function toast(msg){
+        const el = document.createElement('div');
+        el.className = 'fixed bottom-6 right-6 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg animate-in z-[60]';
+        el.textContent = msg; document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1600);
+      }
+    </script>
+  </body>
+</html>
