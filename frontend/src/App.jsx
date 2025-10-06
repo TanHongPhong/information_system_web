@@ -13,7 +13,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/warehouse" element={<WarehouseInOut />} />
-        <Route path="/order-tracking" element={<OrderTracking />} />
+        <Route path="/order_tracking" element={<OrderTracking />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
