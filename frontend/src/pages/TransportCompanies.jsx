@@ -1,37 +1,106 @@
-import React, { useEffect, useMemo, useState } from "react";
-import feather from "feather-icons";
-
-import Sidebar from "../components/companies/Sidebar";
+import React, { useCallback, useMemo, useState } from "react";
+import Filters from "../components/companies/Filters";
 import CompaniesTable from "../components/companies/CompaniesTable";
+import CompanyModal from "../components/companies/CompanyModal";
+
+// ==== DATA DEMO ====
+const COMPANIES = [
+  {
+    name: "Công ty Gemadept",
+    area: "Toàn quốc",
+    cost: 200000,
+    rating: 4.7,
+    reviews: 1248,
+    stats: { orders12m: 3482, ontimeRate: 97.2, csat: 4.8 },
+    sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+    services: { cold: true, danger: false, loading: true, insurance: true },
+    address: "2 Hải Phòng, Q.1, TP.HCM",
+    phone: "028 1234 5678",
+  },
+  {
+    name: "Công ty CP Transimex",
+    area: "Nội thành HCM, Liên tỉnh",
+    cost: 170000,
+    rating: 4.4,
+    reviews: 689,
+    stats: { orders12m: 2214, ontimeRate: 95.5, csat: 4.5 },
+    sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"],
+    services: { cold: true, danger: true, loading: false, insurance: true },
+    address: "36 Tân Thuận, Quận 7, TP.HCM",
+    phone: "028 3777 8888",
+  },
+  {
+    name: "Công ty CP vận tải dầu khí Bình Dương",
+    area: "Miền Nam, Bắc–Nam",
+    cost: 140000,
+    rating: 4.2,
+    reviews: 312,
+    stats: { orders12m: 1210, ontimeRate: 93.1, csat: 4.2 },
+    sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+    services: { cold: false, danger: false, loading: true, insurance: false },
+    address: "25 QL13, TP. Thủ Dầu Một, Bình Dương",
+    phone: "0274 222 3333",
+  },
+  {
+    name: "Công ty giao nhận toàn cầu DHL",
+    area: "Toàn quốc",
+    cost: 185000,
+    rating: 4.6,
+    reviews: 998,
+    stats: { orders12m: 2890, ontimeRate: 96.3, csat: 4.6 },
+    sizes: ["≤ 2 tấn", "≤ 4 tấn"],
+    services: { cold: false, danger: true, loading: false, insurance: true },
+    address: "86 Mai Chí Thọ, TP. Thủ Đức, TP.HCM",
+    phone: "1900 545 548",
+  },
+];
+
+// ==== Helpers ====
+const fmtVND = (n) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+
+const strip = (s) => (s || "").toString().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 export default function TransportCompanies() {
-  const companies = useMemo(
-    () => [
-      { name: "Công ty Gemadept", serviceArea: "Toàn quốc", cost: 200000, sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"] },
-      { name: "Công ty CP vận tải dầu khí Bình Dương", serviceArea: "Miền Nam, Bắc–Nam", cost: 140000, sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"] },
-      { name: "Công ty CP Transimex", serviceArea: "Nội thành HCM, Liên tỉnh", cost: 170000, sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"] },
-      { name: "Công ty giao nhận toàn cầu DHL", serviceArea: "Toàn quốc", cost: 185000, sizes: ["≤ 2 tấn", "≤ 4 tấn"] },
-    ],
-    []
-  );
-
+  // State bộ lọc
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [size, setSize] = useState("");
-  const [result, setResult] = useState(companies);
+  const [sort, setSort] = useState("recommended");
 
-  const fmtVND = (n) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+  // Bộ lọc nâng cao
+  const [showAdv, setShowAdv] = useState(false);
+  const [svcCold, setSvcCold] = useState(false);
+  const [svcDanger, setSvcDanger] = useState(false);
+  const [svcLoading, setSvcLoading] = useState(false);
+  const [svcInsurance, setSvcInsurance] = useState(false);
+  const [cargoType, setCargoType] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
 
-  const strip = (s) =>
-    (s || "").toString().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  // Modal
+  const [selected, setSelected] = useState(null);
 
-  const onSearch = () => {
-    const f = strip(from), t = strip(to), s = strip(size);
+  const matchAdvanced = useCallback(
+    (c) => {
+      if (svcCold && !c.services.cold) return false;
+      if (svcDanger && !c.services.danger) return false;
+      if (svcLoading && !c.services.loading) return false;
+      if (svcInsurance && !c.services.insurance) return false;
+      if (cargoType === "Lạnh" && !c.services.cold) return false;
+      if (cargoType === "Nguy hiểm" && !c.services.danger) return false;
+      return true;
+    },
+    [svcCold, svcDanger, svcLoading, svcInsurance, cargoType]
+  );
+
+  const filtered = useMemo(() => {
+    const f = strip(from);
+    const t = strip(to);
+    const s = strip(size);
     const term = `${f} ${t}`.trim();
 
-    const list = companies.filter((c) => {
-      const area = strip(c.serviceArea);
+    let list = COMPANIES.filter((c) => {
+      const area = strip(c.area);
       const areaOK =
         area.includes("toan quoc") ||
         (term &&
@@ -42,99 +111,53 @@ export default function TransportCompanies() {
         !term;
 
       const sizeOK = !s || c.sizes.some((x) => strip(x).includes(s));
-      return areaOK && sizeOK;
+      return areaOK && sizeOK && matchAdvanced(c);
     });
 
-    setResult(list);
-  };
+    switch (sort) {
+      case "priceAsc":  list.sort((a, b) => a.cost - b.cost); break;
+      case "priceDesc": list.sort((a, b) => b.cost - a.cost); break;
+      case "ratingDesc":list.sort((a, b) => b.rating - a.rating); break;
+      default:          list.sort((a, b) => b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost));
+    }
+    return list;
+  }, [from, to, size, sort, matchAdvanced]);
 
-  const onSwap = () => {
+  const handleSwap = () => {
+    const a = from;
     setFrom(to);
-    setTo(from);
+    setTo(a);
   };
-
-  useEffect(() => {
-    feather.replace({ width: 24, height: 24 });
-  }, []);
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen">
-      <Sidebar />
-
-      <main className="ml-24">
-        {/* Topbar (inline) */}
-        <div className="sticky top-0 z-50 flex items-center justify-end p-3 bg-white/90 backdrop-blur-sm border-b border-slate-200">
-          <button
-            type="button"
-            className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-blue-50 text-slate-900 ring-1 ring-blue-100 shadow-sm hover:bg-blue-100 transition"
-          >
-            <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm" />
-            <span className="font-semibold">Khách hàng A</span>
-            <span className="text-slate-300">•</span>
-            <i data-feather="chevron-down" className="w-4 h-4 opacity-80 group-hover:opacity-100" />
-          </button>
+    <div className="p-6 space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Danh sách công ty vận tải được đề xuất</h1>
+          <p className="text-blue-600">List of recommended transport companies</p>
         </div>
+      </header>
 
-        {/* Hero (inline) */}
-        <section id="hero" className="relative h-52 sticky top-14 z-40">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                "url('https://png.pngtree.com/background/20250103/original/pngtree-d-rendering-and-illustration-of-container-cargo-ship-and-cargo-plane-picture-image_13280377.jpg')",
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50" />
-        </section>
+      {/* Bộ lọc + nâng cao */}
+      <Filters
+        from={from} to={to} size={size} sort={sort}
+        showAdv={showAdv} svcCold={svcCold} svcDanger={svcDanger} svcLoading={svcLoading} svcInsurance={svcInsurance}
+        cargoType={cargoType} pickupTime={pickupTime}
+        setFrom={setFrom} setTo={setTo} setSize={setSize} setSort={setSort}
+        toggleAdv={() => setShowAdv(v => !v)}
+        setSvcCold={setSvcCold} setSvcDanger={setSvcDanger} setSvcLoading={setSvcLoading} setSvcInsurance={setSvcInsurance}
+        setCargoType={setCargoType} setPickupTime={setPickupTime}
+        onSwap={handleSwap}
+        onSearch={() => {/* gắn gọi API nếu cần */}}
+      />
 
-        {/* Content */}
-        <section className="p-6">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,.08)]">
-            <div className="p-5">
-              <h1 className="text-2xl font-bold">Danh sách công ty vận tải được đề xuất</h1>
-              <p className="text-blue-600">List of recommended transport companies</p>
-            </div>
+      {/* Bảng kết quả */}
+      <CompaniesTable list={filtered} fmtVND={fmtVND} onSelect={setSelected} />
 
-            {/* Filters (inline để tối giản) */}
-            <div className="flex flex-wrap gap-2 p-5 pt-2">
-              <input
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSearch()}
-                className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Chọn điểm lấy hàng"
-              />
-              <button onClick={onSwap} type="button" className="size-10 rounded-xl border border-slate-200 grid place-items-center" aria-label="Đổi điểm" title="Đổi điểm">
-                ⇄
-              </button>
-              <input
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSearch()}
-                className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Chọn điểm đến"
-              />
-              <select
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                className="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200 focus:outline-none"
-              >
-                <option value="">Chọn kích thước</option>
-                <option>≤ 2 tấn</option>
-                <option>≤ 4 tấn</option>
-                <option>Container 20ft</option>
-                <option>Container 40ft</option>
-                <option>Xe lạnh</option>
-              </select>
-              <button onClick={onSearch} type="button" className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-                Tìm kiếm
-              </button>
-            </div>
-
-            <CompaniesTable data={result} fmtVND={fmtVND} />
-          </div>
-        </section>
-      </main>
+      {/* Modal chi tiết */}
+      {selected && (
+        <CompanyModal company={selected} onClose={() => setSelected(null)} fmtVND={fmtVND} />
+      )}
     </div>
   );
 }
