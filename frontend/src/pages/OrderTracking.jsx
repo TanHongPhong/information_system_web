@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
 import { Link } from "react-router-dom";
