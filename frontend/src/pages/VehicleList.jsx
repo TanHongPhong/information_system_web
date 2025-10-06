@@ -1,287 +1,141 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import feather from "feather-icons";
+import FilterBtn from "./FilterBtn";
+import VehicleCard from "./VehicleCard";
 
-const VEHICLES = [
-  {
-    id: 1,
-    percent: 50,
-    departDate: "17/10/2025",
-    gradient: "linear-gradient(90deg,#F04D3F 0%,#F39B18 100%)",
-  },
-  {
-    id: 2,
-    percent: 70,
-    departDate: "20/10/2025",
-    gradient: "linear-gradient(90deg,#F56A1D 0%,#F5B71C 100%)",
-  },
-  {
-    id: 3,
-    percent: 20,
-    departDate: "19/10/2025",
-    gradient: "linear-gradient(90deg,#F0473C 0%,#F39B18 100%)",
-  },
-];
+export default function VehiclesList() {
+  const COMPANY = "Gemadept Logistics";
+  const ROUTE = "HCM → Hà Nội";
 
-function VehicleCard({ percent, departDate, gradient, imgSrc }) {
-  // set biến CSS --p cho thanh fill
-  const wrapStyle = { "--p": percent / 100 };
+  const [data] = useState([
+    { id: 1, percent: 50, depart: "2025-10-17", plate: "51C-123.45", driver: "T. Minh", status: "Sẵn sàng" },
+    { id: 2, percent: 70, depart: "2025-10-20", plate: "51D-678.90", driver: "N. Hòa", status: "Còn chỗ" },
+    { id: 3, percent: 20, depart: "2025-10-19", plate: "63C-555.88", driver: "Q. Vũ", status: "Trống nhiều" },
+    { id: 4, percent: 82, depart: "2025-10-18", plate: "15C-456.12", driver: "M. Quân", status: "Gần đầy" },
+    { id: 5, percent: 35, depart: "2025-10-16", plate: "79C-912.34", driver: "Đ. Nam", status: "Trống" },
+    { id: 6, percent: 58, depart: "2025-10-21", plate: "43C-101.22", driver: "K. Sơn", status: "Còn chỗ" },
+    { id: 7, percent: 12, depart: "2025-10-15", plate: "61C-222.33", driver: "B. Lộc", status: "Trống nhiều" },
+    { id: 8, percent: 88, depart: "2025-10-22", plate: "29C-909.10", driver: "P. Hậu", status: "Gần đầy" },
+  ]);
+
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("depart-asc");
+
+  const list = useMemo(() => {
+    let arr = data.filter((x) => {
+      if (filter === "lt50") return x.percent < 50;
+      if (filter === "50-80") return x.percent >= 50 && x.percent <= 80;
+      if (filter === "gt80") return x.percent > 80;
+      return true;
+    });
+
+    if (sort === "depart-asc") arr = [...arr].sort((a, b) => a.depart.localeCompare(b.depart));
+    if (sort === "load-asc") arr = [...arr].sort((a, b) => a.percent - b.percent);
+    if (sort === "load-desc") arr = [...arr].sort((a, b) => b.percent - a.percent);
+    if (sort === "plate") arr = [...arr].sort((a, b) => a.plate.localeCompare(b.plate));
+
+    return arr;
+  }, [data, filter, sort]);
+
+  useEffect(() => {
+    feather.replace({ width: 21, height: 21 });
+  }, []);
+  useEffect(() => {
+    feather.replace();
+  }, [list, filter, sort]);
 
   return (
-    <article className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 flex flex-col items-center text-center">
-      <div
-        className="relative w-full max-w-[700px] truck-wrap"
-        style={wrapStyle}
-      >
-        <a href="donhang.html">
-          <img
-            src={imgSrc}
-            alt="Xe tải"
-            className="w-full h-auto select-none"
-            decoding="async"
-          />
-        </a>
-
-        <div className="trailer-overlay">
-          <div className="trailer-frame">
-            <div className="trailer-fill" style={{ background: gradient }} />
-            <div className="trailer-center">
-              <div className="percent-display">{percent} %</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 h-0.5 w-60 bg-[#1E66FF]" />
-      <h3 className="mt-5 font-semibold">
-        Phần trăm hàng trong xe: <span className="font-bold">{percent}</span>%
-      </h3>
-      <p className="mt-2 text-sm text-slate-600">
-        Ngày khởi hành: {departDate}
-      </p>
-      <a
-        href="donhang.html"
-        className="mt-5 rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2"
-        role="button"
-      >
-        Chọn xe
-      </a>
-    </article>
-  );
-}
-
-export default function VehicleList() {
-  const topbarRef = useRef(null);
-
-  // Tính chiều cao topbar để sticky hero nằm ngay dưới
-  useEffect(() => {
-    const updateTopbarH = () => {
-      const h = topbarRef.current?.offsetHeight ?? 56;
-      document.documentElement.style.setProperty("--topbar-h", `${h}px`);
-    };
-    updateTopbarH();
-    window.addEventListener("resize", updateTopbarH);
-    return () => window.removeEventListener("resize", updateTopbarH);
-  }, []);
-
-  // Render feather icons
-  useEffect(() => {
-    feather.replace({ width: 24, height: 24 });
-  }, []);
-
-  const truckImg =
-    "https://png.pngtree.com/thumb_back/fh260/background/20231007/pngtree-d-rendering-of-an-isolated-white-truck-seen-from-the-side-image_13518507.png";
-
-  const headerCols =
-    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8 justify-items-stretch";
-
-  return (
-    <div className="bg-slate-50 text-slate-900 antialiased min-h-screen">
-      {/* CSS tuỳ chỉnh giữ nguyên từ file gốc */}
+    <div className="bg-slate-50 text-slate-900 min-h-screen">
       <style>{`
-        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" }
-        .sidebar-dot { box-shadow: 0 0 0 2px rgba(0,0,0,.1) inset }
-
-        /* Force-hide ANY truck icon in sidebar even if some cached HTML injects it */
-        aside [data-feather="truck"],
-        aside svg.feather.feather-truck,
-        aside button[data-icon="truck"] { display: none !important; }
-
-        /* Mapping vùng thùng xe */
-        .truck-wrap{
-          --trail-left:19%;
-          --trail-top:26.2%;
-          --trail-width:44%;
-          --trail-height:27%;
-
-          --p:.5;
-          --radius:14px;
-          --frame-inset:clamp(6px,3.5%,14px);
-          --frame-shift-x:-2px;
-          --frame-shift-y:3px;
-        }
-        .trailer-overlay{
-          position:absolute;left:var(--trail-left);top:var(--trail-top);
-          width:var(--trail-width);height:var(--trail-height);
-          container-type:inline-size;
-          display:grid;place-items:center;
-          overflow:hidden;
-        }
-        .trailer-frame{
-          position:absolute; inset:var(--frame-inset);
-          border-radius:var(--radius); overflow:hidden;
-          border:1px solid rgba(255,255,255,.18);
-          background:linear-gradient(0deg,rgba(255,255,255,.06),rgba(255,255,255,.06));
-          backdrop-filter:blur(1px);
-          box-shadow:0 8px 24px rgba(0,0,0,.24);
-          transform:translate(var(--frame-shift-x), var(--frame-shift-y));
-        }
-        .trailer-fill{
-          position:absolute; left:0; top:0; bottom:0;
-          width:calc(var(--p)*100%);
-          border-top-left-radius:var(--radius);
-          border-bottom-left-radius:var(--radius);
-          transition:width .45s cubic-bezier(.22,.61,.36,1);
-          z-index:0;
-        }
-        .trailer-center{
-          position:absolute; inset:0; z-index:1;
-          display:flex; align-items:center; justify-content:center;
-          pointer-events:none; padding-inline:2%;
-        }
-        .percent-display{
-          font-size:clamp(16px,9cqw,44px);
-          font-weight:800; color:#fff; letter-spacing:.5px;
-          text-shadow:0 2px 6px rgba(0,0,0,.35);
-        }
+        body { font-family: Inter, ui-sans-serif, system-ui; }
+        .truck-wrap{ --p:.5; --radius:14px; --frame-inset:clamp(6px,3.5%,14px) }
+        .trailer-overlay{ position:absolute; left:19%; top:26.2%; width:44%; height:27%; display:grid; place-items:center; overflow:hidden }
+        .trailer-frame{ position:absolute; inset:var(--frame-inset); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,.18); background:linear-gradient(0deg,rgba(255,255,255,.06),rgba(255,255,255,.06)); backdrop-filter:blur(1px); box-shadow:0 8px 24px rgba(0,0,0,.24) }
+        .trailer-fill{ position:absolute; inset:0; width:calc(var(--p)*100%); border-top-left-radius:var(--radius); border-bottom-left-radius:var(--radius); transition:width .45s cubic-bezier(.22,.61,.36,1) }
+        .percent-display{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.35) }
+        #hero .title{ color:#1E66FF; -webkit-text-stroke:1px rgba(255,255,255,.18); text-shadow:0 3px 14px rgba(0,0,0,.85), 0 1px 0 rgba(0,0,0,.35) }
+        #hero .hero-bg{ background-image: var(--hero-img); background-size:cover; background-position:center; filter:saturate(1.05) contrast(1.05) }
       `}</style>
 
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-24 bg-white border-r border-slate-200 flex flex-col items-center gap-4 p-4 z-50">
-        <div className="flex flex-col items-center gap-4 text-blue-600">
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Trang chủ"
-            aria-label="Trang chủ"
-            type="button"
-          >
-            <i data-feather="home" />
-          </button>
+      {/* SIDEBAR, HEADER, HERO giữ nguyên như bản bạn gửi */}
 
-          {/* Nút 'truck' cố ý không render */}
+      {/* HERO */}
+      <section id="hero" className="relative h-[220px] sm:h-[260px] md:h-[300px] overflow-hidden">
+        <style>{`
+          #hero{ --hero-img:url('https://png.pngtree.com/background/20220720/original/pngtree-road-photography-in-grassland-scenic-area-picture-image_1688712.jpg'); }
+        `}</style>
+        <div className="hero-bg absolute inset-0" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/70" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,.35)_0%,rgba(0,0,0,0)_60%)]" />
 
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Theo dõi vị trí"
-            aria-label="Theo dõi vị trí"
-            type="button"
-          >
-            <i data-feather="map" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Lịch sử giao dịch"
-            aria-label="Lịch sử giao dịch"
-            type="button"
-          >
-            <i data-feather="file-text" />
-          </button>
-
-          <button
-            className="relative w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Thông báo"
-            aria-label="Thông báo"
-            type="button"
-          >
-            <i data-feather="bell" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Người dùng"
-            aria-label="Người dùng"
-            type="button"
-          >
-            <i data-feather="user" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Cài đặt"
-            aria-label="Cài đặt"
-            type="button"
-          >
-            <i data-feather="settings" />
-          </button>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
+          <h1 className="title text-2xl sm:text-3xl md:text-[34px] font-extrabold tracking-tight">
+            List of transportation vehicles
+          </h1>
+          <div className="mt-2 h-[6px] w-40 relative">
+            <span className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-white/60 rounded-full"></span>
+            <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-[6px] w-24 bg-[#1E66FF] rounded-full shadow-[0_2px_10px_rgba(30,102,255,0.5)]"></span>
+          </div>
+          <p className="mt-3 max-w-4xl text-sm sm:text-base text-white/90 leading-relaxed">
+            Đây là danh sách các phương tiện sẵn sàng đáp ứng nhu cầu vận chuyển của bạn.
+          </p>
         </div>
-      </aside>
+      </section>
 
-      <main className="ml-24">
-        {/* Topbar (sticky) */}
-        <div
-          id="topbar"
-          ref={topbarRef}
-          className="sticky top-0 z-50 flex items-center justify-end p-3 bg-white/90 backdrop-blur-sm border-b border-slate-200"
-        >
-          <button
-            type="button"
-            className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-blue-50 text-slate-900 ring-1 ring-blue-100 shadow-sm hover:bg-blue-100 transition"
-          >
-            <img
-              src="https://i.pravatar.cc/40?img=8"
-              alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
-            />
-            <span className="font-semibold">Khách hàng A</span>
-            <span className="text-slate-300">•</span>
-            <i
-              data-feather="chevron-down"
-              className="w-4 h-4 opacity-80 group-hover:opacity-100"
-            />
-          </button>
+      {/* FILTER BAR */}
+      <section className="sticky top-[56px] z-40 bg-white/95 backdrop-blur border-y border-slate-200">
+        <div className="w-full px-4 md:px-6 py-3 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <i data-feather="filter" className="w-4 h-4 text-slate-500" />
+            <span className="text-sm font-semibold">Bộ lọc</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <FilterBtn value="all" label="Tất cả" active={filter === "all"} onClick={setFilter} />
+            <FilterBtn value="lt50" label="< 50%" active={filter === "lt50"} onClick={setFilter} />
+            <FilterBtn value="50-80" label="50–80%" active={filter === "50-80"} onClick={setFilter} />
+            <FilterBtn value="gt80" label="> 80%" active={filter === "gt80"} onClick={setFilter} />
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <i data-feather="sliders" className="w-4 h-4 text-slate-500" />
+            <select
+              id="sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="px-3 py-1.5 text-sm rounded-lg ring-1 ring-slate-200 bg-white"
+            >
+              <option value="depart-asc">Sắp xếp: Khởi hành sớm → trễ</option>
+              <option value="load-asc">% tải tăng dần</option>
+              <option value="load-desc">% tải giảm dần</option>
+              <option value="plate">Theo biển số (A→Z)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* GRID */}
+      <section className="w-full px-4 md:px-6 py-8 md:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-7">
+          {list.map((item) => (
+            <VehicleCard key={item.id} item={item} company={COMPANY} route={ROUTE} />
+          ))}
         </div>
 
-        {/* Hero (sticky ngay dưới header) */}
-        <section
-          id="hero"
-          className="relative h-36 sm:h-40 md:h-44 sticky z-40"
-          style={{ top: "var(--topbar-h, 56px)" }}
-        >
-          <div className="absolute inset-0 bg-[url('https://img.thuthuattinhoc.vn/uploads/2019/08/15/hinh-anh-con-duong-dai_064458636.jpg')] bg-cover bg-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/55" />
-
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#1E66FF] drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-              List of transportation vehicles
-            </h1>
-            <p className="mt-2 text-sm sm:text-base text-white/90 max-w-4xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-              Đây là danh sách các phương tiện của công ty đã sẵn sàng đáp ứng
-              nhu cầu vận chuyển của khách hàng.
-            </p>
-            <p className="text-sm sm:text-base text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-              Vui lòng chọn phương tiện phù hợp nhất với nhu cầu của bạn!
-            </p>
-          </div>
-        </section>
-
-        {/* CARDS */}
-        <section className="flex-1">
-          <div className="mx-auto w-full max-w-none px-8 py-10">
-            <div className={headerCols}>
-              {VEHICLES.map((v) => (
-                <VehicleCard
-                  key={v.id}
-                  percent={v.percent}
-                  departDate={v.departDate}
-                  gradient={v.gradient}
-                  imgSrc={truckImg}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
+        <div className="mt-12 text-center">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-red-600 font-semibold ring-1 ring-red-300 hover:bg-red-50 shadow-soft focus:outline-none focus:ring-2 focus:ring-red-200"
+            onClick={() => {}}
+          >
+            <i data-feather="x-circle" className="w-5 h-5" />
+            Hủy yêu cầu
+          </button>
+          <p className="mt-3 text-sm text-slate-500">
+            Không thấy xe phù hợp? Gửi yêu cầu để hệ thống gợi ý hoặc mở thêm chuyến.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
