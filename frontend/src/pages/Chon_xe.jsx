@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import feather from "feather-icons";
+import VehicleCard from "../components/driver/VehicleCard"
+import Sidebar from "../components/driver/Sidebar"
 
 const VEHICLES = [
   {
@@ -21,53 +23,6 @@ const VEHICLES = [
     gradient: "linear-gradient(90deg,#F0473C 0%,#F39B18 100%)",
   },
 ];
-
-function VehicleCard({ percent, departDate, gradient, imgSrc }) {
-  // set biến CSS --p cho thanh fill
-  const wrapStyle = { "--p": percent / 100 };
-
-  return (
-    <article className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 flex flex-col items-center text-center">
-      <div
-        className="relative w-full max-w-[700px] truck-wrap"
-        style={wrapStyle}
-      >
-        <a href="donhang.html">
-          <img
-            src={imgSrc}
-            alt="Xe tải"
-            className="w-full h-auto select-none"
-            decoding="async"
-          />
-        </a>
-
-        <div className="trailer-overlay">
-          <div className="trailer-frame">
-            <div className="trailer-fill" style={{ background: gradient }} />
-            <div className="trailer-center">
-              <div className="percent-display">{percent} %</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 h-0.5 w-60 bg-[#1E66FF]" />
-      <h3 className="mt-5 font-semibold">
-        Phần trăm hàng trong xe: <span className="font-bold">{percent}</span>%
-      </h3>
-      <p className="mt-2 text-sm text-slate-600">
-        Ngày khởi hành: {departDate}
-      </p>
-      <a
-        href="donhang.html"
-        className="mt-5 rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2"
-        role="button"
-      >
-        Chọn xe
-      </a>
-    </article>
-  );
-}
 
 export default function VehicleList() {
   const topbarRef = useRef(null);
@@ -156,67 +111,9 @@ export default function VehicleList() {
       `}</style>
 
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-24 bg-white border-r border-slate-200 flex flex-col items-center gap-4 p-4 z-50">
-        <div className="flex flex-col items-center gap-4 text-blue-600">
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Trang chủ"
-            aria-label="Trang chủ"
-            type="button"
-          >
-            <i data-feather="home" />
-          </button>
-
-          {/* Nút 'truck' cố ý không render */}
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Theo dõi vị trí"
-            aria-label="Theo dõi vị trí"
-            type="button"
-          >
-            <i data-feather="map" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Lịch sử giao dịch"
-            aria-label="Lịch sử giao dịch"
-            type="button"
-          >
-            <i data-feather="file-text" />
-          </button>
-
-          <button
-            className="relative w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Thông báo"
-            aria-label="Thông báo"
-            type="button"
-          >
-            <i data-feather="bell" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Người dùng"
-            aria-label="Người dùng"
-            type="button"
-          >
-            <i data-feather="user" />
-          </button>
-
-          <button
-            className="w-12 h-12 rounded-xl grid place-items-center hover:bg-slate-100"
-            title="Cài đặt"
-            aria-label="Cài đặt"
-            type="button"
-          >
-            <i data-feather="settings" />
-          </button>
-        </div>
-      </aside>
-
+      
+      <Sidebar/>
+      
       <main className="ml-24">
         {/* Topbar (sticky) */}
         <div
