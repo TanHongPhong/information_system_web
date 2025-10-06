@@ -1,1123 +1,557 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Danh sách công ty vận tải</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách công ty vận tải</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 
-    <script>
-      tailwind = window.tailwind || {};
-      tailwind.config = {
-        theme: {
-          extend: {
-            boxShadow: { soft: "0 8px 30px rgba(15,23,42,.08)" },
-            keyframes: {
-              in: {
-                from: { transform: "translateY(8px)", opacity: 0.0 },
-                to: { transform: "translateY(0)", opacity: 1 },
-              },
-            },
-            animation: { in: "in .25s ease-out both" },
-          },
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: { soft: "0 8px 30px rgba(15,23,42,.08)" },
+          keyframes: { in: { from: { transform: "translateY(8px)", opacity: 0 }, to: { transform: "translateY(0)", opacity: 1 } } },
+          animation: { in: "in .25s ease-out both" },
         },
-      };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
 
-    <style>
-      body {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI,
-          Roboto, Helvetica, Arial;
-      }
-      :is(button, a, select, input, details, summary):focus-visible {
-        outline: 2px solid #2563eb;
-        outline-offset: 2px;
-      }
-      /* Star rating */
-      .stars {
-        --s: 18px;
-        position: relative;
-        display: inline-block;
-        width: calc(var(--s) * 5);
-        height: var(--s);
-      }
-      .stars::before,
-      .stars-fill {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-repeat: repeat-x;
-        background-size: var(--s) var(--s);
-      }
-      .stars::before {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d1d5db' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E");
-      }
-      /* CHANGED: màu sao đã chấm -> vàng (#f59e0b) */
-      .stars-fill {
-        overflow: hidden;
-        width: 0%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f59e0b' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E");
-      }
-    </style>
-  </head>
-  <body class="bg-slate-50 text-slate-900">
-    <!-- Sidebar -->
-    <aside
-      class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3"
-    >
-      <!-- Brand tối giản + điểm màu + chữ công ty -->
-      <div class="mt-1 mb-1 text-center">
-        <span
-          class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm"
-        >
-          <i data-feather="shield" class="w-6 h-6"></i>
-        </span>
-        <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">
-          LGBT
-        </div>
-      </div>
+  <style>
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    :is(button,a,select,input,details,summary):focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+    /* Stars */
+    .stars{--s:18px;position:relative;display:inline-block;width:calc(var(--s)*5);height:var(--s)}
+    .stars::before,.stars-fill{content:"";position:absolute;inset:0;background-repeat:repeat-x;background-size:var(--s) var(--s)}
+    .stars::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d1d5db' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E")}
+    .stars-fill{overflow:hidden;width:0%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f59e0b' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E")}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <!-- Sidebar -->
+  <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+    <div class="mt-1 mb-1 text-center">
+      <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+        <i data-feather="shield" class="w-6 h-6"></i>
+      </span>
+      <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+    </div>
+    <div class="flex flex-col items-center gap-4">
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></button>
+      <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+        <i data-feather="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></button>
+    </div>
+  </aside>
 
-      <!-- Nav -->
-      <div class="flex flex-col items-center gap-4">
-        <button
-          class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Trang chủ"
-        >
-          <i data-feather="home"></i>
-        </button>
-        <button
-          class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Theo dõi vị trí"
-        >
-          <i data-feather="map"></i>
-        </button>
-        <button
-          class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Lịch sử giao dịch"
-        >
-          <i data-feather="file-text"></i>
-        </button>
-        <button
-          class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Thông báo"
-        >
-          <i data-feather="bell"></i>
-          <span
-            class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
-          ></span>
-        </button>
-        <button
-          class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Người dùng"
-        >
-          <i data-feather="user"></i>
-        </button>
-        <button
-          class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          title="Cài đặt"
-        >
-          <i data-feather="settings"></i>
-        </button>
-      </div>
-    </aside>
-
-    <main class="ml-20">
-      <!-- HEADER -->
-      <header
-        class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white"
-      >
-        <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
-          <!-- Search sát trái hơn -->
-          <div class="flex-1 max-w-2xl mr-3 md:mr-6">
-            <div class="relative">
-              <i
-                data-feather="search"
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-              ></i>
-              <input
-                class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200"
-                placeholder="Search by User id, User Name, Date etc"
-              />
-              <button
-                class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"
-                title="Filter"
-              >
-                <i data-feather="filter" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Actions + User -->
-          <div class="flex items-center gap-2 md:gap-3">
-            <button
-              class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50"
-              title="New"
-            >
-              <i data-feather="plus" class="w-4 h-4"></i>
-            </button>
-            <button
-              class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50"
-              title="Notifications"
-            >
-              <i data-feather="bell" class="w-4 h-4"></i>
-            </button>
-            <button
-              class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50"
-              title="Archive"
-            >
-              <i data-feather="archive" class="w-4 h-4"></i>
-            </button>
-
-            <button
-              type="button"
-              class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              <img
-                src="https://i.pravatar.cc/40?img=8"
-                alt="Avatar"
-                class="w-8 h-8 rounded-full object-cover"
-              />
-              <div class="text-left leading-tight hidden sm:block">
-                <div class="text-[13px] font-semibold">Harsh Vani</div>
-                <div class="text-[11px] text-slate-500 -mt-0.5">
-                  Deportation Manager
-                </div>
-              </div>
-              <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Content -->
-      <section class="p-6 space-y-8">
-        <!-- BOX: Danh sách đề xuất + bộ lọc -->
-        <div class="bg-white border border-slate-200 rounded-2xl shadow-soft">
-          <div class="p-5">
-            <div class="flex items-center justify-between">
-              <div>
-                <h1 class="text-2xl font-bold">
-                  Danh sách công ty vận tải được đề xuất
-                </h1>
-                <p class="text-blue-600">
-                  List of recommended transport companies
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-slate-500">Sắp xếp</label>
-                <select
-                  id="sort"
-                  class="h-10 px-3 rounded-xl border border-slate-200"
-                >
-                  <option value="recommended">Phù hợp nhất</option>
-                  <option value="priceAsc">Giá ↑</option>
-                  <option value="priceDesc">Giá ↓</option>
-                  <option value="ratingDesc">Đánh giá ↓</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Filters -->
-          <div class="flex flex-wrap gap-2 p-5 pt-2">
-            <input
-              id="from"
-              class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
-              placeholder="Chọn điểm lấy hàng"
-            />
-            <button
-              id="swap"
-              class="size-10 rounded-xl border border-slate-200 grid place-items-center"
-              title="Đổi chiều"
-            >
-              ⇄
-            </button>
-            <input
-              id="to"
-              class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
-              placeholder="Chọn điểm đến"
-            />
-            <select
-              id="size"
-              class="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200"
-            >
-              <option value="">Chọn kích thước</option>
-              <option>≤ 2 tấn</option>
-              <option>≤ 4 tấn</option>
-              <option>Container 20ft</option>
-              <option>Container 40ft</option>
-              <option>Xe lạnh</option>
-            </select>
-            <button
-              id="search"
-              class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Tìm kiếm
-            </button>
-            <button
-              id="toggle-adv"
-              class="h-10 px-3 rounded-xl border border-slate-200"
-            >
-              Bộ lọc nâng cao
-            </button>
-          </div>
-
-          <!-- Filters nâng cao -->
-          <div id="adv" class="px-5 pb-4 hidden">
-            <div class="grid md:grid-cols-3 gap-3">
-              <label class="flex items-center gap-2"
-                ><input type="checkbox" id="svc-cold" class="size-4" />Xe
-                lạnh</label
-              >
-              <label class="flex items-center gap-2"
-                ><input type="checkbox" id="svc-danger" class="size-4" />Hàng
-                nguy hiểm</label
-              >
-              <label class="flex items-center gap-2"
-                ><input type="checkbox" id="svc-loading" class="size-4" />Bốc
-                xếp</label
-              >
-              <label class="flex items-center gap-2"
-                ><input type="checkbox" id="svc-insurance" class="size-4" />Bảo
-                hiểm</label
-              >
-              <div>
-                <label class="block text-sm text-slate-500 mb-1"
-                  >Thời gian lấy hàng</label
-                >
-                <input
-                  id="pickup-time"
-                  type="datetime-local"
-                  class="h-10 w-full px-3 rounded-xl border border-slate-200"
-                />
-              </div>
-              <div>
-                <label class="block text-sm text-slate-500 mb-1"
-                  >Loại hàng</label
-                >
-                <select
-                  id="cargo-type"
-                  class="h-10 w-full px-3 rounded-xl border border-slate-200"
-                >
-                  <option value="">— Chọn —</option>
-                  <option>Khô</option>
-                  <option>Lạnh</option>
-                  <option>Nguy hiểm</option>
-                  <option>Hàng cồng kềnh</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Chips -->
-          <div class="px-5 pb-2" id="recent"></div>
-
-          <!-- Table -->
-          <div
-            class="border-t border-slate-200"
-            role="table"
-            aria-label="Danh sách công ty"
-          >
-            <div
-              class="hidden md:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 pt-3 pb-2 text-slate-500 font-semibold"
-              role="row"
-            >
-              <div>Transport company</div>
-              <div>Service area</div>
-              <div class="text-center">Cost</div>
-              <div class="text-center">Đánh giá</div>
-              <div class="text-center">Information</div>
-            </div>
-            <div id="rows"></div>
-          </div>
-        </div>
-
-        <!-- Ưu đãi -->
-        <section class="space-y-4">
-          <!-- CHANGED: thêm màu xanh chủ đạo -->
-          <h2 class="text-xl font-bold text-blue-700 -ml+[10px]">
-            Ưu đãi & Gói dịch vụ
-          </h2>
-          <div class="grid md:grid-cols-3 gap-4">
-            <article
-              class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft animate-in"
-            >
-              <div class="text-amber-600 font-semibold mb-1">
-                Giảm 10% tuyến HCM ⇆ Đồng Nai
-              </div>
-              <p class="text-sm text-slate-600">
-                Áp dụng đơn ≥ 5 chuyến/tháng, thanh toán định kỳ.
-              </p>
-            </article>
-            <article
-              class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft"
-            >
-              <div class="text-emerald-600 font-semibold mb-1">
-                SLA: Dock-to-Dock ≤ 24h
-              </div>
-              <p class="text-sm text-slate-600">
-                Cam kết thời gian, phạt trễ; theo dõi mốc real-time.
-              </p>
-            </article>
-            <article
-              class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft"
-            >
-              <div class="text-blue-600 font-semibold mb-1">
-                Bảo hiểm hàng hóa tới 500 triệu
-              </div>
-              <p class="text-sm text-slate-600">
-                Tùy chọn nâng cấp bảo hiểm cho các lô hàng giá trị cao.
-              </p>
-            </article>
-          </div>
-        </section>
-
-        <!-- So sánh nhanh -->
-        <section
-          class="bg-white border border-slate-200 rounded-2xl shadow-soft p-5"
-        >
-          <!-- CHANGED: thêm màu xanh chủ đạo -->
-          <h2 class="text-xl font-bold text-blue-700 mb-4">
-            So sánh nhanh 3 nhà vận tải
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="min-w-[720px] w-full text-sm">
-              <thead class="text-left text-slate-500">
-                <tr>
-                  <th class="py-2">Tiêu chí</th>
-                  <th>Gemadept</th>
-                  <th>Transimex</th>
-                  <th>DHL</th>
-                </tr>
-              </thead>
-              <tbody
-                class="[&_td]:py-3 [&_td]:border-t [&_td]:border-slate-200"
-              >
-                <tr>
-                  <td>SLA tuyến HCM ⇆ Bình Dương</td>
-                  <td>≤ 6h</td>
-                  <td>≤ 8h</td>
-                  <td>≤ 10h</td>
-                </tr>
-                <tr>
-                  <td>Tracking</td>
-                  <td>GPS + mốc</td>
-                  <td>GPS</td>
-                  <td>GPS + ảnh</td>
-                </tr>
-                <tr>
-                  <td>Bảo hiểm</td>
-                  <td>Tùy chọn</td>
-                  <td>Mặc định</td>
-                  <td>Tùy chọn</td>
-                </tr>
-                <tr>
-                  <td>Dịch vụ lạnh</td>
-                  <td>Có</td>
-                  <td>Có</td>
-                  <td>—</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-    </main>
-    <!-- ===== MODAL (đÃ SỬA: canh giữa, khoá cuộn nền, ESC) ===== -->
-    <div id="modal" class="fixed inset-0 hidden z-[60]">
-      <!-- overlay -->
-      <div class="absolute inset-0 bg-black/40" onclick="closeModal()"></div>
-      <!-- center wrapper -->
-      <div class="relative z-[61] w-full h-full grid place-items-center p-4">
-        <!-- dialog -->
-        <div
-          class="w-full max-w-[960px] lg:max-w-[1040px] bg-white rounded-2xl shadow-soft border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-in"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
-        >
-          <!-- Header: banner + avatar + tên + rating -->
+  <main class="ml-20">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
+      <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
+        <div class="flex-1 max-w-2xl mr-3 md:mr-6">
           <div class="relative">
-            <div class="px-5 md:px-6 mt-6 flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <!-- Company avatar -->
-                <img
-                  src="https://i.pravatar.cc/120?u=company-1"
-                  alt="Company avatar"
-                  class="w-16 h-16 rounded-2xl ring-2 ring-white object-cover shadow"
-                />
-                <div>
-                  <h3
-                    id="modal-title"
-                    class="text-xl md:text-2xl font-extrabold leading-none text-slate-900"
-                  >
-                    Chi tiết công ty
-                  </h3>
-                  <div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
-                    <span
-                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                    >
-                      <i data-feather="check-circle" class="w-4 h-4"></i> Đã xác
-                      minh
-                    </span>
-                    <span
-                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-                    >
-                      <i data-feather="truck" class="w-4 h-4"></i> Cross-dock /
-                      FTL / LTL
-                    </span>
-                    <span
-                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                    >
-                      ★ 4.7 (1,248 đánh giá)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <button
-                  id="modal-close"
-                  class="h-9 w-9 grid place-items-center rounded-xl hover:bg-slate-50"
-                  onclick="closeModal()"
-                  aria-label="Đóng"
-                  title="Đóng"
-                >
-                  <i data-feather="x" class="w-5 h-5"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Quick stats -->
-            <div class="px-5 md:px-6 py-3">
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="rounded-xl border border-slate-200 bg-white p-3">
-                  <div class="text-xs text-slate-500">
-                    Đơn hoàn tất (12 tháng)
-                  </div>
-                  <div class="mt-1 text-lg font-bold">3,482</div>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-white p-3">
-                  <div class="text-xs text-slate-500">Tỉ lệ đúng hẹn</div>
-                  <div class="mt-1 text-lg font-bold text-emerald-600">
-                    97.2%
-                  </div>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-white p-3">
-                  <div class="text-xs text-slate-500">Điểm phản hồi (CSAT)</div>
-                  <div class="mt-1 text-lg font-bold">4.8/5</div>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-white p-3">
-                  <div class="text-xs text-slate-500">Phạm vi</div>
-                  <div class="mt-1 text-lg font-bold">Toàn quốc</div>
-                </div>
-              </div>
-            </div>
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+            <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Search by User id, User Name, Date etc" />
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+              <i data-feather="filter" class="w-4 h-4"></i>
+            </button>
           </div>
-
-          <!-- Body -->
-          <div class="p-5 md:p-6 overflow-auto">
-            <div class="flex flex-wrap gap-2 text-sm mb-4" id="badges">
-              <span
-                class="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200"
-                >Kho lạnh 2–8°C</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200"
-                >Hàng dễ vỡ</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200"
-                >Bốc xếp tiêu chuẩn</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200"
-                >E-POD / eInvoice</span
-              >
+        </div>
+        <div class="flex items-center gap-2 md:gap-3">
+          <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4"></i></button>
+          <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+            <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+            <div class="text-left leading-tight hidden sm:block">
+              <div class="text-[13px] font-semibold">Harsh Vani</div>
+              <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
             </div>
+            <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </header>
 
-            <div class="grid md:grid-cols-3 gap-5 items-start">
-              <!-- Trái (2/3) -->
-              <div class="md:col-span-2">
-                <!-- About -->
-                <div class="rounded-2xl border border-slate-200 p-4">
-                  <h4 class="font-semibold mb-2">Giới thiệu</h4>
-                  <p class="text-sm text-slate-700">
-                    Đơn vị vận tải chuyên tuyến khu vực miền Nam – Bắc, thế mạnh
-                    cold-chain, FMCG, và last-mile nội thành. Hỗ trợ API để đồng
-                    bộ đơn hàng, tracking theo thời gian thực.
-                  </p>
-                </div>
-
-                <!-- Năng lực -->
-                <div class="rounded-2xl border border-slate-200 p-4 mt-4">
-                  <h4 class="font-semibold mb-2">Năng lực</h4>
-                  <ul class="list-disc pl-5 space-y-1 text-sm" id="capability">
-                    <li>Đội xe 70+ (1T–15T), container lạnh 20/40ft</li>
-                    <li>Kho trung chuyển TP.HCM, Đà Nẵng, Hà Nội</li>
-                    <li>Giám sát nhiệt độ, nghiêng/va đập, GPS 24/7</li>
-                    <li>Dịch vụ đóng gói, tem niêm phong, e-POD</li>
-                  </ul>
-                </div>
-
-                <!-- Phạm vi dịch vụ -->
-                <div class="rounded-2xl border border-slate-200 p-4 mt-4">
-                  <h4 class="font-semibold mb-2">Phạm vi dịch vụ</h4>
-                  <div class="flex flex-wrap gap-2 text-sm">
-                    <span
-                      class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-                      >FTL / LTL</span
-                    >
-                    <span
-                      class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-                      >Cold-chain</span
-                    >
-                    <span
-                      class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-                      >Last-mile</span
-                    >
-                    <span
-                      class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-                      >Reverse logistics</span
-                    >
-                  </div>
-                </div>
-
-                <!-- Điều khoản -->
-                <div class="rounded-2xl border border-slate-200 p-4 mt-4">
-                  <h4 class="font-semibold mb-2">Điều khoản</h4>
-                  <ul class="list-disc pl-5 space-y-1 text-sm">
-                    <li>Hủy miễn phí trong 30 phút</li>
-                    <li>Phạt trễ theo SLA</li>
-                    <li>Hỗ trợ 24/7</li>
-                  </ul>
-                </div>
-
-                <!-- Đánh giá -->
-                <div class="rounded-2xl border border-slate-200 p-4 mt-4">
-                  <h4 class="font-semibold mb-2">Đánh giá gần đây</h4>
-                  <ul class="space-y-3" id="reviews">
-                    <li class="text-sm">
-                      <div class="flex items-center justify-between">
-                        <span class="font-medium">Coopmart DC</span>
-                        <span class="text-amber-600">★ ★ ★ ★ ☆</span>
-                      </div>
-                      <p class="text-slate-600">
-                        Đúng giờ, chứng từ đầy đủ, xử lý khiếu nại nhanh.
-                      </p>
-                    </li>
-                    <li class="text-sm">
-                      <div class="flex items-center justify-between">
-                        <span class="font-medium">Big C Miền Đông</span>
-                        <span class="text-amber-600">★ ★ ★ ★ ★</span>
-                      </div>
-                      <p class="text-slate-600">
-                        Cold-chain ổn định, tài xế chuyên nghiệp.
-                      </p>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <!-- Phải (1/3) -->
-              <div class="space-y-4">
-                <!-- Liên hệ -->
-                <div
-                  class="p-4 rounded-2xl border border-slate-200 bg-slate-50"
-                >
-                  <h4 class="font-semibold mb-2">Liên hệ</h4>
-                  <div class="space-y-2 text-[13px]">
-                    <div class="flex items-center gap-2">
-                      <i data-feather="map-pin" class="w-4 h-4"></i>
-                      <span id="cmp-address"
-                        >279 Nguyễn Tri Phương, Q.10, TP.HCM</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <i data-feather="phone" class="w-4 h-4"></i>
-                      <a
-                        href="tel:0345869283"
-                        id="cmp-phone"
-                        class="underline decoration-dotted"
-                      >
-                        0345 869 283
-                      </a>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <i data-feather="mail" class="w-4 h-4"></i>
-                      <a
-                        href="mailto:sales@company.vn"
-                        class="underline decoration-dotted"
-                      >
-                        sales@company.vn
-                      </a>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <i data-feather="globe" class="w-4 h-4"></i>
-                      <a href="#" class="underline decoration-dotted"
-                        >company.vn</a
-                      >
-                    </div>
-                  </div>
-
-                  <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div
-                      class="rounded-xl bg-white border border-slate-200 p-2"
-                    >
-                      <div class="text-[11px] text-slate-500">SLA</div>
-                      <div class="font-semibold">24h</div>
-                    </div>
-                    <div
-                      class="rounded-xl bg-white border border-slate-200 p-2"
-                    >
-                      <div class="text-[11px] text-slate-500">Tối đa tải</div>
-                      <div class="font-semibold">15T</div>
-                    </div>
-                    <div
-                      class="rounded-xl bg-white border border-slate-200 p-2"
-                    >
-                      <div class="text-[11px] text-slate-500">Bảo hiểm</div>
-                      <div class="font-semibold">Có</div>
-                    </div>
-                  </div>
-
-                  <div class="mt-3 flex gap-2">
-                    <button
-                      class="flex-1 h-9 rounded-xl border border-slate-300 hover:bg-white bg-white"
-                    >
-                      Báo giá nhanh
-                    </button>
-                    <button
-                      class="flex-1 h-9 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      Nhắn Zalo
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Giờ làm việc -->
-                <div class="p-4 rounded-2xl border border-slate-200">
-                  <h4 class="font-semibold mb-2">Giờ làm việc</h4>
-                  <ul class="text-[13px] text-slate-700 space-y-1">
-                    <li>Thứ 2–6: 08:00–18:00</li>
-                    <li>Thứ 7: 08:00–12:00</li>
-                    <li>CN: Hỗ trợ trực hotline</li>
-                  </ul>
-                </div>
-
-                <!-- Tài liệu -->
-                <div class="p-4 rounded-2xl border border-slate-200">
-                  <h4 class="font-semibold mb-2">Tài liệu</h4>
-                  <div class="flex flex-col gap-2">
-                    <button
-                      class="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2"
-                    >
-                      <i data-feather="file-text" class="w-4 h-4"></i> Hồ sơ
-                      năng lực.pdf
-                    </button>
-                    <button
-                      class="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2"
-                    >
-                      <i data-feather="shield" class="w-4 h-4"></i> Bảo hiểm
-                      hàng hóa.pdf
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div
-            class="p-4 border-t border-slate-200 flex items-center justify-between gap-2"
-          >
-            <div class="text-xs text-slate-500">
-              * Giá, điều khoản có thể thay đổi theo mùa vụ và tải trọng.
+    <!-- Content -->
+    <section class="p-6 space-y-8">
+      <!-- List -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-soft">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-bold">Danh sách công ty vận tải được đề xuất</h1>
+              <p class="text-blue-600">List of recommended transport companies</p>
             </div>
             <div class="flex items-center gap-2">
-              <button
-                class="h-10 px-4 rounded-xl border border-slate-200"
-                onclick="closeModal()"
-              >
-                Đóng
-              </button>
-              <button
-                class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Tiếp tục đặt
+              <label class="text-sm text-slate-500">Sắp xếp</label>
+              <select id="sort" class="h-10 px-3 rounded-xl border border-slate-200">
+                <option value="recommended">Phù hợp nhất</option>
+                <option value="priceAsc">Giá ↑</option>
+                <option value="priceDesc">Giá ↓</option>
+                <option value="ratingDesc">Đánh giá ↓</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 p-5 pt-2">
+          <input id="from" class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200" placeholder="Chọn điểm lấy hàng" />
+          <button id="swap" class="size-10 rounded-xl border border-slate-200 grid place-items-center" title="Đổi chiều">⇄</button>
+          <input id="to" class="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200" placeholder="Chọn điểm đến" />
+          <select id="size" class="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200">
+            <option value="">Chọn kích thước</option>
+            <option>≤ 2 tấn</option><option>≤ 4 tấn</option>
+            <option>Container 20ft</option><option>Container 40ft</option><option>Xe lạnh</option>
+          </select>
+          <button id="search" class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Tìm kiếm</button>
+          <button id="toggle-adv" class="h-10 px-3 rounded-xl border border-slate-200">Bộ lọc nâng cao</button>
+        </div>
+
+        <!-- Advanced -->
+        <div id="adv" class="px-5 pb-4 hidden">
+          <div class="grid md:grid-cols-3 gap-3">
+            <label class="flex items-center gap-2"><input type="checkbox" id="svc-cold" class="size-4" />Xe lạnh</label>
+            <label class="flex items-center gap-2"><input type="checkbox" id="svc-danger" class="size-4" />Hàng nguy hiểm</label>
+            <label class="flex items-center gap-2"><input type="checkbox" id="svc-loading" class="size-4" />Bốc xếp</label>
+            <label class="flex items-center gap-2"><input type="checkbox" id="svc-insurance" class="size-4" />Bảo hiểm</label>
+            <div>
+              <label class="block text-sm text-slate-500 mb-1">Thời gian lấy hàng</label>
+              <input id="pickup-time" type="datetime-local" class="h-10 w-full px-3 rounded-xl border border-slate-200" />
+            </div>
+            <div>
+              <label class="block text-sm text-slate-500 mb-1">Loại hàng</label>
+              <select id="cargo-type" class="h-10 w-full px-3 rounded-xl border border-slate-200">
+                <option value="">— Chọn —</option>
+                <option>Khô</option><option>Lạnh</option><option>Nguy hiểm</option><option>Hàng cồng kềnh</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent -->
+        <div class="px-5 pb-2" id="recent"></div>
+
+        <!-- Table -->
+        <div class="border-t border-slate-200" role="table" aria-label="Danh sách công ty">
+          <div class="hidden md:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 pt-3 pb-2 text-slate-500 font-semibold" role="row">
+            <div>Transport company</div>
+            <div>Service area</div>
+            <div class="text-center">Cost</div>
+            <div class="text-center">Đánh giá</div>
+            <div class="text-center">Information</div>
+          </div>
+          <div id="rows"></div>
+        </div>
+      </div>
+
+      <!-- Offers -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-blue-700 pl-4">Ưu đãi & Gói dịch vụ</h2>
+        <div class="grid md:grid-cols-3 gap-4">
+          <article class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft animate-in">
+            <div class="text-amber-600 font-semibold mb-1">Giảm 10% tuyến HCM ⇆ Đồng Nai</div>
+            <p class="text-sm text-slate-600">Áp dụng đơn ≥ 5 chuyến/tháng, thanh toán định kỳ.</p>
+          </article>
+          <article class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft">
+            <div class="text-emerald-600 font-semibold mb-1">SLA: Dock-to-Dock ≤ 24h</div>
+            <p class="text-sm text-slate-600">Cam kết thời gian, phạt trễ; theo dõi mốc real-time.</p>
+          </article>
+          <article class="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft">
+            <div class="text-blue-600 font-semibold mb-1">Bảo hiểm hàng hóa tới 500 triệu</div>
+            <p class="text-sm text-slate-600">Tuỳ chọn nâng cấp bảo hiểm cho lô hàng giá trị cao.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Compare -->
+      <section class="bg-white border border-slate-200 rounded-2xl shadow-soft p-5">
+        <h2 class="text-xl font-bold text-blue-700 mb-4">So sánh nhanh 3 nhà vận tải</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-[720px] w-full text-sm">
+            <thead class="text-left text-slate-500">
+              <tr><th class="py-2">Tiêu chí</th><th>Gemadept</th><th>Transimex</th><th>DHL</th></tr>
+            </thead>
+            <tbody class="[&_td]:py-3 [&_td]:border-t [&_td]:border-slate-200">
+              <tr><td>SLA tuyến HCM ⇆ Bình Dương</td><td>≤ 6h</td><td>≤ 8h</td><td>≤ 10h</td></tr>
+              <tr><td>Tracking</td><td>GPS + mốc</td><td>GPS</td><td>GPS + ảnh</td></tr>
+              <tr><td>Bảo hiểm</td><td>Tuỳ chọn</td><td>Mặc định</td><td>Tuỳ chọn</td></tr>
+              <tr><td>Dịch vụ lạnh</td><td>Có</td><td>Có</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal" class="fixed inset-0 hidden z-[60]">
+    <div class="absolute inset-0 bg-black/40" onclick="closeModal()"></div>
+    <div class="relative z-[61] w-full h-full grid place-items-center p-4">
+      <div class="w-full max-w-[960px] lg:max-w-[1040px] bg-white rounded-2xl shadow-soft border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-in" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <!-- Header -->
+        <div class="relative">
+          <div class="px-5 md:px-6 mt-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <img src="https://i.pravatar.cc/120?u=company-1" alt="Company avatar" class="w-16 h-16 rounded-2xl ring-2 ring-white object-cover shadow"/>
+              <div>
+                <!-- TÊN CÔNG TY: sẽ được JS gán chính xác (Transimex, Gemadept, DHL...) -->
+                <h3 id="modal-title" class="text-xl md:text-2xl font-extrabold leading-none text-slate-900">Chi tiết công ty</h3>
+                <div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                    <i data-feather="check-circle" class="w-4 h-4"></i> Đã xác minh
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200">
+                    <i data-feather="truck" class="w-4 h-4"></i> Cross-dock / FTL / LTL
+                  </span>
+                  <span id="rating-pill" class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200"></span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="modal-close" class="h-9 w-9 grid place-items-center rounded-xl hover:bg-slate-50" onclick="closeModal()" aria-label="Đóng" title="Đóng">
+                <i data-feather="x" class="w-5 h-5"></i>
               </button>
             </div>
+          </div>
+
+          <!-- Quick stats -->
+          <div class="px-5 md:px-6 py-3">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-xs text-slate-500">Đơn hoàn tất (12 tháng)</div><div id="stat-orders" class="mt-1 text-lg font-bold">—</div></div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-xs text-slate-500">Tỉ lệ đúng hẹn</div><div id="stat-ontime" class="mt-1 text-lg font-bold text-emerald-600">—</div></div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-xs text-slate-500">Điểm phản hồi (CSAT)</div><div id="stat-csat" class="mt-1 text-lg font-bold">—</div></div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-xs text-slate-500">Phạm vi</div><div id="stat-coverage" class="mt-1 text-lg font-bold">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 md:p-6 overflow-auto">
+          <div class="flex flex-wrap gap-2 text-sm mb-4" id="badges"></div>
+
+          <div class="grid md:grid-cols-3 gap-5 items-start">
+            <div class="md:col-span-2">
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <h4 class="font-semibold mb-2">Giới thiệu</h4>
+                <p class="text-sm text-slate-700">Đơn vị vận tải chuyên tuyến, thế mạnh cold-chain, FMCG, last-mile nội thành. Hỗ trợ API đồng bộ đơn, tracking thời gian thực.</p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 p-4 mt-4">
+                <h4 class="font-semibold mb-2">Năng lực</h4>
+                <ul class="list-disc pl-5 space-y-1 text-sm" id="capability"></ul>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 p-4 mt-4">
+                <h4 class="font-semibold mb-2">Điều khoản</h4>
+                <ul class="list-disc pl-5 space-y-1 text-sm">
+                  <li>Hủy miễn phí trong 30 phút</li><li>Phạt trễ theo SLA</li><li>Hỗ trợ 24/7</li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 p-4 mt-4">
+                <h4 class="font-semibold mb-2">Đánh giá gần đây</h4>
+                <ul class="space-y-3" id="reviews"></ul>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                <h4 class="font-semibold mb-2">Liên hệ</h4>
+                <div class="space-y-2 text-[13px]">
+                  <div class="flex items-center gap-2"><i data-feather="map-pin" class="w-4 h-4"></i><span id="cmp-address">—</span></div>
+                  <div class="flex items-center gap-2"><i data-feather="phone" class="w-4 h-4"></i><a href="#" id="cmp-phone" class="underline decoration-dotted">—</a></div>
+                  <div class="flex items-center gap-2"><i data-feather="mail" class="w-4 h-4"></i><a href="mailto:sales@company.vn" class="underline decoration-dotted">sales@company.vn</a></div>
+                  <div class="flex items-center gap-2"><i data-feather="globe" class="w-4 h-4"></i><a href="#" class="underline decoration-dotted">company.vn</a></div>
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div class="rounded-xl bg-white border border-slate-200 p-2"><div class="text-[11px] text-slate-500">SLA</div><div class="font-semibold">24h</div></div>
+                  <div class="rounded-xl bg-white border border-slate-200 p-2"><div class="text-[11px] text-slate-500">Tối đa tải</div><div class="font-semibold">15T</div></div>
+                  <div class="rounded-xl bg-white border border-slate-200 p-2"><div class="text-[11px] text-slate-500">Bảo hiểm</div><div class="font-semibold">Có</div></div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button class="flex-1 h-9 rounded-xl border border-slate-300 bg-white hover:bg-slate-50">Báo giá nhanh</button>
+                  <button class="flex-1 h-9 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Nhắn Zalo</button>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl border border-slate-200">
+                <h4 class="font-semibold mb-2">Giờ làm việc</h4>
+                <ul class="text-[13px] text-slate-700 space-y-1">
+                  <li>Thứ 2–6: 08:00–18:00</li><li>Thứ 7: 08:00–12:00</li><li>CN: Hỗ trợ trực hotline</li>
+                </ul>
+              </div>
+
+              <div class="p-4 rounded-2xl border border-slate-200">
+                <h4 class="font-semibold mb-2">Tài liệu</h4>
+                <div class="flex flex-col gap-2">
+                  <button class="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2">
+                    <i data-feather="file-text" class="w-4 h-4"></i> Hồ sơ năng lực.pdf
+                  </button>
+                  <button class="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2">
+                    <i data-feather="shield" class="w-4 h-4"></i> Bảo hiểm hàng hóa.pdf
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-200 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-500">* Giá, điều khoản có thể thay đổi theo mùa vụ và tải trọng.</div>
+          <div class="flex items-center gap-2">
+            <button class="h-10 px-4 rounded-xl border border-slate-200" onclick="closeModal()">Đóng</button>
+            <button class="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Tiếp tục đặt</button>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script>
-      // ===== Data =====
-      const companies = [
-        {
-          name: "Công ty Gemadept",
-          area: "Toàn quốc",
-          cost: 200000,
-          rating: 4.7,
-          sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
-          services: {
-            cold: true,
-            danger: false,
-            loading: true,
-            insurance: true,
-          },
-          address: "2 Hải Phòng, Q.1, TP.HCM",
-          phone: "028 1234 5678",
-        },
-        {
-          name: "Công ty CP vận tải dầu khí Bình Dương",
-          area: "Miền Nam, Bắc–Nam",
-          cost: 140000,
-          rating: 4.2,
-          sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
-          services: {
-            cold: false,
-            danger: false,
-            loading: true,
-            insurance: false,
-          },
-          address: "25 QL13, TP. Thủ Dầu Một, Bình Dương",
-          phone: "0274 222 3333",
-        },
-        {
-          name: "Công ty CP Transimex",
-          area: "Nội thành HCM, Liên tỉnh",
-          cost: 170000,
-          rating: 4.4,
-          sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"],
-          services: {
-            cold: true,
-            danger: true,
-            loading: false,
-            insurance: true,
-          },
-          address: "36 Tân Thuận, Quận 7, TP.HCM",
-          phone: "028 3777 8888",
-        },
-        {
-          name: "Công ty giao nhận toàn cầu DHL",
-          area: "Toàn quốc",
-          cost: 185000,
-          rating: 4.6,
-          sizes: ["≤ 2 tấn", "≤ 4 tấn"],
-          services: {
-            cold: false,
-            danger: true,
-            loading: false,
-            insurance: true,
-          },
-          address: "86 Mai Chí Thọ, TP. Thủ Đức, TP.HCM",
-          phone: "1900 545 548",
-        },
-      ];
-      const recentKey = "recent-routes-v1";
+  <script>
+    // ===== DATA =====
+    const companies = [
+      {
+        name: "Công ty Gemadept",
+        area: "Toàn quốc",
+        cost: 200000,
+        rating: 4.7,
+        reviews: 1248,
+        stats: { orders12m: 3482, ontimeRate: 97.2, csat: 4.8 },
+        sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+        services: { cold: true, danger: false, loading: true, insurance: true },
+        address: "2 Hải Phòng, Q.1, TP.HCM",
+        phone: "028 1234 5678",
+      },
+      {
+        name: "Công ty CP Transimex",
+        area: "Nội thành HCM, Liên tỉnh",
+        cost: 170000,
+        rating: 4.4,
+        reviews: 689,
+        stats: { orders12m: 2214, ontimeRate: 95.5, csat: 4.5 },
+        sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"],
+        services: { cold: true, danger: true, loading: false, insurance: true },
+        address: "36 Tân Thuận, Quận 7, TP.HCM",
+        phone: "028 3777 8888",
+      },
+      {
+        name: "Công ty CP vận tải dầu khí Bình Dương",
+        area: "Miền Nam, Bắc–Nam",
+        cost: 140000,
+        rating: 4.2,
+        reviews: 312,
+        stats: { orders12m: 1210, ontimeRate: 93.1, csat: 4.2 },
+        sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+        services: { cold: false, danger: false, loading: true, insurance: false },
+        address: "25 QL13, TP. Thủ Dầu Một, Bình Dương",
+        phone: "0274 222 3333",
+      },
+      {
+        name: "Công ty giao nhận toàn cầu DHL",
+        area: "Toàn quốc",
+        cost: 185000,
+        rating: 4.6,
+        reviews: 998,
+        stats: { orders12m: 2890, ontimeRate: 96.3, csat: 4.6 },
+        sizes: ["≤ 2 tấn", "≤ 4 tấn"],
+        services: { cold: false, danger: true, loading: false, insurance: true },
+        address: "86 Mai Chí Thọ, TP. Thủ Đức, TP.HCM",
+        phone: "1900 545 548",
+      },
+    ];
+    const recentKey = "recent-routes-v1";
 
-      // ===== Helpers =====
-      const fmtVND = (n) =>
-        new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-          maximumFractionDigits: 0,
-        }).format(n);
-      const strip = (s) =>
-        (s || "")
-          .toString()
-          .normalize("NFD")
-          .replace(/\p{Diacritic}/gu, "")
-          .toLowerCase();
-      const headerThemes = {
-        "Công ty Gemadept": {
-          bg: "bg-white",
-          text: "text-blue-700",
-          border: "border-slate-200",
-          btnHover: "hover:bg-slate-100",
-        },
-        "Công ty CP vận tải dầu khí Bình Dương": {
-          bg: "bg-blue-600",
-          text: "text-black",
-          border: "border-blue-700",
-          btnHover: "hover:bg-blue-700/30",
-        },
-        "Công ty CP Transimex": {
-          bg: "bg-orange-500",
-          text: "text-white",
-          border: "border-orange-600",
-          btnHover: "hover:bg-white/10",
-        },
-        "Công ty giao nhận toàn cầu DHL": {
-          bg: "bg-yellow-400",
-          text: "text-red-700",
-          border: "border-yellow-500",
-          btnHover: "hover:bg-black/5",
-        },
-        default: {
-          bg: "bg-white",
-          text: "text-slate-900",
-          border: "border-slate-200",
-          btnHover: "hover:bg-slate-100",
-        },
-      };
-      function applyHeaderTheme(companyName) {
-        const t = headerThemes[companyName] || headerThemes.default;
+    // ===== HELPERS =====
+    const fmtVND = (n)=>new Intl.NumberFormat("vi-VN",{style:"currency",currency:"VND",maximumFractionDigits:0}).format(n);
+    const strip = (s)=>(s||"").toString().normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase();
 
-        const title = document.getElementById("modal-title");
-        const closeBt = document.getElementById("modal-close");
+    function starHTML(r){
+      const pct = Math.max(0,Math.min(100,(r/5)*100));
+      return `<span class="inline-flex items-center gap-1" title="${r.toFixed(1)}/5">
+        <span class="stars align-[-2px]" aria-hidden="true"><span class="stars-fill" style="width:${pct}%"></span></span>
+        <span class="text-xs font-bold text-slate-900">(${r.toFixed(1)})</span>
+      </span>`;
+    }
 
-        // reset màu cũ
-        title.classList.remove(
-          "text-blue-700",
-          "text-white",
-          "text-black",
-          "text-slate-900",
-          "text-red-700"
-        );
-        closeBt.classList.remove(
-          "text-blue-700",
-          "text-white",
-          "text-black",
-          "text-slate-900",
-          "text-red-700",
-          "hover:bg-slate-100",
-          "hover:bg-blue-700/30",
-          "hover:bg-white/10",
-          "hover:bg-black/5"
-        );
+    // ===== LIST RENDER =====
+    const rowsEl = document.getElementById("rows");
+    const fromEl = document.getElementById("from");
+    const toEl = document.getElementById("to");
+    const sizeEl = document.getElementById("size");
+    const sortEl = document.getElementById("sort");
+    const advBox = document.getElementById("adv");
+    const recentEl = document.getElementById("recent");
 
-        // áp theme mới (giữ nguyên gradient header hiện tại)
-        title.classList.add(t.text || "text-slate-900");
-        closeBt.classList.add(t.text || "text-slate-900");
-        if (t.btnHover) closeBt.classList.add(t.btnHover);
+    function render(list){
+      rowsEl.innerHTML = "";
+      if(!list.length){
+        rowsEl.innerHTML = `<div class="px-5 py-10 text-center text-slate-500">Không có kết quả phù hợp. Hãy chỉnh bộ lọc hoặc thử tuyến khác.</div>`;
+        return;
       }
-
-      function starHTML(r) {
-        const pct = Math.max(0, Math.min(100, (r / 5) * 100));
-        return `
-        <span class="inline-flex items-center gap-1" title="${r.toFixed(1)}/5">
-          <span class="stars align-[-2px]" aria-hidden="true">
-            <span class="stars-fill" style="width:${pct}%"></span>
-          </span>
-          <span class="text-xs font-bold text-slate-900">(${r.toFixed(
-            1
-          )})</span>
-        </span>`;
-      }
-
-      // ===== Render list =====
-      const rowsEl = document.getElementById("rows");
-      const fromEl = document.getElementById("from");
-      const toEl = document.getElementById("to");
-      const sizeEl = document.getElementById("size");
-      const sortEl = document.getElementById("sort");
-      const advBox = document.getElementById("adv");
-      const recentEl = document.getElementById("recent");
-
-      function render(list) {
-        rowsEl.innerHTML = "";
-        if (!list.length) {
-          rowsEl.innerHTML = `<div class="px-5 py-10 text-center text-slate-500">Không có kết quả phù hợp. Hãy chỉnh bộ lọc hoặc thử tuyến khác.</div>`;
-          return;
-        }
-        list.forEach((c) => {
-          const row = document.createElement("div");
-          row.className =
-            "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 py-4 border-t border-slate-200 animate-in";
-          const co2 = Math.round((c.cost / 1000) * 0.8);
-          row.innerHTML = `
+      list.forEach((c)=>{
+        const row = document.createElement("div");
+        row.className = "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 py-4 border-t border-slate-200 animate-in";
+        const co2 = Math.round((c.cost/1000)*0.8);
+        row.innerHTML = `
           <div class="font-medium flex items-center gap-2">${c.name}</div>
           <div class="min-w-0 font-medium truncate">${c.area}</div>
           <div class="font-medium text-center">${fmtVND(c.cost)}/KM
-            <div class="text-[11px] text-slate-500">ETA: ~${(
-              c.cost / 10000 +
-              2
-            ).toFixed(1)}h • CO₂ ~${co2}g/KM</div>
+            <div class="text-[11px] text-slate-500">ETA: ~${(c.cost/10000+2).toFixed(1)}h • CO₂ ~${co2}g/KM</div>
           </div>
           <div class="text-center">${starHTML(c.rating)}</div>
           <div class="text-center">
-            <button type="button" class="h-9 px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700" onclick="openModal('${
-              c.name
-            }')">Xem chi tiết</button>
+            <button type="button" class="h-9 px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700" onclick="openModal('${c.name}')">Xem chi tiết</button>
           </div>`;
-          rowsEl.appendChild(row);
-        });
+        rowsEl.appendChild(row);
+      });
+    }
+
+    function matchAdvanced(c){
+      const needCold = document.getElementById("svc-cold").checked;
+      const needDanger = document.getElementById("svc-danger").checked;
+      const needLoading = document.getElementById("svc-loading").checked;
+      const needIns = document.getElementById("svc-insurance").checked;
+      if(needCold && !c.services.cold) return false;
+      if(needDanger && !c.services.danger) return false;
+      if(needLoading && !c.services.loading) return false;
+      if(needIns && !c.services.insurance) return false;
+      const cargo = document.getElementById("cargo-type").value;
+      if(cargo==="Lạnh" && !c.services.cold) return false;
+      if(cargo==="Nguy hiểm" && !c.services.danger) return false;
+      return true;
+    }
+
+    function search(){
+      const f = strip(fromEl.value), t = strip(toEl.value), s = strip(sizeEl.value);
+      const term = `${f} ${t}`.trim();
+      let list = companies.filter((c)=>{
+        const area = strip(c.area);
+        const areaOK = area.includes("toan quoc")
+          || (term && (area.includes("mien") || area.includes("lien tinh") || (area.includes("noi thanh hcm") && (term.includes("hcm")||term.includes("ho chi minh")||term.includes("sai gon")))))
+          || !term;
+        const sizeOK = !s || c.sizes.some((x)=>strip(x).includes(s));
+        return areaOK && sizeOK && matchAdvanced(c);
+      });
+      switch(sortEl.value){
+        case "priceAsc": list.sort((a,b)=>a.cost-b.cost); break;
+        case "priceDesc": list.sort((a,b)=>b.cost-a.cost); break;
+        case "ratingDesc": list.sort((a,b)=>b.rating-a.rating); break;
+        default: list.sort((a,b)=>b.rating*1000-b.cost-(a.rating*1000-a.cost));
       }
+      render(list); saveRecent();
+    }
 
-      function matchAdvanced(c) {
-        const needCold = document.getElementById("svc-cold").checked;
-        const needDanger = document.getElementById("svc-danger").checked;
-        const needLoading = document.getElementById("svc-loading").checked;
-        const needIns = document.getElementById("svc-insurance").checked;
-        if (needCold && !c.services.cold) return false;
-        if (needDanger && !c.services.danger) return false;
-        if (needLoading && !c.services.loading) return false;
-        if (needIns && !c.services.insurance) return false;
-        const cargo = document.getElementById("cargo-type").value;
-        if (cargo === "Lạnh" && !c.services.cold) return false;
-        if (cargo === "Nguy hiểm" && !c.services.danger) return false;
-        return true;
-      }
+    function saveRecent(){
+      const v = { from: fromEl.value.trim(), to: toEl.value.trim() };
+      if(!(v.from||v.to)) return;
+      const data = JSON.parse(localStorage.getItem(recentKey)||"[]").filter(x=>x.from!==v.from||x.to!==v.to);
+      data.unshift(v); if(data.length>6) data.pop();
+      localStorage.setItem(recentKey, JSON.stringify(data));
+      renderRecent();
+    }
+    function renderRecent(){
+      const data = JSON.parse(localStorage.getItem(recentKey)||"[]");
+      recentEl.innerHTML = data.length ? '<div class="text-sm text-slate-500 mb-1">Tuyến đã tìm:</div>' : "";
+      const wrap = document.createElement("div"); wrap.className="flex flex-wrap gap-2";
+      data.forEach(({from,to})=>{
+        const b=document.createElement("button");
+        b.className="px-3 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-sm";
+        b.textContent=[from,to].filter(Boolean).join(" → ");
+        b.onclick=()=>{ fromEl.value=from||""; toEl.value=to||""; search(); };
+        wrap.appendChild(b);
+      });
+      recentEl.appendChild(wrap);
+    }
 
-      function search() {
-        const f = strip(fromEl.value),
-          t = strip(toEl.value),
-          s = strip(sizeEl.value);
-        const term = `${f} ${t}`.trim();
+    // ===== MODAL =====
+    function openModal(name){
+      const c = companies.find(x=>x.name===name);
+      if(!c) return;
 
-        let list = companies.filter((c) => {
-          const area = strip(c.area);
-          const areaOK =
-            area.includes("toan quoc") ||
-            (term &&
-              (area.includes("mien") ||
-                area.includes("lien tinh") ||
-                (area.includes("noi thanh hcm") &&
-                  (term.includes("hcm") ||
-                    term.includes("ho chi minh") ||
-                    term.includes("sai gon"))))) ||
-            !term;
-          const sizeOK = !s || c.sizes.some((x) => strip(x).includes(s));
-          return areaOK && sizeOK && matchAdvanced(c);
-        });
+      // GÁN TÊN CÔNG TY CHÍNH XÁC
+      document.getElementById("modal-title").textContent = c.name;
 
-        switch (sortEl.value) {
-          case "priceAsc":
-            list.sort((a, b) => a.cost - b.cost);
-            break;
-          case "priceDesc":
-            list.sort((a, b) => b.cost - a.cost);
-            break;
-          case "ratingDesc":
-            list.sort((a, b) => b.rating - a.rating);
-            break;
-          default:
-            list.sort(
-              (a, b) => b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost)
-            );
-        }
+      // Rating pill
+      document.getElementById("rating-pill").innerHTML =
+        `<span class="inline-flex items-center gap-2">${starHTML(c.rating)}<span class="text-xs font-semibold">(${c.reviews.toLocaleString("vi-VN")} đánh giá)</span></span>`;
 
-        render(list);
-        saveRecent();
-      }
+      // Badges
+      const badges=[];
+      if(c.services.cold) badges.push("Xe lạnh");
+      if(c.services.danger) badges.push("Hàng nguy hiểm");
+      if(c.services.loading) badges.push("Bốc xếp");
+      if(c.services.insurance) badges.push("Bảo hiểm");
+      document.getElementById("badges").innerHTML = badges
+        .map(b=>`<span class="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200">${b}</span>`).join("");
 
-      function saveRecent() {
-        const v = { from: fromEl.value.trim(), to: toEl.value.trim() };
-        if (!(v.from || v.to)) return;
-        const data = JSON.parse(localStorage.getItem(recentKey) || "[]").filter(
-          (x) => x.from !== v.from || x.to !== v.to
-        );
-        data.unshift(v);
-        if (data.length > 6) data.pop();
-        localStorage.setItem(recentKey, JSON.stringify(data));
-        renderRecent();
-      }
-      function renderRecent() {
-        const data = JSON.parse(localStorage.getItem(recentKey) || "[]");
-        recentEl.innerHTML = data.length
-          ? '<div class="text-sm text-slate-500 mb-1">Tuyến đã tìm:</div>'
-          : "";
-        const wrap = document.createElement("div");
-        wrap.className = "flex flex-wrap gap-2";
-        data.forEach(({ from, to }) => {
-          const b = document.createElement("button");
-          b.className =
-            "px-3 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-sm";
-          b.textContent = [from, to].filter(Boolean).join(" → ");
-          b.onclick = () => {
-            fromEl.value = from || "";
-            toEl.value = to || "";
-            search();
-          };
-          wrap.appendChild(b);
-        });
-        recentEl.appendChild(wrap);
-      }
-
-      // ===== Modal: canh giữa + khóa cuộn + ESC =====
-      function openModal(name) {
-        const c = companies.find((x) => x.name === name);
-        document.getElementById("modal-title").textContent = name;
-
-        applyHeaderTheme(name);
-
-        const badges = [];
-        if (c.services.cold) badges.push("Xe lạnh");
-        if (c.services.danger) badges.push("Hàng nguy hiểm");
-        if (c.services.loading) badges.push("Bốc xếp");
-        if (c.services.insurance) badges.push("Bảo hiểm");
-        document.getElementById("badges").innerHTML = badges
-          .map(
-            (b) =>
-              `<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100">${b}</span>`
-          )
-          .join(" ");
-
-        document.getElementById("capability").innerHTML = `
+      // Capability
+      document.getElementById("capability").innerHTML = `
         <li>Phủ tuyến: ${c.area}</li>
         <li>Loại xe: ${c.sizes.join(", ")}</li>
         <li>Giá tham chiếu: ${fmtVND(c.cost)}/KM</li>
-        <li>Đánh giá: ${c.rating.toFixed(1)}/5</li>`;
+        <li>Đánh giá: ${c.rating.toFixed(1)}/5</li>
+      `;
 
-        document.getElementById("reviews").innerHTML = `
-        <li>⭐️⭐️⭐️⭐️⭐️ “Tài xế đúng giờ, hàng lạnh ok”</li>
-        <li>⭐️⭐️⭐️⭐️ “Giá tốt, support nhanh”</li>`;
+      // Stats
+      document.getElementById("stat-orders").textContent = (c.stats?.orders12m ?? "—").toLocaleString("vi-VN");
+      document.getElementById("stat-ontime").textContent = c.stats?.ontimeRate!=null ? `${c.stats.ontimeRate}%` : "—";
+      document.getElementById("stat-csat").textContent = c.stats?.csat!=null ? `${c.stats.csat}/5` : "—";
+      document.getElementById("stat-coverage").textContent = c.area || "—";
 
-        document.getElementById("cmp-address").textContent =
-          c.address || "Đang cập nhật";
-        document.getElementById("cmp-phone").textContent = c.phone || "—";
+      // Contact
+      document.getElementById("cmp-address").textContent = c.address || "Đang cập nhật";
+      const phoneEl = document.getElementById("cmp-phone");
+      phoneEl.textContent = c.phone || "—";
+      phoneEl.href = c.phone ? `tel:${c.phone.replace(/\s/g,"")}` : "#";
 
-        feather.replace();
+      // Reviews
+      document.getElementById("reviews").innerHTML = `
+        <li class="text-sm">
+          <div class="flex items-center justify-between"><span class="font-medium">Coopmart DC</span>${starHTML(Math.min(5,c.rating))}</div>
+          <p class="text-slate-600">Đúng giờ, chứng từ đầy đủ, xử lý khiếu nại nhanh.</p>
+        </li>
+        <li class="text-sm">
+          <div class="flex items-center justify-between"><span class="font-medium">Big C Miền Đông</span>${starHTML(Math.min(5,c.rating+0.1))}</div>
+          <p class="text-slate-600">Cold-chain ổn định, tài xế chuyên nghiệp.</p>
+        </li>`;
 
-        const modal = document.getElementById("modal");
-        modal.classList.remove("hidden");
-        document.documentElement.classList.add("overflow-hidden"); // khóa cuộn nền
+      feather.replace();
+      document.getElementById("modal").classList.remove("hidden");
+      document.documentElement.classList.add("overflow-hidden");
+      window.addEventListener("keydown", escToClose);
+    }
+    function escToClose(e){ if(e.key==="Escape") closeModal(); }
+    function closeModal(){
+      document.getElementById("modal").classList.add("hidden");
+      document.documentElement.classList.remove("overflow-hidden");
+      window.removeEventListener("keydown", escToClose);
+    }
 
-        window.addEventListener("keydown", escToClose);
-      }
-      function escToClose(e) {
-        if (e.key === "Escape") closeModal();
-      }
-      function closeModal() {
-        document.getElementById("modal").classList.add("hidden");
-        document.documentElement.classList.remove("overflow-hidden");
-        window.removeEventListener("keydown", escToClose);
-      }
-
-      // ===== Init =====
-      window.addEventListener("load", () => {
-        feather.replace({ width: 21, height: 21 });
-        render(companies);
-        renderRecent();
-      });
-      document.getElementById("search").addEventListener("click", search);
-      document.getElementById("swap").addEventListener("click", () => {
-        const a = fromEl.value;
-        fromEl.value = toEl.value;
-        toEl.value = a;
-      });
-      [fromEl, toEl, document.getElementById("size"), sortEl].forEach((el) =>
-        el.addEventListener("change", search)
-      );
-      [fromEl, toEl].forEach((el) =>
-        el.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") search();
-        })
-      );
-      document.getElementById("toggle-adv").addEventListener("click", () => {
-        advBox.classList.toggle("hidden");
-      });
-    </script>
-  </body>
+    // INIT
+    window.addEventListener("load", ()=>{
+      feather.replace({ width:21, height:21 });
+      render(companies);
+      renderRecent();
+    });
+    document.getElementById("search").addEventListener("click", search);
+    document.getElementById("swap").addEventListener("click", ()=>{ const a=fromEl.value; fromEl.value=toEl.value; toEl.value=a; });
+    [fromEl,toEl,sizeEl,sortEl].forEach(el=>el.addEventListener("change", search));
+    [fromEl,toEl].forEach(el=>el.addEventListener("keydown",(e)=>{ if(e.key==="Enter") search(); }));
+    document.getElementById("toggle-adv").addEventListener("click",()=>advBox.classList.toggle("hidden"));
+  </script>
+</body>
 </html>
