@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nhập / Xuất kho – Gemadept (v3)</title>
+
+  <!-- Fonts & Tailwind (match qr_payment_fixed_v3 header/sidebar look) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: { soft: "0 8px 30px rgba(15,23,42,.08)" },
+          keyframes: { in: { from: { transform: "translateY(8px)", opacity: 0 }, to: { transform: "translateY(0)", opacity: 1 } } },
+          animation: { in: "in .25s ease-out both" },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    :is(button, a, select, input, details, summary):focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .thin-scrollbar::-webkit-scrollbar{height:8px;width:8px}
+    .thin-scrollbar::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:9999px}
+    .thin-scrollbar::-webkit-scrollbar-track{background:transparent}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <!-- ===== SIDEBAR (from qr_payment_fixed_v3) ===== -->
+  <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+    <div class="mt-1 mb-1 text-center">
+      <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+        <i data-feather="shield" class="w-6 h-6"></i>
+      </span>
+      <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+    </div>
+    <div class="flex flex-col items-center gap-4">
+      <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></a>
+      <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></a>
+      <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></a>
+      <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+        <i data-feather="bell"></i>
+        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></a>
+      <a href="#" class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></a>
+    </div>
+  </aside>
+
+  <main class="ml-20">
+    <!-- ===== HEADER (from qr_payment_fixed_v3) ===== -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
+      <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
+        <div class="flex-1 max-w-2xl mr-3 md:mr-6">
+          <div class="relative">
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+            <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Tìm giao dịch, mã đơn, số tiền…" />
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+              <i data-feather="filter" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 md:gap-3">
+          <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4"></i></button>
+          <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+            <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+            <div class="text-left leading-tight hidden sm:block">
+              <div class="text-[13px] font-semibold">Harsh Vani</div>
+              <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+            </div>
+            <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== CONTENT ===== -->
+    <section class="p-6 md:p-8 space-y-6">
+      <!-- Title & Controls -->
+      <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Quản lý nhập / xuất kho</h2>
+          <p class="text-slate-600">Theo dõi real-time, QR check-in/out, KPI & công suất kho.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-2" id="tabs">
+            <button data-tab="all" class="tab-btn h-10 px-3 rounded-xl text-sm border bg-slate-900 text-white border-slate-900">Tất cả</button>
+            <button data-tab="in"  class="tab-btn h-10 px-3 rounded-xl text-sm border bg-white border-slate-200 hover:bg-slate-50">Nhập kho</button>
+            <button data-tab="out" class="tab-btn h-10 px-3 rounded-xl text-sm border bg-white border-slate-200 hover:bg-slate-50">Xuất kho</button>
+            <button data-tab="hold" class="tab-btn h-10 px-3 rounded-xl text-sm border bg-white border-slate-200 hover:bg-slate-50">Đang giữ tạm</button>
+          </div>
+          <select id="dockSelect" class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+            <option>Tất cả</option><option>D1</option><option>D2</option><option>D3</option><option>D4</option><option>D5</option><option>D6</option>
+          </select>
+          <select id="tempSelect" class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+            <option>Tất cả</option><option>Thường</option><option>Mát</option><option>Lạnh</option>
+          </select>
+          <button id="reloadBtn" class="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2">
+            <i data-feather="refresh-cw" class="w-4 h-4"></i><span>Tải lại</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid md:grid-cols-5 gap-3" id="kpiRow"></div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- Left 2/3 -->
+        <section class="xl:col-span-2 space-y-4">
+
+          <!-- Data Table -->
+          <div class="rounded-2xl bg-white border border-slate-200 shadow-soft overflow-hidden">
+            <div class="px-5 md:px-6 py-4 bg-gradient-to-r from-[#8CC2FF] via-[#6AA8FF] to-[#2A60FF] text-white flex items-center justify-between">
+              <div class="flex items-center gap-2 text-sm">
+                <div class="w-8 h-8 rounded-xl bg-white/20 grid place-items-center"><i data-feather="package" class="w-[18px] h-[18px]"></i></div>
+                <div>
+                  <div class="opacity-90">Kho trung tâm</div>
+                  <div class="font-semibold">Gemadept Logistics</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="h-9 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm flex items-center gap-2">
+                  <i data-feather="upload" class="w-4 h-4"></i> Import
+                </button>
+                <button id="exportBtn" class="h-9 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm flex items-center gap-2">
+                  <i data-feather="download" class="w-4 h-4"></i> Export
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto thin-scrollbar">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">MÃ ĐƠN</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">LOẠI</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">TRẠNG THÁI</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">KHÁCH HÀNG</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">ĐIỂM ĐI</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">ĐIỂM ĐẾN</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">PALLETS</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">KHỐI LƯỢNG</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">DOOR</th>
+                    <th class="text-left text-[11px] tracking-wider font-semibold uppercase px-5 py-3">XE/CONTAINER</th>
+                    <th class="text-right text-[11px] tracking-wider font-semibold uppercase px-5 py-3 pr-5">NGÀY</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right 1/3: Camera QR & snapshots -->
+        <aside class="xl:col-span-1 flex flex-col gap-5">
+          <!-- Camera QR block -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <i data-feather="grid" class="w-4 h-4"></i> QR Check-in/out (Camera)
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col gap-3" aria-label="Khu vực camera quét mã QR nhập/xuất">
+              <!-- Mode: IN / OUT -->
+              <div class="flex items-center gap-2">
+                <span class="text-[12px] text-slate-600">Chế độ:</span>
+                <div class="inline-flex rounded-xl ring-1 ring-slate-200 overflow-hidden">
+                  <button id="modeInBtn"  type="button"
+                    class="px-3 py-1.5 text-sm font-semibold bg-emerald-50 text-emerald-700">Check-in (Nhập)</button>
+                  <button id="modeOutBtn" type="button"
+                    class="px-3 py-1.5 text-sm font-semibold bg-white text-slate-700 hover:bg-slate-50">Check-out (Xuất)</button>
+                </div>
+              </div>
+
+              <!-- Camera selector -->
+              <div class="flex items-center gap-2">
+                <span class="text-[12px] text-slate-600">Camera:</span>
+                <select id="cameraSelect" class="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm min-w-[180px]">
+                  <option value="">Đang tải danh sách…</option>
+                </select>
+                <button id="switchBtn" type="button"
+                  class="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2">
+                  <i data-feather="refresh-cw" class="w-4 h-4"></i> Đổi camera
+                </button>
+              </div>
+
+              <!-- Reader -->
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-2">
+                <div id="qrReader" class="rounded-lg overflow-hidden"
+                    style="aspect-ratio: 1/1; max-width: 320px; margin: 0 auto;"></div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2">
+                <button id="startBtn" type="button"
+                  class="h-9 px-3 rounded-xl bg-sky-600 text-white hover:bg-sky-700 text-sm flex items-center gap-2">
+                  <i data-feather="play" class="w-4 h-4"></i> Bắt đầu quét
+                </button>
+                <button id="pauseBtn" type="button" disabled
+                  class="h-9 px-3 rounded-xl bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm flex items-center gap-2">
+                  <i data-feather="pause" class="w-4 h-4"></i> Tạm dừng
+                </button>
+              </div>
+
+              <!-- Result -->
+              <div id="resultBox" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 hidden">
+                <div class="text-[12px] text-emerald-700 mb-1 font-semibold">Kết quả quét</div>
+                <div class="text-sm font-mono text-emerald-800 break-all" id="lastResult">—</div>
+                <div class="mt-1 text-[12px] text-slate-600">Chế độ hiện tại: <span id="modeLabel" class="font-semibold">NHẬP</span></div>
+              </div>
+
+              <p class="text-[12px] text-slate-500 mt-1">
+                Tip: nếu có nhiều camera, hãy chọn “Camera 2” (thường là camera sau của điện thoại).
+              </p>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="text-[11px] text-slate-600">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-3 h-3 rounded-full bg-emerald-600"></span>
+              <span>NHẬP HÀNG (INBOUND)</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
+              <span>XUẤT HÀNG (OUTBOUND)</span>
+            </div>
+          </div>
+
+          <!-- Inventory snapshot -->
+          <div class="rounded-2xl p-5 border border-slate-200 bg-white">
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i data-feather="box" class="w-4 h-4"></i> Tồn kho nhanh
+            </div>
+            <div class="mt-3 space-y-2 text-sm">
+              <div class="flex justify-between"><span>Kệ thường</span><span class="font-medium">1.120 pallets</span></div>
+              <div class="flex justify-between"><span>Kho mát</span><span class="font-medium">210 pallets</span></div>
+              <div class="flex justify-between"><span>Kho lạnh</span><span class="font-medium">120 pallets</span></div>
+            </div>
+            <div class="mt-3">
+              <div class="text-xs text-slate-600 mb-1">Tỷ lệ lấp đầy</div>
+              <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600" style="width:72%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Staff -->
+          <div class="rounded-2xl p-5 border border-slate-200 bg-white">
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i data-feather="users" class="w-4 h-4"></i> Nhân sự ca hôm nay
+            </div>
+            <ul class="mt-3 space-y-2 text-sm">
+              <li class="flex justify-between"><span>Ca sáng</span><span class="text-slate-700">12 NV (2 QC, 1 Supervisor)</span></li>
+              <li class="flex justify-between"><span>Ca chiều</span><span class="text-slate-700">10 NV (1 QC, 1 Supervisor)</span></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <footer class="text-center text-slate-400 text-xs mt-4 mb-6">© 2025 Gemadept – Trang quản lý nhập / xuất kho.</footer>
+  </main>
+
+  <script>
+    // ===== Mock data (giữ như v2) =====
+    const DATA = [
+      { id: "DL04MP7045", type: "in", status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Lào tồn", to: "TP.HCM", weight: 250, unit: "KG", pallets: 8, docks: "D1", carrier: "GMD-TRK-21", eta: "12/12/2025", temp: "Thường" },
+      { id: "DL04MP7046", type: "out", status: "Đã xuất kho", customer: "Thái Lý Lộc", from: "Bình Định", to: "Hà Nội", weight: 2000, unit: "KG", pallets: 12, docks: "D3", carrier: "GMD-TRK-07", eta: "01/12/2025", temp: "Mát" },
+      { id: "DL04MP7054", type: "in", status: "Lưu kho", customer: "Tân Hồng Phong", from: "Vũng Tàu", to: "Đồng Nai", weight: 540, unit: "KG", pallets: 10, docks: "D2", carrier: "GMD-TRK-12", eta: "12/07/2025", temp: "Mát" },
+      { id: "DL04MP7525", type: "in", status: "Đang vận chuyển", customer: "Ngô Trọng Nhân", from: "Đồng Nai", to: "Nha Trang", weight: 938, unit: "KG", pallets: 15, docks: "D5", carrier: "GMD-TRK-33", eta: "20/07/2025", temp: "Lạnh" },
+      { id: "DL04MP9845", type: "out", status: "Đang vận chuyển", customer: "Lê Quang Trường", from: "Khánh Hoà", to: "TP.HCM", weight: 12000, unit: "KG", pallets: 25, docks: "D4", carrier: "GMD-TRK-08", eta: "12/01/2025", temp: "Thường" },
+      { id: "DL04MP7875", type: "in", status: "Lưu kho", customer: "Thái Lý Lộc", from: "Cà Mau", to: "Hà Nội", weight: 250, unit: "KG", pallets: 6, docks: "D2", carrier: "GMD-TRK-02", eta: "22/06/2025", temp: "Thường" },
+      { id: "DL04MP7995", type: "out", status: "Lưu kho", customer: "Ngô Trọng Nhân", from: "Bến Tre", to: "Cà Mau", weight: 370, unit: "KG", pallets: 9, docks: "D6", carrier: "GMD-TRK-19", eta: "19/01/2025", temp: "Mát" },
+      { id: "DL04MP4545", type: "in", status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Vũng Tàu", to: "Vĩnh Long", weight: 920, unit: "KG", pallets: 14, docks: "D1", carrier: "GMD-TRK-17", eta: "17/08/2025", temp: "Thường" },
+    ];
+
+    const state = {
+      tab: 'all',
+      dock: 'Tất cả',
+      temp: 'Tất cả',
+      base() { return this.tab === 'all' ? DATA : DATA.filter(d => d.type === this.tab); },
+      filtered() {
+        return this.base().filter(d => (this.dock === 'Tất cả' || d.docks === this.dock) && (this.temp === 'Tất cả' || d.temp === this.temp));
+      }
+    };
+
+    function renderKPIs(){
+      const base = state.base();
+      const inboundToday = 34;
+      const outboundToday = 29;
+      const inTransit = base.filter(d => d.status === "Đang vận chuyển").length;
+      const alerts = 2;
+      const capacityUsed = 72;
+      const kpiRow = document.getElementById('kpiRow');
+      if(!kpiRow) return;
+      kpiRow.innerHTML = `
+        ${Stat('package', 'Đã nhập hôm nay', inboundToday, '', 'in')}
+        ${Stat('truck', 'Đã xuất hôm nay', outboundToday, '', 'out')}
+        ${Stat('truck', 'Đang vận chuyển', inTransit, '', 'neutral')}
+        ${Stat('alert-triangle', 'Cảnh báo', alerts, 'Thiếu chứng từ: 1 • Lệch khối lượng: 1', 'alert')}
+        <div class="rounded-2xl p-4 border border-slate-200 bg-white">
+          <div class="flex items-center gap-2 text-sm text-slate-500"><i data-feather="activity" class="w-4 h-4"></i> Công suất kho</div>
+          <div class="mt-2">
+            <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600" style="width:${capacityUsed}%"></div>
+            </div>
+          </div>
+          <div class="text-[12px] text-slate-500 mt-1">${capacityUsed}% sử dụng • 1.450/2.000 pallets</div>
+        </div>
+      `;
+    }
+
+    function Stat(icon, label, value, sub, tone){
+      const toneMap = { neutral:"bg-slate-50", in:"bg-blue-50", out:"bg-indigo-50", alert:"bg-rose-50" };
+      return `
+        <div class="rounded-2xl p-4 border border-slate-200 ${toneMap[tone]||''}">
+          <div class="flex items-center gap-2 text-sm text-slate-500"><i data-feather="${icon}" class="w-4 h-4"></i>${label}</div>
+          <div class="mt-1 text-2xl font-bold tracking-tight">${value}</div>
+          ${sub ? `<div class="text-[12px] text-slate-500 mt-1">${sub}</div>` : ''}
+        </div>`;
+    }
+
+    function statusBadge(status){
+      const map = {
+        "Đã xuất kho": "bg-red-50 text-red-600 ring-red-200",
+        "Lưu kho": "bg-emerald-50 text-emerald-600 ring-emerald-200",
+        "Đang vận chuyển": "bg-blue-50 text-blue-600 ring-blue-200",
+      };
+      const cls = map[status] || "bg-slate-50 text-slate-700 ring-slate-200";
+      return `<span class="inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium ring-1 min-w-[112px] ${cls}">${status}</span>`;
+    }
+
+    function renderDockUtil(){
+      const container = document.getElementById('dockUtil');
+      if(!container) return; // guard if the section is absent
+      const vals = [80,60,55,40,72,63];
+      container.innerHTML = ['D1','D2','D3','D4','D5','D6'].map((d,i)=>`
+        <div>
+          <div class="text-xs text-slate-600 mb-1">Door ${d}</div>
+          <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600" style="width:${vals[i]}%"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderTable(){
+      const body = document.getElementById('tableBody');
+      if(!body) return;
+      const rows = state.filtered().map(o => `
+        <tr class="hover:bg-slate-50/70">
+          <td class="px-5 py-3 align-middle font-medium text-slate-900">
+            <span class="inline-block max-w-[140px] truncate align-middle">${o.id}</span>
+          </td>
+          <td class="px-5 py-3 align-middle">
+            <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ring-1 ${o.type==='in'?'bg-blue-50 text-blue-700 ring-blue-200':'bg-indigo-50 text-indigo-700 ring-indigo-200'}">
+              ${o.type === 'in' ? 'Nhập' : 'Xuất'}
+            </span>
+          </td>
+          <td class="px-5 py-3 align-middle">${statusBadge(o.status)}</td>
+          <td class="px-5 py-3 align-middle">${o.customer}</td>
+          <td class="px-5 py-3 align-middle">${o.from}</td>
+          <td class="px-5 py-3 align-middle">${o.to}</td>
+          <td class="px-5 py-3 align-middle">${o.pallets}</td>
+          <td class="px-5 py-3 align-middle">${o.weight.toLocaleString()} ${o.unit}</td>
+          <td class="px-5 py-3 align-middle">${o.docks}</td>
+          <td class="px-5 py-3 align-middle">${o.carrier}</td>
+          <td class="px-5 py-3 align-middle text-right pr-5 text-slate-600">${o.eta}</td>
+        </tr>
+      `).join('');
+      body.innerHTML = rows || `<tr><td colspan="11" class="px-5 py-6 text-center text-slate-500">Không có bản ghi phù hợp.</td></tr>`;
+    }
+
+    // Events
+    const tabs = document.getElementById('tabs');
+    if(tabs){
+      tabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn'); if(!btn) return;
+        document.querySelectorAll('#tabs .tab-btn').forEach(b=>{
+          b.classList.remove('bg-slate-900','text-white','border-slate-900');
+          b.classList.add('bg-white','border-slate-200');
+        });
+        btn.classList.add('bg-slate-900','text-white','border-slate-900');
+        btn.classList.remove('bg-white','border-slate-200');
+        state.tab = btn.getAttribute('data-tab');
+        renderKPIs();
+        renderTable();
+        feather.replace();
+      });
+    }
+
+    const dockSelect = document.getElementById('dockSelect');
+    if(dockSelect){
+      dockSelect.addEventListener('change', (e)=>{
+        state.dock = e.target.value;
+        renderTable();
+      });
+    }
+
+    const tempSelect = document.getElementById('tempSelect');
+    if(tempSelect){
+      tempSelect.addEventListener('change', (e)=>{
+        state.temp = e.target.value;
+        renderTable();
+      });
+    }
+
+    const reloadBtn = document.getElementById('reloadBtn');
+    if(reloadBtn){
+      reloadBtn.addEventListener('click', ()=>{
+        renderKPIs(); renderDockUtil(); renderTable(); feather.replace();
+      });
+    }
+
+    const exportBtn = document.getElementById('exportBtn');
+    if(exportBtn){
+      exportBtn.addEventListener('click', ()=>{
+        const rows = state.filtered();
+        const header = ["Mã đơn","Loại","Trạng thái","Khách hàng","Điểm đi","Điểm đến","Pallets","Khối lượng","Door","Xe/Container","Ngày"];
+        const lines = [header.join(",")].concat(rows.map(o=>[o.id,o.type,o.status,o.customer,o.from,o.to,o.pallets,`${o.weight} ${o.unit}`,o.docks,o.carrier,o.eta].map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")));
+        const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8;"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'warehouse_in_out.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Init
+    window.addEventListener('load', () => {
+      feather.replace({ width: 21, height: 21 });
+      renderKPIs(); renderDockUtil(); renderTable();
+    });
+  </script>
+
+  <!-- ===== QR Scanner library ===== -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <!-- ===== QR Scanner controller ===== -->
+  <script>
+  (() => {
+    const modeInBtn = document.getElementById('modeInBtn');
+    const modeOutBtn = document.getElementById('modeOutBtn');
+    const cameraSelect = document.getElementById('cameraSelect');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const switchBtn = document.getElementById('switchBtn');
+    const resultBox = document.getElementById('resultBox');
+    const lastResult = document.getElementById('lastResult');
+    const modeLabel = document.getElementById('modeLabel');
+
+    const state = {
+      mode: 'IN',
+      cameras: [],
+      currentCameraId: null,
+      reader: null,
+      running: false,
+    };
+
+    function setMode(m){
+      state.mode = m;
+      modeLabel.textContent = (m === 'IN' ? 'NHẬP' : 'XUẤT');
+      if(m === 'IN'){
+        modeInBtn.className = "px-3 py-1.5 text-sm font-semibold bg-emerald-50 text-emerald-700";
+        modeOutBtn.className = "px-3 py-1.5 text-sm font-semibold bg-white text-slate-700 hover:bg-slate-50";
+      }else{
+        modeOutBtn.className = "px-3 py-1.5 text-sm font-semibold bg-amber-50 text-amber-700";
+        modeInBtn.className  = "px-3 py-1.5 text-sm font-semibold bg-white text-slate-700 hover:bg-slate-50";
+      }
+    }
+    modeInBtn?.addEventListener('click', ()=>setMode('IN'));
+    modeOutBtn?.addEventListener('click',()=>setMode('OUT'));
+
+    async function loadCameras(){
+      try{
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        state.cameras = devices.filter(d => d.kind === 'videoinput');
+        cameraSelect.innerHTML = '';
+        state.cameras.forEach((c, idx) => {
+          const opt = document.createElement('option');
+          opt.value = c.deviceId;
+          opt.textContent = `Camera ${idx+1}` + (c.label ? ` – ${c.label}` : '');
+          cameraSelect.appendChild(opt);
+        });
+        if(state.cameras.length){
+          cameraSelect.value = state.cameras[0].deviceId;
+          state.currentCameraId = cameraSelect.value;
+        }else{
+          cameraSelect.innerHTML = '<option>Không tìm thấy camera</option>';
+        }
+      }catch(err){
+        cameraSelect.innerHTML = '<option>Không truy cập được camera</option>';
+        console.error(err);
+        alert('Không truy cập được camera. Hãy cấp quyền camera cho trình duyệt.');
+      }
+    }
+
+    cameraSelect?.addEventListener('change', ()=>{
+      state.currentCameraId = cameraSelect.value;
+      if(state.running){ restart(); }
+    });
+
+    switchBtn?.addEventListener('click', ()=>{
+      if(!state.cameras.length) return;
+      const idx = state.cameras.findIndex(c => c.deviceId === state.currentCameraId);
+      const next = (idx + 1) % state.cameras.length;
+      state.currentCameraId = state.cameras[next].deviceId;
+      cameraSelect.value = state.currentCameraId;
+      if(state.running){ restart(); }
+    });
+
+    const cfg = { fps: 10, qrbox: { width: 260, height: 260 } };
+
+    function onScanSuccess(decodedText){
+      resultBox.classList.remove('hidden');
+      lastResult.textContent = decodedText;
+      const payload = { code: decodedText, mode: state.mode, ts: Date.now() };
+      window.dispatchEvent(new CustomEvent('qr-scan', { detail: payload }));
+      pause();
+    }
+    function onScanError(_err){}
+
+    async function start(){
+      if(state.running || !state.currentCameraId) return;
+      if(!state.reader){ state.reader = new Html5Qrcode('qrReader'); }
+      try{
+        await state.reader.start({ deviceId: { exact: state.currentCameraId } }, cfg, onScanSuccess, onScanError);
+        state.running = true;
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+      }catch(err){
+        console.error(err);
+        alert('Không thể khởi động camera này. Hãy thử đổi camera.');
+      }
+    }
+    async function pause(){
+      if(!state.reader || !state.running) return;
+      try{
+        await state.reader.stop();
+        state.running = false;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+      }catch(err){ console.error(err); }
+    }
+    async function restart(){
+      await pause(); await start();
+    }
+
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ pause(); }
+    });
+
+    startBtn?.addEventListener('click', start);
+    pauseBtn?.addEventListener('click', pause);
+
+    (async () => {
+      try{ await navigator.mediaDevices.getUserMedia({ video: true }); }catch(_){}
+      await loadCameras();
+    })();
+  })();
+  </script>
+</body>
+</html>

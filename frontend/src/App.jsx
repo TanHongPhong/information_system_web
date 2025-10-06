@@ -1,32 +1,21 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// Pages
+// Pages (giữ cả 2 nhánh)
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
-<<<<<<< HEAD
-import VehicleList from "./pages/Chon_xe";
+
+// Nhánh A (tiếng Việt)
+import ChonXe from "./pages/Chon_xe";
 import Order from "./pages/Don_hang";
 
-function App() {
-  return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="*" element={<NotFound />} />
-          <Route path="/vehicle_list" element={<VehicleList />} />
-          
-        </Routes>
-      </BrowserRouter>
-    </>
-=======
+// Nhánh B (tiếng Anh)
 import VehicleList from "./pages/VehicleList";
 import TransportCompanies from "./pages/TransportCompanies";
 import PaymentQR from "./pages/PaymentQR";
 import PaymentHistory from "./pages/PaymentHistory";
 import CommodityForm from "./pages/CommodityForm"; 
-// ⬆️ Nếu dự án của bạn để CommodityForm trong "components",
-// đổi dòng trên thành:  import CommodityForm from "./components/CommodityForm";
+// Nếu dự án của bạn để CommodityForm trong "components":
+// import CommodityForm from "./components/CommodityForm";
 
 function App() {
   return (
@@ -36,8 +25,12 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="*" element={<NotFound />} />
 
-        {/* Vehicles */}
+        {/* Vehicles (giữ cả alias) */}
         <Route path="/vehicle_list" element={<VehicleList />} />
+        <Route path="/chon_xe" element={<ChonXe />} />
+
+        {/* Đơn hàng */}
+        <Route path="/don_hang" element={<Order />} />
 
         {/* Transport Companies */}
         <Route path="/transport_companies" element={<TransportCompanies />} />
@@ -54,7 +47,6 @@ function App() {
         <Route path="/commodityform" element={<CommodityForm />} />
       </Routes>
     </BrowserRouter>
->>>>>>> 84ef693f0d165d2ba8725b7014cb71363c4b6aa5
   );
 }
 
