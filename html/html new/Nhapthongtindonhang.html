@@ -15,7 +15,7 @@
       theme: {
         extend: {
           fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
-          colors: { brand: { 50:'#eff6ff',100:'#dbeafe',500:'#2563eb',600:'#1d4ed8',700:'#1e40af' } },
+          colors: { brand: { 50:'#eff6ff',100:'#dbeafe',500:'#2563eb',600:'#1d4ed8',700:'#1e40af',300:'#93c5fd',400:'#60a5fa' } },
           boxShadow: { soft:'0 12px 40px rgba(2,6,23,.08)' },
           borderRadius: { xl2:'1rem' },
         }
@@ -29,24 +29,38 @@
     .field .icon{ position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#94a3b8 }
     .field input,.field select,.field textarea{
       width:100%; padding:.625rem .875rem; padding-left:2.25rem;
-      border-radius: .75rem; border:1px solid #e2e8f0; background:#fff;
+      border-radius:.75rem; border:1px solid #e2e8f0; background:#fff;
       outline:none; transition: box-shadow .15s, border-color .15s;
     }
     .field textarea{ min-height:110px; padding-left:2.25rem }
     .field input:focus,.field select:focus,.field textarea:focus{
       border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15);
     }
-    .label{ font-size:14px; font-weight:600; color:#0f172a }
+    .label{ font-size:14px; font-weight:600; color:#1d4ed8 }
     .help{ font-size:12px; color:#64748b; margin-top:.25rem }
     .unit{ position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#64748b; font-size:13px }
     .required::after{ content:" *"; color:#ef4444 }
-    /* Icon riêng cho ô Ghi chú để ngang hàng placeholder */
     .field-note .icon{ top:1rem; transform:none; }
+
+    /* Link “Trở lại” luôn xanh */
+    .link-brand{ color:#1d4ed8 !important; }
+    .link-brand:hover{ color:#1e40af !important; }
+
+    /* Stepper màu xanh (b3 nhạt hơn) */
+    .stepper li{ display:flex; align-items:center; }
+    .stepper .done, .stepper .active{ color:#1d4ed8; }
+    .stepper .upcoming{ color:#60a5fa; }              /* xanh nhạt hơn */
+    .stepper .badge{ width:1.5rem; height:1.5rem; display:grid; place-items:center; border-radius:9999px; margin-right:.5rem; }
+    .stepper .badge-done, .stepper .badge-active{ border:2px solid #1d4ed8; color:#1d4ed8; }
+    .stepper .badge-upcoming{ border:2px solid #93c5fd; color:#60a5fa; }
+
+    /* Tiêu đề panel xanh rõ ràng */
+    .section-title{ color:#1d4ed8 !important; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 font-sans">
 
-  <!-- Sidebar (mới) -->
+  <!-- SIDEBAR (giữ nguyên như Payment) -->
   <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
     <div class="mt-1 mb-1 text-center">
       <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
@@ -54,21 +68,22 @@
       </span>
       <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
     </div>
+
     <div class="flex flex-col items-center gap-4">
       <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></button>
       <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></button>
       <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></button>
       <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
-        <i data-feather="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+        <i data-feather="bell"></i>
+        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
       </button>
       <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></button>
       <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></button>
     </div>
   </aside>
 
-  <!-- Main dịch phải theo sidebar -->
   <main class="ml-20">
-    <!-- Header (mới) -->
+    <!-- Header -->
     <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
       <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
         <div class="flex-1 max-w-2xl mr-3 md:mr-6">
@@ -96,23 +111,23 @@
       </div>
     </header>
 
-    <!-- Nội dung trang giữ nguyên -->
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Content -->
+    <div class="max-w-7xl px-3 sm:px-4 lg:px-6 py-6">
       <!-- Stepper -->
       <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-4">
-        <ol class="flex items-center text-sm">
-          <li class="flex items-center text-slate-600 font-medium">
-            <span class="w-6 h-6 rounded-full border-2 border-slate-300 text-slate-600 grid place-items-center mr-2">1</span>
+        <ol class="stepper flex items-center w-full justify-center text-sm">
+          <li class="done font-medium">
+            <span class="badge badge-done">1</span>
             Chọn xe
             <span class="mx-3 h-px w-10 bg-slate-200"></span>
           </li>
-          <li class="flex items-center text-brand-600 font-semibold">
-            <span class="w-6 h-6 rounded-full border-2 border-brand-600 text-brand-600 grid place-items-center mr-2">2</span>
+          <li class="active font-semibold">
+            <span class="badge badge-active">2</span>
             Nhập thông tin hàng hóa
             <span class="mx-3 h-px w-10 bg-slate-200"></span>
           </li>
-          <li class="flex items-center text-slate-400">
-            <span class="w-6 h-6 rounded-full border-2 border-slate-300 text-slate-400 grid place-items-center mr-2">3</span>
+          <li class="upcoming">
+            <span class="badge badge-upcoming">3</span>
             Xác nhận
           </li>
         </ol>
@@ -219,7 +234,7 @@
 
             <!-- Actions -->
             <div class="flex items-center justify-between">
-              <a href="./chon-xe.html" class="text-brand-600 underline underline-offset-2">Trở lại</a>
+              <a href="./chon-xe.html" class="link-brand underline underline-offset-2">Trở lại</a>
               <button type="submit"
                       class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl shadow-soft">
                 Tiếp tục
@@ -234,7 +249,7 @@
           <div class="lg:sticky lg:top-24 space-y-4">
             <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-6">
               <div class="flex items-center justify-between">
-                <h3 class="font-semibold">Ước tính chi phí</h3>
+                <h3 class="font-semibold section-title">Ước tính chi phí</h3>
                 <span id="slaBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">3–5 ngày</span>
               </div>
 
@@ -267,7 +282,7 @@
             </div>
 
             <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-5">
-              <h4 class="font-semibold mb-3">Mẹo đóng gói an toàn</h4>
+              <h4 class="font-semibold mb-3 section-title">Mẹo đóng gói an toàn</h4>
               <ul class="text-sm text-slate-700 space-y-2">
                 <li class="flex gap-2"><i data-feather="check-circle" class="w-4 h-4 text-emerald-600"></i>Bọc đệm góc và mặt hàng dễ vỡ.</li>
                 <li class="flex gap-2"><i data-feather="check-circle" class="w-4 h-4 text-emerald-600"></i>Dán nhãn “Hàng dễ vỡ” nếu cần.</li>
@@ -283,7 +298,7 @@
   <script>
     feather.replace();
 
-    // Tính phí demo
+    // Demo tính phí
     const weightEl = document.getElementById('weight');
     const lenEl = document.getElementById('len');
     const widEl = document.getElementById('wid');
@@ -330,7 +345,6 @@
     });
     recalc();
 
-    // Submit demo
     document.getElementById('cargoForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       alert('Đã lưu thông tin hàng hóa. Bước tiếp theo: Xác nhận & thanh toán.');
