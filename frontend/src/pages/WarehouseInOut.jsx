@@ -294,6 +294,7 @@ export default function WarehouseInOut() {
 
               <button
                 onClick={() => {
+                  // just force re-run effects & maintain UX parity
                   feather.replace({ width: 21, height: 21 });
                 }}
                 className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2"
@@ -306,9 +307,24 @@ export default function WarehouseInOut() {
 
           {/* KPI Row */}
           <div className="grid md:grid-cols-5 gap-3" id="kpiRow">
-            <Stat icon="package" label="Đã nhập hôm nay" value={inboundToday} tone="in" />
-            <Stat icon="truck" label="Đã xuất hôm nay" value={outboundToday} tone="out" />
-            <Stat icon="truck" label="Đang vận chuyển" value={inTransit} tone="neutral" />
+            <Stat
+              icon="package"
+              label="Đã nhập hôm nay"
+              value={inboundToday}
+              tone="in"
+            />
+            <Stat
+              icon="truck"
+              label="Đã xuất hôm nay"
+              value={outboundToday}
+              tone="out"
+            />
+            <Stat
+              icon="truck"
+              label="Đang vận chuyển"
+              value={inTransit}
+              tone="neutral"
+            />
             <Stat
               icon="alert-triangle"
               label="Cảnh báo"
@@ -559,6 +575,7 @@ function QRCameraPanel() {
   const [running, setRunning] = useState(false);
   const [lastResult, setLastResult] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const html5CtorRef = useRef(null);
   const readerRef = useRef(null);
   const idRef = useRef(`qrReader-${Math.random().toString(36).slice(2)}`);
 
@@ -593,8 +610,11 @@ function QRCameraPanel() {
 
   const onScanSuccess = (decodedText) => {
     setLastResult(decodedText);
+    // bắn event ra outside nếu muốn consume ở nơi khác:
     window.dispatchEvent(
-      new CustomEvent("qr-scan", { detail: { code: decodedText, mode, ts: Date.now() } })
+      new CustomEvent("qr-scan", {
+        detail: { code: decodedText, mode, ts: Date.now() },
+      })
     );
     pause();
   };
@@ -602,8 +622,14 @@ function QRCameraPanel() {
 
   const start = async () => {
     if (running || !currentCameraId) return;
+    if (!html5CtorRef.current) {
+      alert(
+        "Thiếu thư viện html5-qrcode. Cài bằng: npm i html5-qrcode\nHoặc chèn CDN vào public/index.html"
+      );
+      return;
+    }
     if (!readerRef.current) {
-      readerRef.current = new Html5Qrcode(idRef.current);
+      readerRef.current = new html5CtorRef.current(idRef.current);
     }
     try {
       await readerRef.current.start(
