@@ -1,138 +1,26 @@
 // File: src/pages/WarehouseInOut.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
-import { Link } from "react-router-dom";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function WarehouseInOut() {
   // ===== Mock data (giữ như v2) =====
   const DATA = useMemo(
     () => [
-      {
-        id: "DL04MP7045",
-        type: "in",
-        status: "Đang vận chuyển",
-        customer: "Đặng Huy Tuấn",
-        from: "Lào tồn",
-        to: "TP.HCM",
-        weight: 250,
-        unit: "KG",
-        pallets: 8,
-        docks: "D1",
-        carrier: "GMD-TRK-21",
-        eta: "12/12/2025",
-        temp: "Thường",
-      },
-      {
-        id: "DL04MP7046",
-        type: "out",
-        status: "Đã xuất kho",
-        customer: "Thái Lý Lộc",
-        from: "Bình Định",
-        to: "Hà Nội",
-        weight: 2000,
-        unit: "KG",
-        pallets: 12,
-        docks: "D3",
-        carrier: "GMD-TRK-07",
-        eta: "01/12/2025",
-        temp: "Mát",
-      },
-      {
-        id: "DL04MP7054",
-        type: "in",
-        status: "Lưu kho",
-        customer: "Tân Hồng Phong",
-        from: "Vũng Tàu",
-        to: "Đồng Nai",
-        weight: 540,
-        unit: "KG",
-        pallets: 10,
-        docks: "D2",
-        carrier: "GMD-TRK-12",
-        eta: "12/07/2025",
-        temp: "Mát",
-      },
-      {
-        id: "DL04MP7525",
-        type: "in",
-        status: "Đang vận chuyển",
-        customer: "Ngô Trọng Nhân",
-        from: "Đồng Nai",
-        to: "Nha Trang",
-        weight: 938,
-        unit: "KG",
-        pallets: 15,
-        docks: "D5",
-        carrier: "GMD-TRK-33",
-        eta: "20/07/2025",
-        temp: "Lạnh",
-      },
-      {
-        id: "DL04MP9845",
-        type: "out",
-        status: "Đang vận chuyển",
-        customer: "Lê Quang Trường",
-        from: "Khánh Hoà",
-        to: "TP.HCM",
-        weight: 12000,
-        unit: "KG",
-        pallets: 25,
-        docks: "D4",
-        carrier: "GMD-TRK-08",
-        eta: "12/01/2025",
-        temp: "Thường",
-      },
-      {
-        id: "DL04MP7875",
-        type: "in",
-        status: "Lưu kho",
-        customer: "Thái Lý Lộc",
-        from: "Cà Mau",
-        to: "Hà Nội",
-        weight: 250,
-        unit: "KG",
-        pallets: 6,
-        docks: "D2",
-        carrier: "GMD-TRK-02",
-        eta: "22/06/2025",
-        temp: "Thường",
-      },
-      {
-        id: "DL04MP7995",
-        type: "out",
-        status: "Lưu kho",
-        customer: "Ngô Trọng Nhân",
-        from: "Bến Tre",
-        to: "Cà Mau",
-        weight: 370,
-        unit: "KG",
-        pallets: 9,
-        docks: "D6",
-        carrier: "GMD-TRK-19",
-        eta: "19/01/2025",
-        temp: "Mát",
-      },
-      {
-        id: "DL04MP4545",
-        type: "in",
-        status: "Đang vận chuyển",
-        customer: "Đặng Huy Tuấn",
-        from: "Vũng Tàu",
-        to: "Vĩnh Long",
-        weight: 920,
-        unit: "KG",
-        pallets: 14,
-        docks: "D1",
-        carrier: "GMD-TRK-17",
-        eta: "17/08/2025",
-        temp: "Thường",
-      },
+      { id: "DL04MP7045", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Lào tồn",   to: "TP.HCM",  weight: 250,  unit: "KG", pallets: 8,  docks: "D1", carrier: "GMD-TRK-21", eta: "12/12/2025", temp: "Thường" },
+      { id: "DL04MP7046", type: "out", status: "Đã xuất kho",     customer: "Thái Lý Lộc",  from: "Bình Định", to: "Hà Nội",  weight: 2000, unit: "KG", pallets: 12, docks: "D3", carrier: "GMD-TRK-07", eta: "01/12/2025", temp: "Mát" },
+      { id: "DL04MP7054", type: "in",  status: "Lưu kho",          customer: "Tân Hồng Phong",from: "Vũng Tàu", to: "Đồng Nai",weight: 540,  unit: "KG", pallets: 10, docks: "D2", carrier: "GMD-TRK-12", eta: "12/07/2025", temp: "Mát" },
+      { id: "DL04MP7525", type: "in",  status: "Đang vận chuyển", customer: "Ngô Trọng Nhân",from: "Đồng Nai", to: "Nha Trang",weight: 938, unit: "KG", pallets: 15, docks: "D5", carrier: "GMD-TRK-33", eta: "20/07/2025", temp: "Lạnh" },
+      { id: "DL04MP9845", type: "out", status: "Đang vận chuyển", customer: "Lê Quang Trường",from:"Khánh Hoà",to:"TP.HCM", weight:12000,unit:"KG",pallets:25,docks:"D4",carrier:"GMD-TRK-08",eta:"12/01/2025",temp:"Thường"},
+      { id: "DL04MP7875", type: "in",  status: "Lưu kho",          customer: "Thái Lý Lộc",  from: "Cà Mau",    to: "Hà Nội",  weight: 250,  unit: "KG", pallets: 6,  docks: "D2", carrier: "GMD-TRK-02", eta: "22/06/2025", temp: "Thường" },
+      { id: "DL04MP7995", type: "out", status: "Lưu kho",          customer: "Ngô Trọng Nhân",from: "Bến Tre",  to: "Cà Mau",  weight: 370,  unit: "KG", pallets: 9,  docks: "D6", carrier: "GMD-TRK-19", eta: "19/01/2025", temp: "Mát" },
+      { id: "DL04MP4545", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Vũng Tàu",  to: "Vĩnh Long",weight: 920, unit: "KG", pallets: 14, docks: "D1", carrier: "GMD-TRK-17", eta: "17/08/2025", temp: "Thường" },
     ],
     []
   );
 
   // ===== UI state =====
-  const [tab, setTab] = useState("all"); // 'all' | 'in' | 'out' | 'hold'
+  const [tab, setTab] = useState("all");           // 'all' | 'in' | 'out' | 'hold'
   const [dock, setDock] = useState("Tất cả");
   const [temp, setTemp] = useState("Tất cả");
 
@@ -158,9 +46,7 @@ export default function WarehouseInOut() {
   // KPI values
   const inboundToday = 34;
   const outboundToday = 29;
-  const inTransit = baseRows.filter(
-    (d) => d.status === "Đang vận chuyển"
-  ).length;
+  const inTransit = baseRows.filter((d) => d.status === "Đang vận chuyển").length;
   const alerts = 2;
   const capacityUsed = 72;
 
@@ -223,27 +109,27 @@ export default function WarehouseInOut() {
           </div>
         </div>
         <div className="flex flex-col items-center gap-4">
-          <Link
-            to="/"
+          <a
+            href="#"
             className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             title="Trang chủ"
           >
             <i data-feather="home" />
-          </Link>
-          <Link
-            to="/order-tracking"
+          </a>
+          <a
+            href="#"
             className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             title="Theo dõi vị trí"
           >
             <i data-feather="map" />
-          </Link>
-          <Link
-            to="/warehouse"
+          </a>
+          <a
+            href="#"
             className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             title="Lịch sử giao dịch"
           >
             <i data-feather="file-text" />
-          </Link>
+          </a>
           <button
             className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             title="Thông báo"
@@ -324,10 +210,7 @@ export default function WarehouseInOut() {
                     Deportation Manager
                   </div>
                 </div>
-                <i
-                  data-feather="chevron-down"
-                  className="w-4 h-4 text-slate-400"
-                />
+                <i data-feather="chevron-down" className="w-4 h-4 text-slate-400" />
               </button>
             </div>
           </div>
@@ -411,7 +294,6 @@ export default function WarehouseInOut() {
 
               <button
                 onClick={() => {
-                  // just force re-run effects & maintain UX parity
                   feather.replace({ width: 21, height: 21 });
                 }}
                 className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2"
@@ -424,24 +306,9 @@ export default function WarehouseInOut() {
 
           {/* KPI Row */}
           <div className="grid md:grid-cols-5 gap-3" id="kpiRow">
-            <Stat
-              icon="package"
-              label="Đã nhập hôm nay"
-              value={inboundToday}
-              tone="in"
-            />
-            <Stat
-              icon="truck"
-              label="Đã xuất hôm nay"
-              value={outboundToday}
-              tone="out"
-            />
-            <Stat
-              icon="truck"
-              label="Đang vận chuyển"
-              value={inTransit}
-              tone="neutral"
-            />
+            <Stat icon="package" label="Đã nhập hôm nay" value={inboundToday} tone="in" />
+            <Stat icon="truck" label="Đã xuất hôm nay" value={outboundToday} tone="out" />
+            <Stat icon="truck" label="Đang vận chuyển" value={inTransit} tone="neutral" />
             <Stat
               icon="alert-triangle"
               label="Cảnh báo"
@@ -545,23 +412,15 @@ export default function WarehouseInOut() {
                             <td className="px-5 py-3 align-middle">
                               <StatusBadge status={o.status} />
                             </td>
-                            <td className="px-5 py-3 align-middle">
-                              {o.customer}
-                            </td>
+                            <td className="px-5 py-3 align-middle">{o.customer}</td>
                             <td className="px-5 py-3 align-middle">{o.from}</td>
                             <td className="px-5 py-3 align-middle">{o.to}</td>
-                            <td className="px-5 py-3 align-middle">
-                              {o.pallets}
-                            </td>
+                            <td className="px-5 py-3 align-middle">{o.pallets}</td>
                             <td className="px-5 py-3 align-middle">
                               {o.weight.toLocaleString()} {o.unit}
                             </td>
-                            <td className="px-5 py-3 align-middle">
-                              {o.docks}
-                            </td>
-                            <td className="px-5 py-3 align-middle">
-                              {o.carrier}
-                            </td>
+                            <td className="px-5 py-3 align-middle">{o.docks}</td>
+                            <td className="px-5 py-3 align-middle">{o.carrier}</td>
                             <td className="px-5 py-3 align-middle text-right pr-5 text-slate-600">
                               {o.eta}
                             </td>
@@ -619,9 +478,7 @@ export default function WarehouseInOut() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <div className="text-xs text-slate-600 mb-1">
-                    Tỷ lệ lấp đầy
-                  </div>
+                  <div className="text-xs text-slate-600 mb-1">Tỷ lệ lấp đầy</div>
                   <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-blue-500 to-indigo-600"
@@ -634,21 +491,16 @@ export default function WarehouseInOut() {
               {/* Staff */}
               <div className="rounded-2xl p-5 border border-slate-200 bg-white">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <i data-feather="users" className="w-4 h-4" /> Nhân sự ca hôm
-                  nay
+                  <i data-feather="users" className="w-4 h-4" /> Nhân sự ca hôm nay
                 </div>
                 <ul className="mt-3 space-y-2 text-sm">
                   <li className="flex justify-between">
                     <span>Ca sáng</span>
-                    <span className="text-slate-700">
-                      12 NV (2 QC, 1 Supervisor)
-                    </span>
+                    <span className="text-slate-700">12 NV (2 QC, 1 Supervisor)</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Ca chiều</span>
-                    <span className="text-slate-700">
-                      10 NV (1 QC, 1 Supervisor)
-                    </span>
+                    <span className="text-slate-700">10 NV (1 QC, 1 Supervisor)</span>
                   </li>
                 </ul>
               </div>
@@ -679,9 +531,7 @@ function Stat({ icon, label, value, sub, tone = "neutral" }) {
         {label}
       </div>
       <div className="mt-1 text-2xl font-bold tracking-tight">{value}</div>
-      {sub ? (
-        <div className="text-[12px] text-slate-500 mt-1">{sub}</div>
-      ) : null}
+      {sub ? <div className="text-[12px] text-slate-500 mt-1">{sub}</div> : null}
     </div>
   );
 }
@@ -709,54 +559,20 @@ function QRCameraPanel() {
   const [running, setRunning] = useState(false);
   const [lastResult, setLastResult] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const html5CtorRef = useRef(null);
   const readerRef = useRef(null);
   const idRef = useRef(`qrReader-${Math.random().toString(36).slice(2)}`);
 
-  // Load html5-qrcode lazily (robust cho Vite, ESM & CDN)
-  useEffect(() => {
-    let mounted = true;
-
-    if (typeof window !== "undefined") {
-      (async () => {
-        try {
-          const mod = await import("html5-qrcode");
-          const Html5Qrcode =
-            mod?.Html5Qrcode ??
-            mod?.default?.Html5Qrcode ??
-            // fallback nếu dùng CDN gắn window
-            window.Html5Qrcode;
-          if (mounted) html5CtorRef.current = Html5Qrcode || null;
-        } catch (err) {
-          console.error("Failed to load html5-qrcode", err);
-          html5CtorRef.current =
-            typeof window !== "undefined" ? window.Html5Qrcode : null;
-        }
-      })();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Pre-ask camera permission & list devices
+  // Liệt kê camera bằng API của html5-qrcode (cần HTTPS hoặc quyền camera)
   useEffect(() => {
     (async () => {
       try {
-        await navigator.mediaDevices
-          .getUserMedia({ video: true })
-          .catch(() => {});
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cams = devices.filter((d) => d.kind === "videoinput");
-        setCameras(cams);
-        if (cams.length) {
-          setCurrentCameraId(cams[0].deviceId);
-        }
+        // Gợi ý xin quyền trước để lấy được label đầy đủ trên một số trình duyệt
+        await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => {});
+        const cams = await Html5Qrcode.getCameras();
+        setCameras(cams || []);
+        if (cams?.length) setCurrentCameraId(cams[0].id);
       } catch (err) {
-        setErrorMsg(
-          "Không truy cập được camera. Hãy cấp quyền cho trình duyệt."
-        );
+        setErrorMsg("Không truy cập được camera. Hãy cấp quyền cho trình duyệt.");
         console.error(err);
       }
     })();
@@ -766,9 +582,9 @@ function QRCameraPanel() {
     // Clean up reader on unmount
     return () => {
       if (readerRef.current) {
-        try {
-          readerRef.current.stop();
-        } catch {}
+        readerRef.current.stop().catch(() => {});
+        readerRef.current.clear().catch(() => {});
+        readerRef.current = null;
       }
     };
   }, []);
@@ -777,11 +593,8 @@ function QRCameraPanel() {
 
   const onScanSuccess = (decodedText) => {
     setLastResult(decodedText);
-    // bắn event ra outside nếu muốn consume ở nơi khác:
     window.dispatchEvent(
-      new CustomEvent("qr-scan", {
-        detail: { code: decodedText, mode, ts: Date.now() },
-      })
+      new CustomEvent("qr-scan", { detail: { code: decodedText, mode, ts: Date.now() } })
     );
     pause();
   };
@@ -789,14 +602,8 @@ function QRCameraPanel() {
 
   const start = async () => {
     if (running || !currentCameraId) return;
-    if (!html5CtorRef.current) {
-      alert(
-        "Thiếu thư viện html5-qrcode. Cài bằng: npm i html5-qrcode\nHoặc chèn CDN vào public/index.html"
-      );
-      return;
-    }
     if (!readerRef.current) {
-      readerRef.current = new html5CtorRef.current(idRef.current);
+      readerRef.current = new Html5Qrcode(idRef.current);
     }
     try {
       await readerRef.current.start(
@@ -829,9 +636,9 @@ function QRCameraPanel() {
 
   const switchCamera = () => {
     if (!cameras.length) return;
-    const idx = cameras.findIndex((c) => c.deviceId === currentCameraId);
+    const idx = cameras.findIndex((c) => c.id === currentCameraId);
     const next = (idx + 1) % cameras.length;
-    setCurrentCameraId(cameras[next].deviceId);
+    setCurrentCameraId(cameras[next].id);
     if (running) restart();
   };
 
@@ -841,10 +648,7 @@ function QRCameraPanel() {
         <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera)
       </div>
 
-      <div
-        className="flex flex-col gap-3"
-        aria-label="Khu vực camera quét mã QR nhập/xuất"
-      >
+      <div className="flex flex-col gap-3" aria-label="Khu vực camera quét mã QR nhập/xuất">
         {/* Mode */}
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-slate-600">Chế độ:</span>
@@ -887,7 +691,7 @@ function QRCameraPanel() {
           >
             {cameras.length ? (
               cameras.map((c, idx) => (
-                <option key={c.deviceId} value={c.deviceId}>
+                <option key={c.id} value={c.id}>
                   {`Camera ${idx + 1}` + (c.label ? ` – ${c.label}` : "")}
                 </option>
               ))
@@ -939,14 +743,10 @@ function QRCameraPanel() {
             <div className="text-[12px] text-emerald-700 mb-1 font-semibold">
               Kết quả quét
             </div>
-            <div className="text-sm font-mono text-emerald-800 break-all">
-              {lastResult}
-            </div>
+            <div className="text-sm font-mono text-emerald-800 break-all">{lastResult}</div>
             <div className="mt-1 text-[12px] text-slate-600">
               Chế độ hiện tại:{" "}
-              <span className="font-semibold">
-                {mode === "IN" ? "NHẬP" : "XUẤT"}
-              </span>
+              <span className="font-semibold">{mode === "IN" ? "NHẬP" : "XUẤT"}</span>
             </div>
           </div>
         )}
@@ -955,8 +755,7 @@ function QRCameraPanel() {
           <p className="text-[12px] text-rose-600 mt-1">{errorMsg}</p>
         ) : (
           <p className="text-[12px] text-slate-500 mt-1">
-            Tip: nếu có nhiều camera, hãy chọn “Camera 2” (thường là camera sau
-            của điện thoại).
+            Tip: nếu có nhiều camera, hãy chọn “Camera 2” (thường là camera sau của điện thoại).
           </p>
         )}
       </div>
