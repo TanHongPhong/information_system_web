@@ -1,7 +1,7 @@
 // File: src/pages/WarehouseInOut.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
-import { Link } from "react-router-dom";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function WarehouseInOut() {
   // ===== Mock data (giữ như v2) =====
@@ -109,9 +109,27 @@ export default function WarehouseInOut() {
           </div>
         </div>
         <div className="flex flex-col items-center gap-4">
-          <Link to="/" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home" /></Link>
-          <Link to="/order-tracking" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map" /></Link>
-          <Link to="/warehouse" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text" /></Link>
+          <a
+            href="#"
+            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            title="Trang chủ"
+          >
+            <i data-feather="home" />
+          </a>
+          <a
+            href="#"
+            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            title="Theo dõi vị trí"
+          >
+            <i data-feather="map" />
+          </a>
+          <a
+            href="#"
+            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            title="Lịch sử giao dịch"
+          >
+            <i data-feather="file-text" />
+          </a>
           <button
             className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
             title="Thông báo"
@@ -289,9 +307,24 @@ export default function WarehouseInOut() {
 
           {/* KPI Row */}
           <div className="grid md:grid-cols-5 gap-3" id="kpiRow">
-            <Stat icon="package" label="Đã nhập hôm nay" value={inboundToday} tone="in" />
-            <Stat icon="truck" label="Đã xuất hôm nay" value={outboundToday} tone="out" />
-            <Stat icon="truck" label="Đang vận chuyển" value={inTransit} tone="neutral" />
+            <Stat
+              icon="package"
+              label="Đã nhập hôm nay"
+              value={inboundToday}
+              tone="in"
+            />
+            <Stat
+              icon="truck"
+              label="Đã xuất hôm nay"
+              value={outboundToday}
+              tone="out"
+            />
+            <Stat
+              icon="truck"
+              label="Đang vận chuyển"
+              value={inTransit}
+              tone="neutral"
+            />
             <Stat
               icon="alert-triangle"
               label="Cảnh báo"
@@ -546,34 +579,15 @@ function QRCameraPanel() {
   const readerRef = useRef(null);
   const idRef = useRef(`qrReader-${Math.random().toString(36).slice(2)}`);
 
-  // Load html5-qrcode lazily
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const mod = await import("html5-qrcode");
-        if (mounted) html5CtorRef.current = mod.Html5Qrcode;
-      } catch {
-        // Nếu không import được, hướng dẫn dùng CDN ở public/index.html
-        html5CtorRef.current = null;
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Pre-ask camera permission & list devices
+  // Liệt kê camera bằng API của html5-qrcode (cần HTTPS hoặc quyền camera)
   useEffect(() => {
     (async () => {
       try {
+        // Gợi ý xin quyền trước để lấy được label đầy đủ trên một số trình duyệt
         await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => {});
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cams = devices.filter((d) => d.kind === "videoinput");
-        setCameras(cams);
-        if (cams.length) {
-          setCurrentCameraId(cams[0].deviceId);
-        }
+        const cams = await Html5Qrcode.getCameras();
+        setCameras(cams || []);
+        if (cams?.length) setCurrentCameraId(cams[0].id);
       } catch (err) {
         setErrorMsg("Không truy cập được camera. Hãy cấp quyền cho trình duyệt.");
         console.error(err);
@@ -585,9 +599,9 @@ function QRCameraPanel() {
     // Clean up reader on unmount
     return () => {
       if (readerRef.current) {
-        try {
-          readerRef.current.stop();
-        } catch {}
+        readerRef.current.stop().catch(() => {});
+        readerRef.current.clear().catch(() => {});
+        readerRef.current = null;
       }
     };
   }, []);
@@ -598,7 +612,9 @@ function QRCameraPanel() {
     setLastResult(decodedText);
     // bắn event ra outside nếu muốn consume ở nơi khác:
     window.dispatchEvent(
-      new CustomEvent("qr-scan", { detail: { code: decodedText, mode, ts: Date.now() } })
+      new CustomEvent("qr-scan", {
+        detail: { code: decodedText, mode, ts: Date.now() },
+      })
     );
     pause();
   };
@@ -646,9 +662,9 @@ function QRCameraPanel() {
 
   const switchCamera = () => {
     if (!cameras.length) return;
-    const idx = cameras.findIndex((c) => c.deviceId === currentCameraId);
+    const idx = cameras.findIndex((c) => c.id === currentCameraId);
     const next = (idx + 1) % cameras.length;
-    setCurrentCameraId(cameras[next].deviceId);
+    setCurrentCameraId(cameras[next].id);
     if (running) restart();
   };
 
@@ -701,7 +717,7 @@ function QRCameraPanel() {
           >
             {cameras.length ? (
               cameras.map((c, idx) => (
-                <option key={c.deviceId} value={c.deviceId}>
+                <option key={c.id} value={c.id}>
                   {`Camera ${idx + 1}` + (c.label ? ` – ${c.label}` : "")}
                 </option>
               ))
