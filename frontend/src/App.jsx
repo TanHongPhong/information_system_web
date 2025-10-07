@@ -1,53 +1,29 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// Pages (giữ cả 2 nhánh)
-import HomePage from "./pages/HomePage";
-import NotFound from "./pages/NotFound";
+import HomePage from "./pages/HomePage.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import WarehouseInOut from "./pages/WarehouseInOut.jsx";
+import OrderTracking from "./pages/OrderTracking.jsx";
+import PaymentQR from "./pages/PaymentQR.jsx";
+import PaymentHistory from "./pages/PaymentHistory.jsx";
+import TransportCompanies from "./pages/TransportCompanies.jsx";
+import VehiclePages from "./pages/VehicleList.jsx";
 
-// Nhánh A (tiếng Việt)
-import ChonXe from "./pages/Chon_xe";
-import Order from "./pages/Don_hang";
-
-// Nhánh B (tiếng Anh)
-import VehicleList from "./pages/VehicleList";
-import TransportCompanies from "./pages/TransportCompanies";
-import PaymentQR from "./pages/PaymentQR";
-import PaymentHistory from "./pages/PaymentHistory";
-import CommodityForm from "./pages/CommodityForm"; 
-// Nếu dự án của bạn để CommodityForm trong "components":
-// import CommodityForm from "./components/CommodityForm";
-
-function App() {
+// Chỉ giữ 4 trang như bạn yêu cầu
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Home & 404 */}
         <Route path="/" element={<HomePage />} />
-        <Route path="*" element={<NotFound />} />
-
-        {/* Vehicles (giữ cả alias) */}
-        <Route path="/vehicle_list" element={<VehicleList />} />
-        <Route path="/chon_xe" element={<ChonXe />} />
-
-        {/* Đơn hàng */}
-        <Route path="/don_hang" element={<Order />} />
-
-        {/* Transport Companies */}
-        <Route path="/transport_companies" element={<TransportCompanies />} />
-
-        {/* Payment History */}
+        <Route path="/warehouse" element={<WarehouseInOut />} />
+        <Route path="/order_tracking" element={<OrderTracking />} />
         <Route path="/payment_history" element={<PaymentHistory />} />
-
-        {/* Payment QR (giữ alias để không vỡ link cũ) */}
         <Route path="/payment_qr" element={<PaymentQR />} />
-        <Route path="/paymentQR" element={<PaymentQR />} />
-
-        {/* Commodity Form (giữ alias để không vỡ link cũ) */}
-        <Route path="/commodity_form" element={<CommodityForm />} />
-        <Route path="/commodityform" element={<CommodityForm />} />
+        <Route path="/transport_companies" element={<TransportCompanies />} />
+        <Route path="/vehicle_list" element={<VehiclePages />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;

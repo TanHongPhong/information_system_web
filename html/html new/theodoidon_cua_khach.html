@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Khách hàng — Theo dõi đơn hàng</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<script>
+  tailwind = window.tailwind || {};
+  tailwind.config = { theme:{ extend:{
+    fontFamily:{ sans:["Inter","ui-sans-serif","system-ui"] },
+    colors:{ brand:{50:"#eff6ff",100:"#dbeafe",500:"#2563eb",600:"#1d4ed8"}},
+    boxShadow:{ soft:"0 10px 28px rgba(2,6,23,.08)" },
+    borderRadius:{ xl2:"1rem" }
+  } } };
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/feather-icons"></script>
+
+<style>
+  :root{ --sidebar-w: 80px; }
+  body{font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+  @media (min-width:1024px){ html, body{ overflow: hidden; } }
+
+  .nice-scroll{ scrollbar-width:thin; scrollbar-color:#cbd5e1 #f1f5f9 }
+  .nice-scroll::-webkit-scrollbar{ width:10px }
+  .nice-scroll::-webkit-scrollbar-track{ background:#f1f5f9; border-radius:9999px }
+  .nice-scroll::-webkit-scrollbar-thumb{ background:#c7d2fe; border-radius:9999px; border:3px solid #f8fafc }
+
+  .mini-progress{height:8px;border-radius:9999px;background:#e5edff;position:relative;overflow:hidden}
+  .mini-progress > span{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,#2563eb 0%,#60a5fa 100%)}
+
+  #status ol{ position:relative; padding-left:44px; }
+  #status .rail{ position:absolute; left:20px; top:0; bottom:0; width:2px; background:linear-gradient(#93c5fd 0 45%, #e5e7eb 45% 100%); }
+  #status li{ position:relative; margin-bottom:12px; }
+  #status .dot{ position:absolute; left:14px; top:18px; width:12px; height:12px; border-radius:9999px; background:#fff; border:3px solid #93c5fd; box-shadow:0 0 0 3px #fff }
+  #status .dot.done, #status .dot.current{ border-color:#2563eb; background:#2563eb }
+  #status .dot.current{ box-shadow:0 0 0 6px rgba(37,99,235,.18) }
+  #status .dot.future{ border-color:#cbd5e1; background:#fff }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<!-- SIDEBAR -->
+<aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+  <div class="mt-1 mb-1 text-center">
+    <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+      <i data-feather="shield"></i>
+    </span>
+    <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+  </div>
+  <div class="flex flex-col items-center gap-4">
+    <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></button>
+    <button class="w-10 h-10 rounded-xl grid place-items-center text-blue-600 bg-blue-50 ring-1 ring-blue-200" title="Theo dõi đơn"><i data-feather="map"></i></button>
+    <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử"><i data-feather="file-text"></i></button>
+    <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+      <i data-feather="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+    </button>
+    <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Tài khoản"><i data-feather="user"></i></button>
+    <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></button>
+  </div>
+</aside>
+
+<!-- HEADER -->
+<header id="topbar"
+  class="fixed top-0 z-40 border-b md:py-1 bg-white/95 backdrop-blur bg-gradient-to-l from-blue-900 via-sky-200 to-white"
+  style="margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w));">
+  <div class="px-3 md:px-5 py-2.5">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex-1 max-w-2xl mr-3 md:mr-6">
+        <div class="relative">
+          <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300"></i>
+          <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200"
+                 placeholder="Search by User id, User Name, Date etc"/>
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+            <i data-feather="filter"></i>
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus"></i></button>
+        <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell"></i></button>
+        <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive"></i></button>
+        <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+          <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover"/>
+          <div class="text-left leading-tight hidden sm:block">
+            <div class="text-[13px] font-semibold">Harsh Vani</div>
+            <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+          </div>
+          <i data-feather="chevron-down" class="text-slate-400"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="pt-[64px] lg:overflow-hidden" style="margin-left: var(--sidebar-w);">
+  <div class="p-4 grid grid-cols-12 gap-4">
+
+    <!-- LEFT: Đơn đang theo dõi -->
+    <section class="col-span-12 lg:col-span-3">
+      <!-- CHỈ SỬA DÒNG DƯỚI: giảm offset để mép trên ngang hai khối còn lại -->
+      <div class="sticky top-[calc(var(--topbar-h,64px)-55px)]">
+        <div class="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 relative">
+            <div class="sticky top-0 z-10 -m-3 p-3 bg-white/95 backdrop-blur rounded-t-2xl border-b border-slate-200">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="font-semibold tracking-tight">ĐƠN HÀNG CỦA BẠN</h3>
+                <span class="text-xs text-slate-500">1 đơn đang theo dõi</span>
+              </div>
+            </div>
+
+            <article class="mt-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                  <span class="inline-grid place-items-center w-8 h-8 rounded-lg bg-blue-100 text-blue-700">
+                    <i data-feather="package" class="w-4 h-4"></i>
+                  </span>
+                  <div class="text-sm min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-semibold text-slate-800">ORDERID 0112</span>
+                      <span class="text-[11px] px-2 py-0.5 rounded-full bg-white text-blue-700 ring-1 ring-blue-300">ĐANG VẬN CHUYỂN</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 leading-snug">
+                      279 Nguyễn Tri Phương, Q10 → 777 Lê Lai, Hà Nội
+                    </div>
+                    <div class="mt-2 mini-progress"><span style="transform:scaleX(.62)"></span></div>
+                  </div>
+                </div>
+                <button title="Theo dõi" class="shrink-0 w-8 h-8 rounded-full grid place-items-center bg-blue-600 text-white ring-1 ring-blue-500/30 hover:brightness-105">
+                  <i data-feather="map-pin" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-[12px] text-slate-600">
+                <div class="flex items-center gap-1"><i data-feather="clock" class="w-4 h-4"></i> Dự kiến: 20/10/2025 16:30</div>
+                <a class="text-blue-600 hover:underline inline-flex items-center gap-1" href="#"><i data-feather="download" class="w-4 h-4"></i>Hóa đơn</a>
+              </div>
+            </article>
+
+            <div class="mt-4 p-3 rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-sky-50 to-white">
+              <div class="text-sm font-semibold text-slate-800">Mẹo giao nhận an toàn</div>
+              <ul class="mt-1 text-[12px] text-slate-600 list-disc pl-5 space-y-1">
+                <li>Luôn xác minh mã đơn/OTP khi nhận.</li>
+                <li>Ưu tiên thanh toán không tiền mặt.</li>
+                <li>Kiểm tra niêm phong trước khi ký.</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER: Bản đồ + stats -->
+    <section class="col-span-12 lg:col-span-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <div class="text-sm text-slate-500">Đang theo dõi</div>
+            <h2 class="text-xl font-semibold">ORDERID 0112</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-sm inline-flex items-center gap-1"><i data-feather="check-circle" class="w-4 h-4"></i>Không trễ</span>
+            <span class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-200 text-sm inline-flex items-center gap-1"><i data-feather="clock" class="w-4 h-4"></i>ETA 3h15’</span>
+            <span class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-sm inline-flex items-center gap-1"><i data-feather="navigation" class="w-4 h-4"></i>78 km còn lại</span>
+          </div>
+        </div>
+
+        <div class="mt-3 relative rounded-2xl overflow-hidden ring-1 ring-slate-200 h-[520px]">
+          <img src="https://s3.cloud.cmctelecom.vn/tinhte2/2020/08/5100688_ban_do_tphcm.jpg" alt="Map" class="absolute inset-0 w-full h-full object-cover select-none"/>
+          <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 900 640" preserveAspectRatio="none">
+            <polyline points="120,520 220,470 300,430 370,390 450,350 520,310 590,270 650,230 730,190"
+                      fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            <circle cx="120" cy="520" r="12" fill="#2563eb"></circle>
+            <circle cx="730" cy="190" r="12" fill="#2563eb"></circle>
+          </svg>
+          <div class="absolute left-3 bottom-3 bg-white/95 backdrop-blur rounded-xl shadow-soft ring-1 ring-slate-200 p-3 flex items-center gap-3">
+            <img src="https://i.pravatar.cc/48?img=12" class="w-10 h-10 rounded-full" alt="driver"/>
+            <div class="text-sm">
+              <div class="font-semibold">Tài xế: Quang Trè</div>
+              <div class="text-xs text-slate-500">Xe tải 6.5T • DL04MP7045</div>
+            </div>
+            <a href="tel:0900000000" class="ml-2 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white text-xs inline-flex items-center gap-1"><i data-feather="phone" class="w-4 h-4"></i>Gọi</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Trạng thái + hỗ trợ + tóm tắt -->
+    <section class="col-span-12 lg:col-span-3">
+      <div class="sticky top-[calc(var(--topbar-h,64px)+16px)]">
+        <div class="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
+          <div class="space-y-4">
+
+<div id="statusCard" class="bg-white border border-slate-200 rounded-2xl p-3"
+     style="height: var(--map-h); display:flex; flex-direction:column; --nudge: 8px;">
+  <div class="flex items-center justify-between">
+    <h3 class="font-semibold">Status</h3>
+    <button class="px-3 py-1.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 text-sm">Làm mới</button>
+  </div>
+
+  <div class="mt-3 grid grid-cols-4 text-xs text-slate-600">
+    <span class="flex items-center gap-1">TP.HCM</span>
+    <span class="text-center">Quảng Ngãi</span>
+    <span class="text-center">Thanh Hóa</span>
+    <span class="text-right">Hà Nội</span>
+  </div>
+
+  <div class="mt-2 relative rounded-full h-[30px] bg-[#ecf2ff] shadow-inner">
+    <div id="segFill" class="absolute inset-0 rounded-full"
+         style="width:60%;
+                background:linear-gradient(90deg,#0B43C6 0%,#2F78FF 45%,#8AB8FF 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 4px 14px rgba(46,119,255,.25);"></div>
+    <span class="absolute top-1 bottom-1 left-1/4 w-[2px] bg-slate-300 rounded"></span>
+    <span class="absolute top-1 bottom-1 left-1/2 w-[2px] bg-slate-300 rounded"></span>
+    <span class="absolute top-1 bottom-1 left-[75%] w-[2px] bg-slate-300 rounded"></span>
+    <div id="etaPill"
+         class="absolute top-1/2 -translate-y-1/2 right-2 px-2 py-1 rounded-full bg-[#e7f0ff] text-[#0B43C6] text-[12px] font-bold shadow">
+      12 Hrs Left
+    </div>
+  </div>
+
+  <div class="mt-3 steps-wrap pr-1">
+    <div class="steps-outer">
+      <ol class="steps">
+        <li>
+          <span class="dot done"></span>
+          <div class="card step-card ring-1 ring-slate-200 bg-white p-3 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-900 font-semibold">Departure</span>
+              <span class="inline-flex items-center gap-1 step-meta text-slate-600">
+                <i data-feather="calendar" class="w-4 h-4"></i> 17/7/2024, 10:00
+              </span>
+            </div>
+            <div class="mt-1 step-meta text-slate-600">
+              279 Nguyễn Trị Phương, P.8, Q.10, TP.HCM
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="dot current"></span>
+          <div class="card step-card ring-1 ring-blue-200 bg-blue-50/60 p-3 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-900 font-semibold">Stop</span>
+              <span class="inline-flex items-center gap-1 step-meta text-slate-700">
+                <i data-feather="calendar" class="w-4 h-4"></i> 17/7/2024, 12:00
+              </span>
+            </div>
+            <div class="mt-1 step-meta text-slate-700">76 Nguyễn Tất Thành, Quảng Ngãi</div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="text-[10px] px-2 py-1 rounded-full bg-white text-blue-700 ring-1 ring-blue-300 inline-flex items-center gap-1">
+                <i data-feather="clock" class="w-4 h-4"></i> Đang xử lý (15’)
+              </span>
+              <span class="text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700 ring-1 ring-green-300">ON TIME</span>
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="dot future"></span>
+          <div class="card step-card ring-1 ring-slate-200 bg-white p-3 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-800 font-semibold">Stop</span>
+              <span class="inline-flex items-center gap-1 step-meta text-slate-500">
+                <i data-feather="calendar" class="w-4 h-4"></i> 17/7/2024, 20:00
+              </span>
+            </div>
+            <div class="mt-1 step-meta text-slate-600">36 Phạm Văn Đồng, Thanh Hóa</div>
+          </div>
+        </li>
+
+        <li>
+          <span class="dot future" style="opacity:.85"></span>
+          <div class="card step-card ring-1 ring-slate-200 bg-slate-50 p-3 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600 font-semibold">Arrival</span>
+              <span class="inline-flex items-center gap-1 step-meta text-slate-500">
+                <i data-feather="calendar" class="w-4 h-4"></i> 21/7/2024, 10:00
+              </span>
+            </div>
+            <div class="mt-1 step-meta text-slate-500">777 Lê Lợi, P.3, Q.1, TP.Hà Nội</div>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<style>
+  #statusCard .steps-wrap{ overflow:visible !important; }
+  #statusCard .steps-outer{ display:flex; justify-content:center; width:100%; }
+  #statusCard .steps{ --nudge: 8px; position:relative; width:100%; max-width:380px; margin:0 auto; padding-left:0; transform: translateX(calc(var(--nudge) * -1)); }
+  #statusCard .rail{ position:absolute; left:16px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#93c5fd 0%,#1e66ff 45%,#e5e7eb 45%); }
+  #statusCard .steps li{ position:relative; padding-left:48px; margin-bottom:12px; }
+  #statusCard .steps li > .dot{ position:absolute; left:9px; top:18px; width:10px; height:10px; border-radius:9999px; background:#fff; border:2px solid #93c5fd; box-shadow:0 0 0 2px #fff; }
+  #statusCard .steps li > .dot.done{ background:#1E66FF; border-color:#1E66FF; }
+  #statusCard .steps li > .dot.current{ background:#1E66FF; border-color:#1E66FF; box-shadow:0 0 0 4px rgba(30,102,255,.16); }
+  #statusCard .steps li > .dot.future{ border-color:#cbd5e1; }
+  #statusCard .step-card{ margin-left:0; }
+  #statusCard .step-meta{ font-size:12px; }
+</style>
+
+            <!-- HỖ TRỢ -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold">Hỗ trợ</h3>
+                <span class="text-xs text-slate-500">24/7</span>
+              </div>
+              <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <a href="tel:19001234" class="px-3 py-2 rounded-lg bg-blue-600 text-white inline-flex items-center justify-center gap-2"><i data-feather="phone" class="w-4 h-4"></i>Gọi tổng đài</a>
+                <a href="#" class="px-3 py-2 rounded-lg ring-1 ring-slate-200 bg-white inline-flex items-center justify-center gap-2 hover:bg-slate-50"><i data-feather="message-circle" class="w-4 h-4"></i>Chat</a>
+              </div>
+            </div>
+
+            <!-- TÓM TẮT -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-3">
+              <h3 class="font-semibold">Tóm tắt</h3>
+              <div class="mt-2 text-sm">
+                <div class="flex items-center justify-between py-1"><span>Kiện hàng</span><span class="font-semibold">3</span></div>
+                <div class="flex items-center justify-between py-1"><span>Khối lượng</span><span class="font-semibold">120 kg</span></div>
+                <div class="flex items-center justify-between py-1"><span>Phí vận chuyển</span><span class="font-semibold">420.000₫</span></div>
+                <div class="border-t mt-2 pt-2 flex items-center justify-between"><span class="font-semibold">Tổng thanh toán</span><span class="font-bold text-slate-900">420.000₫</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+  function setTopbarHeight(){
+    const el = document.getElementById('topbar');
+    if(el) document.documentElement.style.setProperty('--topbar-h', el.offsetHeight + 'px');
+  }
+  window.addEventListener('load', ()=>{
+    setTopbarHeight();
+    if (window.feather) feather.replace({ width: 21, height: 21 });
+  });
+  window.addEventListener('resize', setTopbarHeight);
+</script>
+</body>
+</html>
