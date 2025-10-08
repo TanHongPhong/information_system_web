@@ -9,7 +9,7 @@ import PaymentQR from "./pages/PaymentQR.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
 import TransportCompanies from "./pages/TransportCompanies.jsx";
 import VehiclePages from "./pages/VehicleList.jsx";
-
+import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx"
 // Chỉ giữ 4 trang như bạn yêu cầu
 export default function App() {
   return (
@@ -22,6 +22,7 @@ export default function App() {
         <Route path="/payment_qr" element={<PaymentQR />} />
         <Route path="/transport_companies" element={<TransportCompanies />} />
         <Route path="/vehicle_list" element={<VehiclePages />} />
+        <Route path="/order_trackingcustomer" element={<OrderTrackingCustomner />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
