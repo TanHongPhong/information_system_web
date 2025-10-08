@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nhập thông tin hàng hóa — VT Logistics</title>
+
+  <!-- Fonts + Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
+          colors: { brand: { 50:'#eff6ff',100:'#dbeafe',500:'#2563eb',600:'#1d4ed8',700:'#1e40af',300:'#93c5fd',400:'#60a5fa' } },
+          boxShadow: { soft:'0 12px 40px rgba(2,6,23,.08)' },
+          borderRadius: { xl2:'1rem' },
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .field{ position:relative }
+    .field .icon{ position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#94a3b8 }
+    .field input,.field select,.field textarea{
+      width:100%; padding:.625rem .875rem; padding-left:2.25rem;
+      border-radius:.75rem; border:1px solid #e2e8f0; background:#fff;
+      outline:none; transition: box-shadow .15s, border-color .15s;
+    }
+    .field textarea{ min-height:110px; padding-left:2.25rem }
+    .field input:focus,.field select:focus,.field textarea:focus{
+      border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15);
+    }
+    .label{ font-size:14px; font-weight:600; color:#1d4ed8 }
+    .help{ font-size:12px; color:#64748b; margin-top:.25rem }
+    .unit{ position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#64748b; font-size:13px }
+    .required::after{ content:" *"; color:#ef4444 }
+    .field-note .icon{ top:1rem; transform:none; }
+
+    /* Link “Trở lại” luôn xanh */
+    .link-brand{ color:#1d4ed8 !important; }
+    .link-brand:hover{ color:#1e40af !important; }
+
+    /* Stepper màu xanh (b3 nhạt hơn) */
+    .stepper li{ display:flex; align-items:center; }
+    .stepper .done, .stepper .active{ color:#1d4ed8; }
+    .stepper .upcoming{ color:#60a5fa; }              /* xanh nhạt hơn */
+    .stepper .badge{ width:1.5rem; height:1.5rem; display:grid; place-items:center; border-radius:9999px; margin-right:.5rem; }
+    .stepper .badge-done, .stepper .badge-active{ border:2px solid #1d4ed8; color:#1d4ed8; }
+    .stepper .badge-upcoming{ border:2px solid #93c5fd; color:#60a5fa; }
+
+    /* Tiêu đề panel xanh rõ ràng */
+    .section-title{ color:#1d4ed8 !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans">
+
+  <!-- SIDEBAR (giữ nguyên như Payment) -->
+  <aside class="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
+    <div class="mt-1 mb-1 text-center">
+      <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
+        <i data-feather="shield" class="w-6 h-6"></i>
+      </span>
+      <div class="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
+    </div>
+
+    <div class="flex flex-col items-center gap-4">
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text"></i></button>
+      <button class="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
+        <i data-feather="bell"></i>
+        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user"></i></button>
+      <button class="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings"></i></button>
+    </div>
+  </aside>
+
+  <main class="ml-20">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
+      <div class="flex items-center justify-between px-3 md:px-5 py-2.5">
+        <div class="flex-1 max-w-2xl mr-3 md:mr-6">
+          <div class="relative">
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+            <input class="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Search by User id, User Name, Date etc" />
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
+              <i data-feather="filter" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 md:gap-3">
+          <button class="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4"></i></button>
+          <button class="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4"></i></button>
+          <button type="button" class="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+            <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+            <div class="text-left leading-tight hidden sm:block">
+              <div class="text-[13px] font-semibold">Harsh Vani</div>
+              <div class="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+            </div>
+            <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="max-w-7xl px-3 sm:px-4 lg:px-6 py-6">
+      <!-- Stepper -->
+      <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-4">
+        <ol class="stepper flex items-center w-full justify-center text-sm">
+          <li class="done font-medium">
+            <span class="badge badge-done">1</span>
+            Chọn xe
+            <span class="mx-3 h-px w-10 bg-slate-200"></span>
+          </li>
+          <li class="active font-semibold">
+            <span class="badge badge-active">2</span>
+            Nhập thông tin hàng hóa
+            <span class="mx-3 h-px w-10 bg-slate-200"></span>
+          </li>
+          <li class="upcoming">
+            <span class="badge badge-upcoming">3</span>
+            Xác nhận
+          </li>
+        </ol>
+      </div>
+
+      <!-- Form + Summary -->
+      <div class="grid lg:grid-cols-3 gap-6 mt-6">
+        <!-- Form -->
+        <section class="lg:col-span-2">
+          <form id="cargoForm" class="bg-white rounded-2xl shadow-soft border border-slate-200 p-6 space-y-8">
+            <!-- Địa điểm -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label required">Nơi gửi hàng</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="map-pin"></i>
+                  <input id="origin" type="text" placeholder="VD: Kho Thủ Đức" required>
+                </div>
+              </div>
+              <div>
+                <label class="label required">Nơi nhận</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="target"></i>
+                  <input id="destination" type="text" placeholder="VD: Coopmart Q1" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Người nhận -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label required">Người nhận</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="user"></i>
+                  <input id="recipient_name" type="text" placeholder="VD: Lương Quang Trè" required>
+                </div>
+              </div>
+              <div>
+                <label class="label">Số điện thoại</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="phone"></i>
+                  <input id="recipient_phone" type="tel" inputmode="tel" placeholder="VD: 09xx xxx xxx">
+                </div>
+              </div>
+            </div>
+
+            <!-- Loại hàng + Cân nặng -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label required">Loại hàng</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="layers"></i>
+                  <select id="category" required>
+                    <option value="" disabled selected>Chọn loại hàng</option>
+                    <option value="general">Hàng tổng hợp</option>
+                    <option value="fragile">Dễ vỡ</option>
+                    <option value="food">Thực phẩm</option>
+                    <option value="electronics">Điện tử</option>
+                    <option value="oversize">Cồng kềnh</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="label required">Cân nặng</label>
+                <div class="field mt-2">
+                  <i class="icon" data-feather="scale"></i>
+                  <input id="weight" type="number" step="0.1" placeholder="VD: 1.5" required>
+                  <span class="unit">kg</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kích thước -->
+            <div>
+              <label class="label">Kích thước hàng</label>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                <div class="field">
+                  <i class="icon" data-feather="move"></i>
+                  <input id="len" type="number" placeholder="Dài">
+                  <span class="unit">cm</span>
+                </div>
+                <div class="field">
+                  <i class="icon" data-feather="move"></i>
+                  <input id="wid" type="number" placeholder="Rộng">
+                  <span class="unit">cm</span>
+                </div>
+                <div class="field">
+                  <i class="icon" data-feather="move"></i>
+                  <input id="hei" type="number" placeholder="Cao">
+                  <span class="unit">cm</span>
+                </div>
+              </div>
+              <p class="help">Dùng để tính <b>khối lượng quy đổi</b> = D×R×C / 6000.</p>
+            </div>
+
+            <!-- Ghi chú -->
+            <div>
+              <label class="label">Ghi chú</label>
+              <div class="field mt-2 field-note">
+                <i class="icon" data-feather="edit-3"></i>
+                <textarea id="note" placeholder="Yêu cầu đóng gói, khung giờ giao, địa chỉ chi tiết..."></textarea>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-between">
+              <a href="./chon-xe.html" class="link-brand underline underline-offset-2">Trở lại</a>
+              <button type="submit"
+                      class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl shadow-soft">
+                Tiếp tục
+                <i data-feather="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Summary -->
+        <aside class="lg:col-span-1">
+          <div class="lg:sticky lg:top-24 space-y-4">
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-6">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold section-title">Ước tính chi phí</h3>
+                <span id="slaBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">3–5 ngày</span>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="text-slate-500">Cân nặng thực</div>
+                <div class="text-right"><span id="wtReal">0</span> kg</div>
+
+                <div class="text-slate-500">Khối lượng quy đổi</div>
+                <div class="text-right"><span id="wtVol">0</span> kg</div>
+
+                <div class="text-slate-500">Tính phí theo</div>
+                <div class="text-right"><span id="wtCharge">0</span> kg</div>
+              </div>
+
+              <div class="h-px bg-slate-200 my-4"></div>
+
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span>Phí cơ bản</span><span id="baseFee">₫20.000</span></div>
+                <div class="flex justify-between"><span>Phí theo kg</span><span id="kgFee">₫0</span></div>
+                <div class="flex justify-between"><span>Phụ phí dịch vụ</span><span id="srvFee">₫0</span></div>
+              </div>
+
+              <div class="h-px bg-slate-200 my-4"></div>
+
+              <div class="flex items-baseline justify-between">
+                <div class="text-sm text-slate-500">Tổng tạm tính</div>
+                <div class="text-2xl font-bold text-slate-900" id="totalFee">₫20.000</div>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">Giá tạm tính, có thể thay đổi theo khoảng cách, phụ phí và thuế.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-200 p-5">
+              <h4 class="font-semibold mb-3 section-title">Mẹo đóng gói an toàn</h4>
+              <ul class="text-sm text-slate-700 space-y-2">
+                <li class="flex gap-2"><i data-feather="check-circle" class="w-4 h-4 text-emerald-600"></i>Bọc đệm góc và mặt hàng dễ vỡ.</li>
+                <li class="flex gap-2"><i data-feather="check-circle" class="w-4 h-4 text-emerald-600"></i>Dán nhãn “Hàng dễ vỡ” nếu cần.</li>
+                <li class="flex gap-2"><i data-feather="check-circle" class="w-4 h-4 text-emerald-600"></i>Ghi rõ người nhận & số điện thoại.</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    feather.replace();
+
+    // Demo tính phí
+    const weightEl = document.getElementById('weight');
+    const lenEl = document.getElementById('len');
+    const widEl = document.getElementById('wid');
+    const heiEl = document.getElementById('hei');
+
+    const wtReal = document.getElementById('wtReal');
+    const wtVol = document.getElementById('wtVol');
+    const wtCharge = document.getElementById('wtCharge');
+    const baseFee = document.getElementById('baseFee');
+    const kgFee = document.getElementById('kgFee');
+    const srvFee = document.getElementById('srvFee');
+    const totalFee = document.getElementById('totalFee');
+
+    const currency = v => v.toLocaleString('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0});
+
+    function recalc(){
+      const w = parseFloat(weightEl.value)||0;
+      const L = parseFloat(lenEl.value)||0;
+      const W = parseFloat(widEl.value)||0;
+      const H = parseFloat(heiEl.value)||0;
+
+      const volWeight = L && W && H ? (L*W*H/6000) : 0;
+      const chargeWeight = Math.max(w, volWeight);
+
+      const base = 20000;
+      const perKg = 8000 * chargeWeight;
+      const serviceFee = 0;
+
+      wtReal.textContent = (w||0).toFixed(1);
+      wtVol.textContent = volWeight ? volWeight.toFixed(1) : '0';
+      wtCharge.textContent = chargeWeight ? chargeWeight.toFixed(1) : '0';
+
+      baseFee.textContent = currency(base);
+      kgFee.textContent = currency(Math.round(perKg));
+      srvFee.textContent = currency(serviceFee);
+      totalFee.textContent = currency(Math.round(base + perKg + serviceFee));
+    }
+
+    ['input','change'].forEach(evt=>{
+      weightEl.addEventListener(evt, recalc);
+      lenEl.addEventListener(evt, recalc);
+      widEl.addEventListener(evt, recalc);
+      heiEl.addEventListener(evt, recalc);
+    });
+    recalc();
+
+    document.getElementById('cargoForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      alert('Đã lưu thông tin hàng hóa. Bước tiếp theo: Xác nhận & thanh toán.');
+    });
+  </script>
+</body>
+</html>
