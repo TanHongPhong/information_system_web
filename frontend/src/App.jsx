@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/payment_qr" element={<PaymentQR />} />
         <Route path="/transport_companies" element={<TransportCompanies />} />
         <Route path="/vehicle_list" element={<VehiclePages />} />
-        <Route path="/order_trackingcustomer" element={<OrderTrackingCustomner />} />
+        <Route path="/order_tracking_customer" element={<OrderTrackingCustomner />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
