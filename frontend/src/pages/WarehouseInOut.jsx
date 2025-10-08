@@ -1,26 +1,25 @@
 // File: src/pages/WarehouseInOut.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
-import { Html5Qrcode } from "html5-qrcode";
 
 export default function WarehouseInOut() {
-  // ===== Mock data (giữ như v2) =====
+  // ===== Mock data =====
   const DATA = useMemo(
     () => [
-      { id: "DL04MP7045", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Lào tồn",   to: "TP.HCM",  weight: 250,  unit: "KG", pallets: 8,  docks: "D1", carrier: "GMD-TRK-21", eta: "12/12/2025", temp: "Thường" },
-      { id: "DL04MP7046", type: "out", status: "Đã xuất kho",     customer: "Thái Lý Lộc",  from: "Bình Định", to: "Hà Nội",  weight: 2000, unit: "KG", pallets: 12, docks: "D3", carrier: "GMD-TRK-07", eta: "01/12/2025", temp: "Mát" },
-      { id: "DL04MP7054", type: "in",  status: "Lưu kho",          customer: "Tân Hồng Phong",from: "Vũng Tàu", to: "Đồng Nai",weight: 540,  unit: "KG", pallets: 10, docks: "D2", carrier: "GMD-TRK-12", eta: "12/07/2025", temp: "Mát" },
-      { id: "DL04MP7525", type: "in",  status: "Đang vận chuyển", customer: "Ngô Trọng Nhân",from: "Đồng Nai", to: "Nha Trang",weight: 938, unit: "KG", pallets: 15, docks: "D5", carrier: "GMD-TRK-33", eta: "20/07/2025", temp: "Lạnh" },
-      { id: "DL04MP9845", type: "out", status: "Đang vận chuyển", customer: "Lê Quang Trường",from:"Khánh Hoà",to:"TP.HCM", weight:12000,unit:"KG",pallets:25,docks:"D4",carrier:"GMD-TRK-08",eta:"12/01/2025",temp:"Thường"},
-      { id: "DL04MP7875", type: "in",  status: "Lưu kho",          customer: "Thái Lý Lộc",  from: "Cà Mau",    to: "Hà Nội",  weight: 250,  unit: "KG", pallets: 6,  docks: "D2", carrier: "GMD-TRK-02", eta: "22/06/2025", temp: "Thường" },
-      { id: "DL04MP7995", type: "out", status: "Lưu kho",          customer: "Ngô Trọng Nhân",from: "Bến Tre",  to: "Cà Mau",  weight: 370,  unit: "KG", pallets: 9,  docks: "D6", carrier: "GMD-TRK-19", eta: "19/01/2025", temp: "Mát" },
-      { id: "DL04MP4545", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Vũng Tàu",  to: "Vĩnh Long",weight: 920, unit: "KG", pallets: 14, docks: "D1", carrier: "GMD-TRK-17", eta: "17/08/2025", temp: "Thường" },
+      { id: "DL04MP7045", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn",  from: "Lào tồn",    to: "TP.HCM",   weight: 250,   unit: "KG", pallets: 8,  docks: "D1", carrier: "GMD-TRK-21", eta: "12/12/2025", temp: "Thường" },
+      { id: "DL04MP7046", type: "out", status: "Đã xuất kho",     customer: "Thái Lý Lộc",   from: "Bình Định",  to: "Hà Nội",   weight: 2000,  unit: "KG", pallets: 12, docks: "D3", carrier: "GMD-TRK-07", eta: "01/12/2025", temp: "Mát" },
+      { id: "DL04MP7054", type: "in",  status: "Lưu kho",         customer: "Tân Hồng Phong",from: "Vũng Tàu",   to: "Đồng Nai", weight: 540,   unit: "KG", pallets: 10, docks: "D2", carrier: "GMD-TRK-12", eta: "12/07/2025", temp: "Mát" },
+      { id: "DL04MP7525", type: "in",  status: "Đang vận chuyển", customer: "Ngô Trọng Nhân",from: "Đồng Nai",   to: "Nha Trang",weight: 938,   unit: "KG", pallets: 15, docks: "D5", carrier: "GMD-TRK-33", eta: "20/07/2025", temp: "Lạnh" },
+      { id: "DL04MP9845", type: "out", status: "Đang vận chuyển", customer: "Lê Quang Trường",from:"Khánh Hoà",  to:"TP.HCM",    weight:12000,  unit:"KG", pallets:25, docks:"D4", carrier:"GMD-TRK-08", eta:"12/01/2025", temp:"Thường"},
+      { id: "DL04MP7875", type: "in",  status: "Lưu kho",         customer: "Thái Lý Lộc",   from: "Cà Mau",     to: "Hà Nội",   weight: 250,   unit: "KG", pallets: 6,  docks: "D2", carrier: "GMD-TRK-02", eta: "22/06/2025", temp: "Thường" },
+      { id: "DL04MP7995", type: "out", status: "Lưu kho",         customer: "Ngô Trọng Nhân",from: "Bến Tre",    to: "Cà Mau",   weight: 370,   unit: "KG", pallets: 9,  docks: "D6", carrier: "GMD-TRK-19", eta: "19/01/2025", temp: "Mát" },
+      { id: "DL04MP4545", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Vũng Tàu",   to: "Vĩnh Long",weight: 920,   unit: "KG", pallets: 14, docks: "D1", carrier: "GMD-TRK-17", eta: "17/08/2025", temp: "Thường" },
     ],
     []
   );
 
   // ===== UI state =====
-  const [tab, setTab] = useState("all");           // 'all' | 'in' | 'out' | 'hold'
+  const [tab, setTab] = useState("all"); // 'all' | 'in' | 'out' | 'hold'
   const [dock, setDock] = useState("Tất cả");
   const [temp, setTemp] = useState("Tất cả");
 
@@ -38,12 +37,12 @@ export default function WarehouseInOut() {
     [baseRows, dock, temp]
   );
 
-  // Feather icons refresh after render
+  // Feather icons refresh
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, [tab, dock, temp, filteredRows.length]);
 
-  // KPI values
+  // KPI values (mock)
   const inboundToday = 34;
   const outboundToday = 29;
   const inTransit = baseRows.filter((d) => d.status === "Đang vận chuyển").length;
@@ -293,10 +292,7 @@ export default function WarehouseInOut() {
               </select>
 
               <button
-                onClick={() => {
-                  // just force re-run effects & maintain UX parity
-                  feather.replace({ width: 21, height: 21 });
-                }}
+                onClick={() => feather.replace({ width: 21, height: 21 })}
                 className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2"
               >
                 <i data-feather="refresh-cw" className="w-4 h-4" />
@@ -307,24 +303,9 @@ export default function WarehouseInOut() {
 
           {/* KPI Row */}
           <div className="grid md:grid-cols-5 gap-3" id="kpiRow">
-            <Stat
-              icon="package"
-              label="Đã nhập hôm nay"
-              value={inboundToday}
-              tone="in"
-            />
-            <Stat
-              icon="truck"
-              label="Đã xuất hôm nay"
-              value={outboundToday}
-              tone="out"
-            />
-            <Stat
-              icon="truck"
-              label="Đang vận chuyển"
-              value={inTransit}
-              tone="neutral"
-            />
+            <Stat icon="package" label="Đã nhập hôm nay" value={inboundToday} tone="in" />
+            <Stat icon="truck" label="Đã xuất hôm nay" value={outboundToday} tone="out" />
+            <Stat icon="truck" label="Đang vận chuyển" value={inTransit} tone="neutral" />
             <Stat
               icon="alert-triangle"
               label="Cảnh báo"
@@ -444,10 +425,7 @@ export default function WarehouseInOut() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={11}
-                            className="px-5 py-6 text-center text-slate-500"
-                          >
+                          <td colSpan={11} className="px-5 py-6 text-center text-slate-500">
                             Không có bản ghi phù hợp.
                           </td>
                         </tr>
@@ -568,6 +546,7 @@ function StatusBadge({ status }) {
   );
 }
 
+/* =============== QR Camera (no external lib) =============== */
 function QRCameraPanel() {
   const [mode, setMode] = useState("IN"); // IN | OUT
   const [cameras, setCameras] = useState([]);
@@ -575,84 +554,195 @@ function QRCameraPanel() {
   const [running, setRunning] = useState(false);
   const [lastResult, setLastResult] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const html5CtorRef = useRef(null);
-  const readerRef = useRef(null);
-  const idRef = useRef(`qrReader-${Math.random().toString(36).slice(2)}`);
 
-  // Liệt kê camera bằng API của html5-qrcode (cần HTTPS hoặc quyền camera)
+  const videoRef = useRef(null);
+  const overlayRef = useRef(null);
+  const streamRef = useRef(null);
+  const detectorRef = useRef(null);
+  const rafRef = useRef(null);
+
+  // Refresh feather icons when the panel changes
+  useEffect(() => {
+    feather.replace({ width: 21, height: 21 });
+  }, [mode, running, cameras.length]);
+
+  // Sync overlay size with video box
+  const resizeOverlay = () => {
+    const v = videoRef.current;
+    const c = overlayRef.current;
+    if (!v || !c) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.floor(v.clientWidth * dpr));
+    c.height = Math.max(1, Math.floor(v.clientHeight * dpr));
+  };
+
+  // Enumerate cameras (needs one-time permission to show labels)
   useEffect(() => {
     (async () => {
       try {
-        // Gợi ý xin quyền trước để lấy được label đầy đủ trên một số trình duyệt
-        await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => {});
-        const cams = await Html5Qrcode.getCameras();
-        setCameras(cams || []);
-        if (cams?.length) setCurrentCameraId(cams[0].id);
+        await navigator.mediaDevices
+          .getUserMedia({ video: true, audio: false })
+          .then((s) => s.getTracks().forEach((t) => t.stop()))
+          .catch(() => {});
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cams = devices.filter((d) => d.kind === "videoinput");
+        setCameras(cams);
+        if (cams.length && !currentCameraId) setCurrentCameraId(cams[0].deviceId);
       } catch (err) {
-        setErrorMsg("Không truy cập được camera. Hãy cấp quyền cho trình duyệt.");
         console.error(err);
+        setErrorMsg(
+          "Không truy cập được camera. Hãy cấp quyền cho trình duyệt và chạy trên HTTPS hoặc localhost."
+        );
       }
     })();
-  }, []);
 
+    const onResize = () => resizeOverlay();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []); // mount
+
+  // Cleanup
   useEffect(() => {
-    // Clean up reader on unmount
     return () => {
-      if (readerRef.current) {
-        readerRef.current.stop().catch(() => {});
-        readerRef.current.clear().catch(() => {});
-        readerRef.current = null;
+      cancelAnimationFrame(rafRef.current);
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch {}
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       }
     };
   }, []);
 
-  const cfg = { fps: 10, qrbox: { width: 260, height: 260 } };
+  const drawGuide = () => {
+    const v = videoRef.current;
+    const c = overlayRef.current;
+    if (!v || !c) return;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, c.width, c.height);
 
-  const onScanSuccess = (decodedText) => {
-    setLastResult(decodedText);
-    // bắn event ra outside nếu muốn consume ở nơi khác:
-    window.dispatchEvent(
-      new CustomEvent("qr-scan", {
-        detail: { code: decodedText, mode, ts: Date.now() },
-      })
-    );
-    pause();
+    // dashed guide frame
+    const pad = Math.floor(Math.min(c.width, c.height) * 0.08);
+    const w = c.width - pad * 2;
+    const h = c.height - pad * 2;
+    ctx.lineWidth = Math.max(2, Math.floor(c.width / 320));
+    ctx.strokeStyle = "rgba(59,130,246,0.85)";
+    ctx.setLineDash([10, 6]);
+    ctx.strokeRect(pad, pad, w, h);
+    ctx.setLineDash([]);
   };
-  const onScanError = () => {};
+
+  const drawBox = (bbox) => {
+    const v = videoRef.current;
+    const c = overlayRef.current;
+    if (!v || !c || !bbox) return;
+    const ctx = c.getContext("2d");
+
+    const sx = c.width / (v.videoWidth || 1);
+    const sy = c.height / (v.videoHeight || 1);
+
+    ctx.lineWidth = Math.max(3, Math.floor(c.width / 240));
+    ctx.strokeStyle = "rgba(16,185,129,0.95)";
+    ctx.shadowColor = "rgba(16,185,129,0.6)";
+    ctx.shadowBlur = 12;
+    ctx.strokeRect(bbox.x * sx, bbox.y * sy, bbox.width * sx, bbox.height * sy);
+    ctx.shadowBlur = 0;
+  };
+
+  const scanLoop = async () => {
+    try {
+      if (!running || !videoRef.current || !detectorRef.current) return;
+      const results = await detectorRef.current.detect(videoRef.current);
+      drawGuide();
+
+      if (results && results.length) {
+        const hit = results[0];
+        const code = hit.rawValue || "";
+        if (hit.boundingBox) drawBox(hit.boundingBox);
+
+        if (code) {
+          setLastResult(code);
+          window.dispatchEvent(
+            new CustomEvent("qr-scan", {
+              detail: { code, mode, ts: Date.now() },
+            })
+          );
+          await pause(); // stop immediately after a successful scan
+          return;
+        }
+      }
+    } catch {
+      // ignore transient frame errors
+    }
+    rafRef.current = requestAnimationFrame(scanLoop);
+  };
 
   const start = async () => {
-    if (running || !currentCameraId) return;
-    if (!html5CtorRef.current) {
-      alert(
-        "Thiếu thư viện html5-qrcode. Cài bằng: npm i html5-qrcode\nHoặc chèn CDN vào public/index.html"
+    if (running) return;
+    setErrorMsg("");
+
+    const supported = "BarcodeDetector" in window;
+    if (!supported) {
+      setErrorMsg(
+        "Trình duyệt không hỗ trợ BarcodeDetector. Hãy dùng Chrome/Edge mới hoặc bật Experimental Web Platform Features."
       );
-      return;
     }
-    if (!readerRef.current) {
-      readerRef.current = new html5CtorRef.current(idRef.current);
-    }
+
     try {
-      await readerRef.current.start(
-        { deviceId: { exact: currentCameraId } },
-        cfg,
-        onScanSuccess,
-        onScanError
-      );
-      setRunning(true);
+      const constraints = currentCameraId
+        ? { deviceId: { exact: currentCameraId } }
+        : { facingMode: { ideal: "environment" } };
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { ...constraints, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      const video = videoRef.current;
+      video.srcObject = stream;
+
+      await new Promise((res) => {
+        video.onloadedmetadata = () => {
+          video.play().then(res).catch(res);
+        };
+      });
+
+      resizeOverlay();
+      drawGuide();
+
+      if (supported) {
+        try {
+          detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+        } catch {
+          detectorRef.current = new window.BarcodeDetector();
+        }
+        setRunning(true);
+        rafRef.current = requestAnimationFrame(scanLoop);
+      } else {
+        setRunning(true); // show video even without scanning capability
+      }
     } catch (err) {
       console.error(err);
-      alert("Không thể khởi động camera này. Hãy thử đổi camera.");
+      setErrorMsg("Không thể khởi động camera này. Hãy thử đổi camera hoặc kiểm tra quyền truy cập.");
     }
   };
 
   const pause = async () => {
-    if (!readerRef.current || !running) return;
-    try {
-      await readerRef.current.stop();
-      setRunning(false);
-    } catch (err) {
-      console.error(err);
+    cancelAnimationFrame(rafRef.current);
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {}
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setRunning(false);
   };
 
   const restart = async () => {
@@ -662,16 +752,16 @@ function QRCameraPanel() {
 
   const switchCamera = () => {
     if (!cameras.length) return;
-    const idx = cameras.findIndex((c) => c.id === currentCameraId);
+    const idx = cameras.findIndex((c) => c.deviceId === currentCameraId);
     const next = (idx + 1) % cameras.length;
-    setCurrentCameraId(cameras[next].id);
+    setCurrentCameraId(cameras[next].deviceId);
     if (running) restart();
   };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera)
+        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera – không dùng thư viện ngoài)
       </div>
 
       <div className="flex flex-col gap-3" aria-label="Khu vực camera quét mã QR nhập/xuất">
@@ -683,9 +773,7 @@ function QRCameraPanel() {
               type="button"
               onClick={() => setMode("IN")}
               className={`px-3 py-1.5 text-sm font-semibold ${
-                mode === "IN"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-white text-slate-700 hover:bg-slate-50"
+                mode === "IN" ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
               Check-in (Nhập)
@@ -694,9 +782,7 @@ function QRCameraPanel() {
               type="button"
               onClick={() => setMode("OUT")}
               className={`px-3 py-1.5 text-sm font-semibold ${
-                mode === "OUT"
-                  ? "bg-amber-50 text-amber-700"
-                  : "bg-white text-slate-700 hover:bg-slate-50"
+                mode === "OUT" ? "bg-amber-50 text-amber-700" : "bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
               Check-out (Xuất)
@@ -713,11 +799,11 @@ function QRCameraPanel() {
               setCurrentCameraId(e.target.value);
               if (running) restart();
             }}
-            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm min-w-[180px]"
+            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm min-w-[220px]"
           >
             {cameras.length ? (
               cameras.map((c, idx) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.deviceId} value={c.deviceId}>
                   {`Camera ${idx + 1}` + (c.label ? ` – ${c.label}` : "")}
                 </option>
               ))
@@ -734,13 +820,17 @@ function QRCameraPanel() {
           </button>
         </div>
 
-        {/* Reader */}
+        {/* Video + overlay */}
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-2">
-          <div
-            id={idRef.current}
-            className="rounded-lg overflow-hidden"
-            style={{ aspectRatio: "1/1", maxWidth: 320, margin: "0 auto" }}
-          />
+          <div className="relative" style={{ aspectRatio: "1 / 1", maxWidth: 320, margin: "0 auto" }}>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover rounded-lg"
+              muted
+              playsInline
+            />
+            <canvas ref={overlayRef} className="absolute inset-0 pointer-events-none rounded-lg" />
+          </div>
         </div>
 
         {/* Actions */}
@@ -748,7 +838,7 @@ function QRCameraPanel() {
           <button
             type="button"
             onClick={start}
-            disabled={running || !currentCameraId}
+            disabled={running}
             className="h-9 px-3 rounded-xl bg-sky-600 text-white hover:bg-sky-700 text-sm flex items-center gap-2 disabled:opacity-60"
           >
             <i data-feather="play" className="w-4 h-4" /> Bắt đầu quét
@@ -766,13 +856,10 @@ function QRCameraPanel() {
         {/* Result */}
         {lastResult && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-[12px] text-emerald-700 mb-1 font-semibold">
-              Kết quả quét
-            </div>
+            <div className="text-[12px] text-emerald-700 mb-1 font-semibold">Kết quả quét</div>
             <div className="text-sm font-mono text-emerald-800 break-all">{lastResult}</div>
             <div className="mt-1 text-[12px] text-slate-600">
-              Chế độ hiện tại:{" "}
-              <span className="font-semibold">{mode === "IN" ? "NHẬP" : "XUẤT"}</span>
+              Chế độ hiện tại: <span className="font-semibold">{mode === "IN" ? "NHẬP" : "XUẤT"}</span>
             </div>
           </div>
         )}
@@ -781,7 +868,8 @@ function QRCameraPanel() {
           <p className="text-[12px] text-rose-600 mt-1">{errorMsg}</p>
         ) : (
           <p className="text-[12px] text-slate-500 mt-1">
-            Tip: nếu có nhiều camera, hãy chọn “Camera 2” (thường là camera sau của điện thoại).
+            Tip: chạy trên <strong>HTTPS</strong> hoặc <strong>http://localhost</strong> để camera hoạt động.
+            Nên chọn “Camera 2” (thường là camera sau của điện thoại).
           </p>
         )}
       </div>

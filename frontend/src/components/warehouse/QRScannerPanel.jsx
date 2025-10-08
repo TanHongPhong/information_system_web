@@ -26,22 +26,6 @@ export default function QRScannerPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function startReader() {
-    if (!currentCameraId || running) return;
-    if (!readerRef.current) readerRef.current = new Html5Qrcode(readerId);
-    try {
-      await readerRef.current.start(
-        { deviceId: { exact: currentCameraId } },
-        { fps: 10, qrbox: { width: 260, height: 260 } },
-        onSuccess,
-        () => {}
-      );
-      setRunning(true);
-    } catch (e) {
-      console.error(e);
-      alert("Không thể khởi động camera này. Hãy thử đổi camera.");
-    }
-  }
   async function stopReader() {
     if (!readerRef.current || !running) return;
     try { await readerRef.current.stop(); setRunning(false); } catch (e) { console.error(e); }
