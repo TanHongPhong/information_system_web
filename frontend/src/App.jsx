@@ -9,15 +9,13 @@ import PaymentQR from "./pages/PaymentQR.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
 import TransportCompanies from "./pages/TransportCompanies.jsx";
 import VehicleList from "./pages/VehicleList.jsx";
-import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx"
+import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx";
 import Supplier from "./pages/Supplier.jsx";
-import OrderRequestDetails from "./pages/OrderRequestDetails.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Canonical routes (dùng gạch-nối) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/transport-companies" element={<TransportCompanies />} />
@@ -26,11 +24,44 @@ export default function App() {
         <Route path="/payment-qr" element={<PaymentQR />} />
         <Route path="/order-tracking" element={<OrderTracking />} />
         <Route path="/warehouse-in-out" element={<WarehouseInOut />} />
-        <Route path="/order-tracking-customer" element={<OrderTrackingCustomner />} />
+        <Route
+          path="/order-tracking-customer"
+          element={<OrderTrackingCustomner />}
+        />
         <Route path="/supplier" element={<Supplier />} />
+
+        {/* Legacy aliases → redirect về canonical để tránh trùng nội dung */}
+        <Route
+          path="/transport_companies"
+          element={<Navigate to="/transport-companies" replace />}
+        />
+        <Route
+          path="/vehicle_list"
+          element={<Navigate to="/vehicle-list" replace />}
+        />
+        <Route
+          path="/payment_history"
+          element={<Navigate to="/payment-history" replace />}
+        />
+        <Route
+          path="/payment_qr"
+          element={<Navigate to="/payment-qr" replace />}
+        />
+        <Route
+          path="/order_tracking"
+          element={<Navigate to="/order-tracking" replace />}
+        />
+        <Route
+          path="/warehouse_in_out"
+          element={<Navigate to="/warehouse-in-out" replace />}
+        />
+
+        {/* 404 cuối cùng */}
         <Route path="*" element={<NotFound />} />
-        <Route path="/order-request-details" element={<OrderRequestDetails />} />
-  
+        <Route
+          path="/order-request-details"
+          element={<OrderRequestDetails />}
+        />
       </Routes>
     </BrowserRouter>
   );
