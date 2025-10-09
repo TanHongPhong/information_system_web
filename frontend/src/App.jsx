@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+// Pages
 import HomePage from "./pages/HomePage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import WarehouseInOut from "./pages/WarehouseInOut.jsx";
@@ -8,15 +9,14 @@ import PaymentQR from "./pages/PaymentQR.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
 import TransportCompanies from "./pages/TransportCompanies.jsx";
 import VehicleList from "./pages/VehicleList.jsx";
-import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx";
+import OrderTrackingCustomer from "./pages/OrderTrackingCustomer.jsx";
 import Supplier from "./pages/Supplier.jsx";
-import OrderRequestDetails from "./pages/OrderRequestDetails.jsx";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Main routes (slug-with-hyphen) */}
+        {/* Canonical routes (dùng gạch-nối) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/transport-companies" element={<TransportCompanies />} />
         <Route path="/vehicle-list" element={<VehicleList />} />
@@ -24,26 +24,41 @@ function App() {
         <Route path="/payment-qr" element={<PaymentQR />} />
         <Route path="/order-tracking" element={<OrderTracking />} />
         <Route path="/warehouse-in-out" element={<WarehouseInOut />} />
-
-        {/* Legacy aliases (giữ link cũ dạng underscore nếu cần) */}
-        <Route path="/transport_companies" element={<TransportCompanies />} />
-        <Route path="/vehicle_list" element={<VehicleList />} />
-        <Route path="/payment_history" element={<PaymentHistory />} />
-        <Route path="/payment_qr" element={<PaymentQR />} />
-        <Route path="/transport_companies" element={<TransportCompanies />} />
         <Route
-          path="/order_tracking_customer"
-          element={<OrderTrackingCustomner />}
+          path="/order-tracking-customer"
+          element={<OrderTrackingCustomer />}
         />
         <Route path="/supplier" element={<Supplier />} />
-        <Route path="*" element={<NotFound />} />
+
+        {/* Legacy aliases → redirect về canonical để tránh trùng nội dung */}
         <Route
-          path="/order_request_details"
-          element={<OrderRequestDetails />}
+          path="/transport_companies"
+          element={<Navigate to="/transport-companies" replace />}
         />
+        <Route
+          path="/vehicle_list"
+          element={<Navigate to="/vehicle-list" replace />}
+        />
+        <Route
+          path="/payment_history"
+          element={<Navigate to="/payment-history" replace />}
+        />
+        <Route
+          path="/payment_qr"
+          element={<Navigate to="/payment-qr" replace />}
+        />
+        <Route
+          path="/order_tracking"
+          element={<Navigate to="/order-tracking" replace />}
+        />
+        <Route
+          path="/warehouse_in_out"
+          element={<Navigate to="/warehouse-in-out" replace />}
+        />
+
+        {/* 404 cuối cùng */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;
