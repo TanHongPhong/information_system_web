@@ -41,7 +41,7 @@ export default function QrPayment({
   }, [status]);
 
   // Hết giờ
-  useEffect(() => { if (remain === 0 && status === "pending") setStatus("expired"); }, [remain, status]);
+            useEffect(() => { if (remain === 0 && status === "pending") setStatus("expired"); }, [remain, status]);
 
   // Toast auto-hide
   useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToastMsg(""), 1600); return () => clearTimeout(t); }, [toastMsg]);
