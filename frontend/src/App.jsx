@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-
+// Pages
 import HomePage from "./pages/HomePage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import WarehouseInOut from "./pages/WarehouseInOut.jsx";
@@ -13,11 +13,12 @@ import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx"
 import Supplier from "./pages/Supplier.jsx";
 import OrderRequestDetails from "./pages/OrderRequestDetails.jsx";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
 
+        {/* Canonical routes (dùng gạch-nối) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/transport-companies" element={<TransportCompanies />} />
         <Route path="/vehicle-list" element={<VehicleList />} />
@@ -34,5 +35,3 @@ function App() {
     </BrowserRouter>
   );
 }
-
-export default App;
