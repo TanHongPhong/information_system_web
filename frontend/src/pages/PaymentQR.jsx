@@ -43,14 +43,6 @@ export default function QrPayment({
   // Hết giờ
   useEffect(() => { if (remain === 0 && status === "pending") setStatus("expired"); }, [remain, status]);
 
-  // Fake success sau 9s (demo)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setStatus("success"); setSuccessBar(true); setOrderTime(new Date().toLocaleString("vi-VN"));
-    }, 9000);
-    return () => clearTimeout(t);
-  }, []);
-
   // Toast auto-hide
   useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToastMsg(""), 1600); return () => clearTimeout(t); }, [toastMsg]);
 

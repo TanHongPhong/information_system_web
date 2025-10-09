@@ -3,7 +3,7 @@ import feather from "feather-icons";
 import FilterBtn from "../components/vehicle/FilterBtn";
 import VehicleCard from "../components/vehicle/VehicleCard";
 
-export default function VehiclesPage() {
+export default function VehiclesList() {
   const COMPANY = "Gemadept Logistics";
   const ROUTE = "HCM → Hà Nội";
 
