@@ -1,6 +1,7 @@
 // src/pages/OrderTracking.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
+import MiniMap from "../components/tracking/MiniMap.jsx";
 
 export default function OrderTracking() {
   // ======= Mock data =======
@@ -207,11 +208,8 @@ export default function OrderTracking() {
                         </ul>
                       </div>
                       <div className="col-span-4">
-                        <img
-                          src="https://s3.cloud.cmctelecom.vn/tinhte2/2020/08/5100688_ban_do_tphcm.jpg"
-                          alt="Mini map"
-                          className="w-full h-20 rounded-lg object-cover border border-slate-200"
-                        />
+                        <MiniMap />
+
                       </div>
                     </div>
                   </article>
@@ -269,11 +267,8 @@ export default function OrderTracking() {
                 ref={mapBoxRef}
                 className="mt-3 relative rounded-2xl overflow-hidden ring-1 ring-slate-200 h-[520px]"
               >
-                <img
-                  src="https://s3.cloud.cmctelecom.vn/tinhte2/2020/08/5100688_ban_do_tphcm.jpg"
-                  alt="Map"
-                  className="absolute inset-0 w-full h-full object-cover select-none"
-                />
+                <MiniMap />
+
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 900 640" preserveAspectRatio="none">
                   <polyline
                     points="140,520 210,465 290,410 350,370 420,330 490,290 560,250 620,220 690,190 760,160"

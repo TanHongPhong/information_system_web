@@ -9,7 +9,7 @@ import PaymentQR from "./pages/PaymentQR.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
 import TransportCompanies from "./pages/TransportCompanies.jsx";
 import VehicleList from "./pages/VehicleList.jsx";
-import OrderTrackingCustomer from "./pages/OrderTrackingCustomer.jsx";
+import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx";
 import Supplier from "./pages/Supplier.jsx";
 
 export default function App() {
@@ -26,7 +26,7 @@ export default function App() {
         <Route path="/warehouse-in-out" element={<WarehouseInOut />} />
         <Route
           path="/order-tracking-customer"
-          element={<OrderTrackingCustomer />}
+          element={<OrderTrackingCustomner />}
         />
         <Route path="/supplier" element={<Supplier />} />
 
@@ -58,6 +58,10 @@ export default function App() {
 
         {/* 404 cuối cùng */}
         <Route path="*" element={<NotFound />} />
+        <Route
+          path="/order-request-details"
+          element={<OrderRequestDetails />}
+        />
       </Routes>
     </BrowserRouter>
   );
