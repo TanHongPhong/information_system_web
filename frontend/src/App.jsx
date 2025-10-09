@@ -58,10 +58,6 @@ export default function App() {
 
         {/* 404 cuối cùng */}
         <Route path="*" element={<NotFound />} />
-        <Route
-          path="/order-request-details"
-          element={<OrderRequestDetails />}
-        />
       </Routes>
     </BrowserRouter>
   );
