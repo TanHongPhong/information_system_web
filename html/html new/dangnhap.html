@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Đăng nhập — 6A Logistics</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CDN + Config (đồng bộ homepage) -->
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
+            colors: {
+              brand:{25:'#f7faff',50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',500:'#2563eb',600:'#1d4ed8',700:'#1e40af',800:'#1e3a8a'}
+            },
+            boxShadow:{
+              soft:'0 12px 40px rgba(2,6,23,.08)',
+              blueglow:'0 10px 24px rgba(37,99,235,.32)'
+            },
+            backgroundImage:{
+              ribbon:'linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa,#f472b6,#f59e0b)'
+            },
+            keyframes:{ shine:{to:{backgroundPosition:'200% 0'}} },
+            animation:{ shine:'shine 2.2s linear infinite' }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    /* Giữ giao diện phẳng, bỏ nền hiệu ứng */
+    body{ background:#fff; }
+
+    .glass{ background:rgba(255,255,255,.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+    .subtitle-soft{ color:#334155; }
+
+    /* 🔵 Nút xanh dương (đăng nhập, đặt xe nhanh, xem FAQ) */
+    .btn-blue{
+      background: linear-gradient(180deg,#3b82f6,#2563eb);
+      color:#fff;
+      box-shadow: 0 6px 18px rgba(37,99,235,.35);
+    }
+    .btn-blue:hover{ filter: brightness(1.03); box-shadow: 0 8px 24px rgba(37,99,235,.45); }
+
+    /* 🟢 Chỉ dành cho LinkedIn */
+    .btn-green{
+      background: linear-gradient(180deg,#34d399,#10b981);
+      color:#fff;
+      box-shadow: 0 6px 18px rgba(16,185,129,.35);
+    }
+    .btn-green:hover{ filter: brightness(1.03); box-shadow: 0 8px 24px rgba(16,185,129,.45); }
+
+    .btn-shine{ position:relative; overflow:hidden; isolation:isolate; }
+    .btn-shine::after{
+      content:""; position:absolute; inset:-1px;
+      background: linear-gradient(120deg,rgba(255,255,255,0) 20%,rgba(255,255,255,.55) 45%,rgba(255,255,255,0) 65%);
+      background-size:200% 100%; transform:skewX(-20deg);
+      animation: shine 2.4s linear infinite; pointer-events:none; mix-blend-mode:overlay;
+    }
+
+    /* Link gạch chân chạy nhẹ */
+    .link-ux{
+      position:relative;
+      background-image:linear-gradient(90deg,transparent,#2563eb,transparent);
+      background-repeat:no-repeat; background-size:0% 2px; background-position:50% 100%;
+      transition:background-size .25s, transform .18s;
+    }
+    .link-ux:hover{ background-size:100% 2px; transform:translateY(-1px); }
+  </style>
+</head>
+
+<body class="text-slate-800 font-sans">
+  <!-- NOTICE BAR (đồng bộ homepage) -->
+  <div class="bg-gradient-to-r from-cyan-400/20 via-indigo-400/20 to-fuchsia-400/20 border-b border-white/40 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between text-[13px]">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/80 border border-white/80 text-blue-700">
+          <i data-feather="zap" class="w-3.5 h-3.5"></i> Nhanh – Minh bạch – Đúng giờ
+        </span>
+        <span class="hidden sm:inline subtitle-soft">Ưu đãi 10% cho chuyến liên tỉnh đặt trước 24h</span>
+      </div>
+      <a href="tel:19001234" class="inline-flex items-center gap-1.5 text-blue-700 hover:text-blue-800">
+        <i data-feather="phone" class="w-4 h-4"></i> Hotline: <strong>1900 1234</strong>
+      </a>
+    </div>
+    <div class="h-[3px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
+  </div>
+
+  <!-- HEADER (đồng bộ tone với homepage) -->
+  <header class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <div class="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center text-white font-extrabold shadow-blueglow">6A</div>
+        <div class="leading-tight">
+          <div class="font-extrabold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
+          <div class="subtitle-soft text-sm md:text-[13px] leading-none">Đặt xe chở hàng nhanh</div>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-[15px] font-medium">
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <!-- 🔵 Đặt xe nhanh: màu xanh dương -->
+        <a href="homepage.html#booking"
+           class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm shadow-soft btn-shine btn-blue">
+          <i data-feather="truck" class="w-4 h-4"></i> Đặt xe nhanh
+        </a>
+      </div>
+    </div>
+    <div class="h-[2px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <section class="py-10 lg:py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-6">
+        <!-- FORM -->
+        <div class="glass rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-soft">
+          <div class="flex items-start justify-between">
+            <div>
+              <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Đăng nhập</h1>
+              <p class="subtitle-soft mt-1">Nhập thông tin &amp; chọn đúng vai trò của bạn.</p>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-white/70 border border-brand-100 text-blue-700 text-sm">
+              <i data-feather="lock" class="w-4 h-4"></i> Bảo mật
+            </div>
+          </div>
+
+          <form id="loginForm" class="mt-6 space-y-4" autocomplete="on">
+            <div>
+              <label class="text-sm font-medium text-slate-700">Email hoặc Tên đăng nhập</label>
+              <input id="email" type="email" placeholder="you@company.com"
+                     class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200" required>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700">Mật khẩu</label>
+              <div class="mt-1 flex items-center gap-2">
+                <input id="password" type="password" placeholder="••••••••"
+                       class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200" required>
+                <button type="button" id="togglePwd"
+                        class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm">
+                  Hiện
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-6 gap-3 items-center">
+              <div class="col-span-6 sm:col-span-4">
+                <label class="text-sm font-medium text-slate-700">Vai trò đăng nhập</label>
+                <select id="role"
+                        class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
+                        required>
+                  <option value="">-- Chọn vai trò --</option>
+                  <option value="guest">Khách</option>
+                  <option value="driver">Tài xế</option>
+                  <option value="business">Doanh nghiệp</option>
+                  <option value="warehouse">Nhà kho</option>
+                </select>
+              </div>
+              <label class="col-span-3 sm:col-span-2 mt-7 inline-flex items-center gap-2 text-sm text-slate-600">
+                <input id="remember" type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-200">
+                Nhớ tôi
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <a href="#" class="text-sm text-blue-600 hover:underline">Quên mật khẩu?</a>
+              <!-- 🔵 Đăng nhập: xanh dương -->
+              <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold btn-shine btn-blue">
+                <i data-feather="log-in" class="w-4 h-4"></i> Đăng nhập
+              </button>
+            </div>
+
+            <div class="relative my-4">
+              <div class="h-px bg-slate-200"></div>
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 text-xs text-slate-500">Hoặc tiếp tục với</span>
+            </div>
+
+            <button type="button"
+                    class="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-2.5 hover:bg-slate-50">
+              <img alt="" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"/>
+              <span class="text-sm font-medium text-slate-700">Đăng nhập với Google</span>
+            </button>
+
+            <!-- 🟢 LinkedIn giữ màu xanh lá -->
+            <button type="button" class="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 btn-shine btn-green">
+              <i data-feather="linkedin" class="w-5 h-5"></i>
+              <span class="text-sm font-semibold">Đăng nhập với LinkedIn</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- ROLE PANEL (không có Admin) -->
+        <aside class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 shadow-blueglow">
+          <h3 class="text-xl font-extrabold text-[#14532d]">Quyền truy cập theo vai trò</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-3 text-[15px]">
+            <li>
+              <b>Khách:</b> xem trang chủ, tạo yêu cầu báo giá, theo dõi đơn bằng mã theo dõi, nhận thông báo trạng thái cơ bản
+            </li>
+            <li>
+              <b>Tài xế:</b> nhận/chấp nhận chuyến, điều hướng tới điểm giao/nhận, cập nhật trạng thái, chụp POD/biên nhận, liên hệ người gửi/nhận
+            </li>
+            <li>
+              <b>Doanh nghiệp:</b> tạo &amp; quản lý đơn, sổ địa chỉ, theo dõi realtime, xuất CSV/Excel, đối soát công nợ 
+            </li>
+            <li>
+              <b>Nhà kho:</b> quét mã vận đơn, xác nhận nhập/xuất, đối soát tồn, phân tuyến nội bộ, in tem nhãn 
+            </li>
+          </ul>
+
+          <div class="mt-6 p-4 rounded-xl bg-gradient-to-b from-white to-emerald-50 border border-emerald-100">
+            <p class="text-sm text-emerald-900">
+              Sau khi đăng nhập, thông tin người dùng được lưu ở <code class="font-semibold">localStorage.gd_user</code>.
+            </p>
+          </div>
+
+          <div class="mt-6 grid sm:grid-cols-2 gap-3">
+            <a href="homepage.html" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm">← Về trang chủ</a>
+            <!-- 🔵 Xem FAQ: xanh dương -->
+            <a href="homepage.html#faq" class="px-4 py-2.5 rounded-xl text-white text-sm btn-shine btn-blue">Xem FAQ</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-white/40 bg-gradient-to-r from-cyan-400/20 via-indigo-400/20 to-fuchsia-400/20 backdrop-blur">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between text-blue-900">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-brand-700 text-white font-extrabold flex items-center justify-center shadow-blueglow">6A</div>
+      <div class="text-sm">© 2025 6A Logistics</div>
+    </div>
+    <!-- feather icons sẽ ăn màu từ cha (text-blue-900) -->
+    <div class="flex items-center gap-3">
+      <i data-feather="facebook" class="w-5 h-5"></i>
+      <i data-feather="instagram" class="w-5 h-5"></i>
+      <i data-feather="twitter" class="w-5 h-5"></i>
+    </div>
+  </div>
+  <!-- ribbon chạy đồng bộ với header -->
+  <div class="h-[3px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
+</footer>
+
+  <script>
+    feather.replace();
+
+    // Hiện/ẩn mật khẩu
+    const pwd = document.getElementById('password');
+    const toggle = document.getElementById('togglePwd');
+    toggle.addEventListener('click', () => {
+      const isPwd = pwd.type === 'password';
+      pwd.type = isPwd ? 'text' : 'password';
+      toggle.textContent = isPwd ? 'Ẩn' : 'Hiện';
+    });
+
+    // Submit demo: lưu localStorage + điều hướng theo vai trò (không có admin)
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      const payload = {
+        email: document.getElementById('email').value,
+        role,
+        remember: document.getElementById('remember').checked,
+        ts: Date.now()
+      };
+      localStorage.setItem('gd_user', JSON.stringify(payload));
+
+      const map = {
+        guest:'homepage.html',
+        driver:'driver.html',
+        business:'business.html',
+        warehouse:'warehouse.html'
+      };
+      window.location.href = map[role] || 'homepage.html';
+    });
+  </script>
+</body>
+</html>
