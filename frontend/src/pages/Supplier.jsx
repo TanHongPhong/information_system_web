@@ -698,10 +698,34 @@ export default function Supplier() {
         .mini-map{ pointer-events:none; }
         .mini-map .leaflet-control-attribution{ display:none; }
         .container-padding { padding-top: clamp(8px, calc(var(--topbar-h,64px) - 56px), 18px); }
+        .mini-map{
+          position: relative;       /* tạo stacking context */
+          z-index: 0;               /* khóa z-index con nằm trong context này */
+          overflow: hidden;         /* clip tile theo border-radius */
+          pointer-events: none;     /* như bạn đang dùng để disable tương tác */
+          border-radius: 0.5rem;    /* backup cho trường hợp thiếu rounded trên div */
+        }
+
+        /* Ép các pane của Leaflet không “vượt” z-index ra ngoài */ 
+        .mini-map .leaflet-pane,
+        .mini-map .leaflet-tile-pane,
+        .mini-map .leaflet-overlay-pane,
+        .mini-map .leaflet-shadow-pane,
+        .mini-map .leaflet-marker-pane,
+        .mini-map .leaflet-tooltip-pane,
+        .mini-map .leaflet-popup-pane {
+          z-index: 0 !important;
+        }
+
+        /* Tránh nền trắng của container Leaflet gây “mảng” đè */
+        .mini-map .leaflet-container {
+          background: transparent !important;
+        }
+
       `}</style>
 
       <Sidebar />
-      <Topbar ref={topbarRef} />
+      <Topbar />
 
       <main
         id="main"

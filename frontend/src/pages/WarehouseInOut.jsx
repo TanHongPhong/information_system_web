@@ -1,19 +1,133 @@
 // File: src/pages/WarehouseInOut.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import feather from "feather-icons";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
 
 export default function WarehouseInOut() {
   // ===== Mock data =====
   const DATA = useMemo(
     () => [
-      { id: "DL04MP7045", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn",  from: "Lào tồn",    to: "TP.HCM",   weight: 250,   unit: "KG", pallets: 8,  docks: "D1", carrier: "GMD-TRK-21", eta: "12/12/2025", temp: "Thường" },
-      { id: "DL04MP7046", type: "out", status: "Đã xuất kho",     customer: "Thái Lý Lộc",   from: "Bình Định",  to: "Hà Nội",   weight: 2000,  unit: "KG", pallets: 12, docks: "D3", carrier: "GMD-TRK-07", eta: "01/12/2025", temp: "Mát" },
-      { id: "DL04MP7054", type: "in",  status: "Lưu kho",         customer: "Tân Hồng Phong",from: "Vũng Tàu",   to: "Đồng Nai", weight: 540,   unit: "KG", pallets: 10, docks: "D2", carrier: "GMD-TRK-12", eta: "12/07/2025", temp: "Mát" },
-      { id: "DL04MP7525", type: "in",  status: "Đang vận chuyển", customer: "Ngô Trọng Nhân",from: "Đồng Nai",   to: "Nha Trang",weight: 938,   unit: "KG", pallets: 15, docks: "D5", carrier: "GMD-TRK-33", eta: "20/07/2025", temp: "Lạnh" },
-      { id: "DL04MP9845", type: "out", status: "Đang vận chuyển", customer: "Lê Quang Trường",from:"Khánh Hoà",  to:"TP.HCM",    weight:12000,  unit:"KG", pallets:25, docks:"D4", carrier:"GMD-TRK-08", eta:"12/01/2025", temp:"Thường"},
-      { id: "DL04MP7875", type: "in",  status: "Lưu kho",         customer: "Thái Lý Lộc",   from: "Cà Mau",     to: "Hà Nội",   weight: 250,   unit: "KG", pallets: 6,  docks: "D2", carrier: "GMD-TRK-02", eta: "22/06/2025", temp: "Thường" },
-      { id: "DL04MP7995", type: "out", status: "Lưu kho",         customer: "Ngô Trọng Nhân",from: "Bến Tre",    to: "Cà Mau",   weight: 370,   unit: "KG", pallets: 9,  docks: "D6", carrier: "GMD-TRK-19", eta: "19/01/2025", temp: "Mát" },
-      { id: "DL04MP4545", type: "in",  status: "Đang vận chuyển", customer: "Đặng Huy Tuấn", from: "Vũng Tàu",   to: "Vĩnh Long",weight: 920,   unit: "KG", pallets: 14, docks: "D1", carrier: "GMD-TRK-17", eta: "17/08/2025", temp: "Thường" },
+      {
+        id: "DL04MP7045",
+        type: "in",
+        status: "Đang vận chuyển",
+        customer: "Đặng Huy Tuấn",
+        from: "Lào tồn",
+        to: "TP.HCM",
+        weight: 250,
+        unit: "KG",
+        pallets: 8,
+        docks: "D1",
+        carrier: "GMD-TRK-21",
+        eta: "12/12/2025",
+        temp: "Thường",
+      },
+      {
+        id: "DL04MP7046",
+        type: "out",
+        status: "Đã xuất kho",
+        customer: "Thái Lý Lộc",
+        from: "Bình Định",
+        to: "Hà Nội",
+        weight: 2000,
+        unit: "KG",
+        pallets: 12,
+        docks: "D3",
+        carrier: "GMD-TRK-07",
+        eta: "01/12/2025",
+        temp: "Mát",
+      },
+      {
+        id: "DL04MP7054",
+        type: "in",
+        status: "Lưu kho",
+        customer: "Tân Hồng Phong",
+        from: "Vũng Tàu",
+        to: "Đồng Nai",
+        weight: 540,
+        unit: "KG",
+        pallets: 10,
+        docks: "D2",
+        carrier: "GMD-TRK-12",
+        eta: "12/07/2025",
+        temp: "Mát",
+      },
+      {
+        id: "DL04MP7525",
+        type: "in",
+        status: "Đang vận chuyển",
+        customer: "Ngô Trọng Nhân",
+        from: "Đồng Nai",
+        to: "Nha Trang",
+        weight: 938,
+        unit: "KG",
+        pallets: 15,
+        docks: "D5",
+        carrier: "GMD-TRK-33",
+        eta: "20/07/2025",
+        temp: "Lạnh",
+      },
+      {
+        id: "DL04MP9845",
+        type: "out",
+        status: "Đang vận chuyển",
+        customer: "Lê Quang Trường",
+        from: "Khánh Hoà",
+        to: "TP.HCM",
+        weight: 12000,
+        unit: "KG",
+        pallets: 25,
+        docks: "D4",
+        carrier: "GMD-TRK-08",
+        eta: "12/01/2025",
+        temp: "Thường",
+      },
+      {
+        id: "DL04MP7875",
+        type: "in",
+        status: "Lưu kho",
+        customer: "Thái Lý Lộc",
+        from: "Cà Mau",
+        to: "Hà Nội",
+        weight: 250,
+        unit: "KG",
+        pallets: 6,
+        docks: "D2",
+        carrier: "GMD-TRK-02",
+        eta: "22/06/2025",
+        temp: "Thường",
+      },
+      {
+        id: "DL04MP7995",
+        type: "out",
+        status: "Lưu kho",
+        customer: "Ngô Trọng Nhân",
+        from: "Bến Tre",
+        to: "Cà Mau",
+        weight: 370,
+        unit: "KG",
+        pallets: 9,
+        docks: "D6",
+        carrier: "GMD-TRK-19",
+        eta: "19/01/2025",
+        temp: "Mát",
+      },
+      {
+        id: "DL04MP4545",
+        type: "in",
+        status: "Đang vận chuyển",
+        customer: "Đặng Huy Tuấn",
+        from: "Vũng Tàu",
+        to: "Vĩnh Long",
+        weight: 920,
+        unit: "KG",
+        pallets: 14,
+        docks: "D1",
+        carrier: "GMD-TRK-17",
+        eta: "17/08/2025",
+        temp: "Thường",
+      },
     ],
     []
   );
@@ -45,7 +159,9 @@ export default function WarehouseInOut() {
   // KPI values (mock)
   const inboundToday = 34;
   const outboundToday = 29;
-  const inTransit = baseRows.filter((d) => d.status === "Đang vận chuyển").length;
+  const inTransit = baseRows.filter(
+    (d) => d.status === "Đang vận chuyển"
+  ).length;
   const alerts = 2;
   const capacityUsed = 72;
 
@@ -97,123 +213,11 @@ export default function WarehouseInOut() {
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
-      {/* ===== SIDEBAR ===== */}
-      <aside className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
-        <div className="mt-1 mb-1 text-center">
-          <span className="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
-            <i data-feather="shield" className="w-6 h-6" />
-          </span>
-          <div className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">
-            LGBT
-          </div>
-        </div>
-        <div className="flex flex-col items-center gap-4">
-          <a
-            href="#"
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Trang chủ"
-          >
-            <i data-feather="home" />
-          </a>
-          <a
-            href="#"
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Theo dõi vị trí"
-          >
-            <i data-feather="map" />
-          </a>
-          <a
-            href="#"
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Lịch sử giao dịch"
-          >
-            <i data-feather="file-text" />
-          </a>
-          <button
-            className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Thông báo"
-          >
-            <i data-feather="bell" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-          <a
-            href="#"
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Người dùng"
-          >
-            <i data-feather="user" />
-          </a>
-          <a
-            href="#"
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Cài đặt"
-          >
-            <i data-feather="settings" />
-          </a>
-        </div>
-      </aside>
+      <Sidebar />
 
       <main className="ml-20">
         {/* ===== HEADER ===== */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
-          <div className="flex items-center justify-between px-3 md:px-5 py-2.5">
-            <div className="flex-1 max-w-2xl mr-3 md:mr-6">
-              <div className="relative">
-                <i
-                  data-feather="search"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-                />
-                <input
-                  className="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Tìm giao dịch, mã đơn, số tiền…"
-                />
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"
-                  title="Filter"
-                >
-                  <i data-feather="filter" className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <button
-                className="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50"
-                title="New"
-              >
-                <i data-feather="plus" className="w-4 h-4" />
-              </button>
-              <button
-                className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50"
-                title="Notifications"
-              >
-                <i data-feather="bell" className="w-4 h-4" />
-              </button>
-              <button
-                className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50"
-                title="Archive"
-              >
-                <i data-feather="archive" className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
-              >
-                <img
-                  src="https://i.pravatar.cc/40?img=8"
-                  alt="Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="text-left leading-tight hidden sm:block">
-                  <div className="text-[13px] font-semibold">Harsh Vani</div>
-                  <div className="text-[11px] text-slate-500 -mt-0.5">
-                    Deportation Manager
-                  </div>
-                </div>
-                <i data-feather="chevron-down" className="w-4 h-4 text-slate-400" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <Topbar />
 
         {/* ===== CONTENT ===== */}
         <section className="p-6 md:p-8 space-y-6">
@@ -303,9 +307,24 @@ export default function WarehouseInOut() {
 
           {/* KPI Row */}
           <div className="grid md:grid-cols-5 gap-3" id="kpiRow">
-            <Stat icon="package" label="Đã nhập hôm nay" value={inboundToday} tone="in" />
-            <Stat icon="truck" label="Đã xuất hôm nay" value={outboundToday} tone="out" />
-            <Stat icon="truck" label="Đang vận chuyển" value={inTransit} tone="neutral" />
+            <Stat
+              icon="package"
+              label="Đã nhập hôm nay"
+              value={inboundToday}
+              tone="in"
+            />
+            <Stat
+              icon="truck"
+              label="Đã xuất hôm nay"
+              value={outboundToday}
+              tone="out"
+            />
+            <Stat
+              icon="truck"
+              label="Đang vận chuyển"
+              value={inTransit}
+              tone="neutral"
+            />
             <Stat
               icon="alert-triangle"
               label="Cảnh báo"
@@ -409,15 +428,23 @@ export default function WarehouseInOut() {
                             <td className="px-5 py-3 align-middle">
                               <StatusBadge status={o.status} />
                             </td>
-                            <td className="px-5 py-3 align-middle">{o.customer}</td>
+                            <td className="px-5 py-3 align-middle">
+                              {o.customer}
+                            </td>
                             <td className="px-5 py-3 align-middle">{o.from}</td>
                             <td className="px-5 py-3 align-middle">{o.to}</td>
-                            <td className="px-5 py-3 align-middle">{o.pallets}</td>
+                            <td className="px-5 py-3 align-middle">
+                              {o.pallets}
+                            </td>
                             <td className="px-5 py-3 align-middle">
                               {o.weight.toLocaleString()} {o.unit}
                             </td>
-                            <td className="px-5 py-3 align-middle">{o.docks}</td>
-                            <td className="px-5 py-3 align-middle">{o.carrier}</td>
+                            <td className="px-5 py-3 align-middle">
+                              {o.docks}
+                            </td>
+                            <td className="px-5 py-3 align-middle">
+                              {o.carrier}
+                            </td>
                             <td className="px-5 py-3 align-middle text-right pr-5 text-slate-600">
                               {o.eta}
                             </td>
@@ -425,7 +452,10 @@ export default function WarehouseInOut() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={11} className="px-5 py-6 text-center text-slate-500">
+                          <td
+                            colSpan={11}
+                            className="px-5 py-6 text-center text-slate-500"
+                          >
                             Không có bản ghi phù hợp.
                           </td>
                         </tr>
@@ -472,7 +502,9 @@ export default function WarehouseInOut() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <div className="text-xs text-slate-600 mb-1">Tỷ lệ lấp đầy</div>
+                  <div className="text-xs text-slate-600 mb-1">
+                    Tỷ lệ lấp đầy
+                  </div>
                   <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-blue-500 to-indigo-600"
@@ -485,16 +517,21 @@ export default function WarehouseInOut() {
               {/* Staff */}
               <div className="rounded-2xl p-5 border border-slate-200 bg-white">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <i data-feather="users" className="w-4 h-4" /> Nhân sự ca hôm nay
+                  <i data-feather="users" className="w-4 h-4" /> Nhân sự ca hôm
+                  nay
                 </div>
                 <ul className="mt-3 space-y-2 text-sm">
                   <li className="flex justify-between">
                     <span>Ca sáng</span>
-                    <span className="text-slate-700">12 NV (2 QC, 1 Supervisor)</span>
+                    <span className="text-slate-700">
+                      12 NV (2 QC, 1 Supervisor)
+                    </span>
                   </li>
                   <li className="flex justify-between">
                     <span>Ca chiều</span>
-                    <span className="text-slate-700">10 NV (1 QC, 1 Supervisor)</span>
+                    <span className="text-slate-700">
+                      10 NV (1 QC, 1 Supervisor)
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -525,7 +562,9 @@ function Stat({ icon, label, value, sub, tone = "neutral" }) {
         {label}
       </div>
       <div className="mt-1 text-2xl font-bold tracking-tight">{value}</div>
-      {sub ? <div className="text-[12px] text-slate-500 mt-1">{sub}</div> : null}
+      {sub ? (
+        <div className="text-[12px] text-slate-500 mt-1">{sub}</div>
+      ) : null}
     </div>
   );
 }
@@ -587,7 +626,8 @@ function QRCameraPanel() {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cams = devices.filter((d) => d.kind === "videoinput");
         setCameras(cams);
-        if (cams.length && !currentCameraId) setCurrentCameraId(cams[0].deviceId);
+        if (cams.length && !currentCameraId)
+          setCurrentCameraId(cams[0].deviceId);
       } catch (err) {
         console.error(err);
         setErrorMsg(
@@ -697,7 +737,11 @@ function QRCameraPanel() {
         : { facingMode: { ideal: "environment" } };
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { ...constraints, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          ...constraints,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
 
@@ -716,7 +760,9 @@ function QRCameraPanel() {
 
       if (supported) {
         try {
-          detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+          detectorRef.current = new window.BarcodeDetector({
+            formats: ["qr_code"],
+          });
         } catch {
           detectorRef.current = new window.BarcodeDetector();
         }
@@ -727,7 +773,9 @@ function QRCameraPanel() {
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Không thể khởi động camera này. Hãy thử đổi camera hoặc kiểm tra quyền truy cập.");
+      setErrorMsg(
+        "Không thể khởi động camera này. Hãy thử đổi camera hoặc kiểm tra quyền truy cập."
+      );
     }
   };
 
@@ -761,10 +809,14 @@ function QRCameraPanel() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera – không dùng thư viện ngoài)
+        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera –
+        không dùng thư viện ngoài)
       </div>
 
-      <div className="flex flex-col gap-3" aria-label="Khu vực camera quét mã QR nhập/xuất">
+      <div
+        className="flex flex-col gap-3"
+        aria-label="Khu vực camera quét mã QR nhập/xuất"
+      >
         {/* Mode */}
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-slate-600">Chế độ:</span>
@@ -773,7 +825,9 @@ function QRCameraPanel() {
               type="button"
               onClick={() => setMode("IN")}
               className={`px-3 py-1.5 text-sm font-semibold ${
-                mode === "IN" ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-700 hover:bg-slate-50"
+                mode === "IN"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
               Check-in (Nhập)
@@ -782,7 +836,9 @@ function QRCameraPanel() {
               type="button"
               onClick={() => setMode("OUT")}
               className={`px-3 py-1.5 text-sm font-semibold ${
-                mode === "OUT" ? "bg-amber-50 text-amber-700" : "bg-white text-slate-700 hover:bg-slate-50"
+                mode === "OUT"
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
               Check-out (Xuất)
@@ -822,14 +878,16 @@ function QRCameraPanel() {
 
         {/* Video + overlay */}
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-2">
-          <div className="relative" style={{ aspectRatio: "1 / 1", maxWidth: 320, margin: "0 auto" }}>
+          <div
+            className="relative"
+            style={{ aspectRatio: "1 / 1", maxWidth: 320, margin: "0 auto" }}
+          >
             <video
               ref={videoRef}
               className="w-full h-full object-cover rounded-lg"
               muted
               playsInline
             />
-            <canvas ref={overlayRef} className="absolute inset-0 pointer-events-none rounded-lg" />
           </div>
         </div>
 
@@ -856,10 +914,17 @@ function QRCameraPanel() {
         {/* Result */}
         {lastResult && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-[12px] text-emerald-700 mb-1 font-semibold">Kết quả quét</div>
-            <div className="text-sm font-mono text-emerald-800 break-all">{lastResult}</div>
+            <div className="text-[12px] text-emerald-700 mb-1 font-semibold">
+              Kết quả quét
+            </div>
+            <div className="text-sm font-mono text-emerald-800 break-all">
+              {lastResult}
+            </div>
             <div className="mt-1 text-[12px] text-slate-600">
-              Chế độ hiện tại: <span className="font-semibold">{mode === "IN" ? "NHẬP" : "XUẤT"}</span>
+              Chế độ hiện tại:{" "}
+              <span className="font-semibold">
+                {mode === "IN" ? "NHẬP" : "XUẤT"}
+              </span>
             </div>
           </div>
         )}
@@ -868,8 +933,9 @@ function QRCameraPanel() {
           <p className="text-[12px] text-rose-600 mt-1">{errorMsg}</p>
         ) : (
           <p className="text-[12px] text-slate-500 mt-1">
-            Tip: chạy trên <strong>HTTPS</strong> hoặc <strong>http://localhost</strong> để camera hoạt động.
-            Nên chọn “Camera 2” (thường là camera sau của điện thoại).
+            Tip: chạy trên <strong>HTTPS</strong> hoặc{" "}
+            <strong>http://localhost</strong> để camera hoạt động. Nên chọn
+            “Camera 2” (thường là camera sau của điện thoại).
           </p>
         )}
       </div>
