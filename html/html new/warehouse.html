@@ -444,8 +444,6 @@
     });
   </script>
 
-  <!-- ===== QR Scanner library ===== -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <!-- ===== QR Scanner controller ===== -->
   <script>
@@ -531,19 +529,6 @@
     }
     function onScanError(_err){}
 
-    async function start(){
-      if(state.running || !state.currentCameraId) return;
-      if(!state.reader){ state.reader = new Html5Qrcode('qrReader'); }
-      try{
-        await state.reader.start({ deviceId: { exact: state.currentCameraId } }, cfg, onScanSuccess, onScanError);
-        state.running = true;
-        startBtn.disabled = true;
-        pauseBtn.disabled = false;
-      }catch(err){
-        console.error(err);
-        alert('Không thể khởi động camera này. Hãy thử đổi camera.');
-      }
-    }
     async function pause(){
       if(!state.reader || !state.running) return;
       try{
