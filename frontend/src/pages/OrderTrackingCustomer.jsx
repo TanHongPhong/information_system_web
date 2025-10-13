@@ -1,6 +1,8 @@
 // src/pages/OrderTracking.jsx
 import React, { useEffect, useRef } from "react";
 import feather from "feather-icons";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
 
 export default function OrderTracking() {
   const topbarRef = useRef(null);
@@ -9,7 +11,10 @@ export default function OrderTracking() {
   const setTopbarHeight = () => {
     const el = topbarRef.current;
     if (el) {
-      document.documentElement.style.setProperty("--topbar-h", el.offsetHeight + "px");
+      document.documentElement.style.setProperty(
+        "--topbar-h",
+        el.offsetHeight + "px"
+      );
     }
   };
 
@@ -63,106 +68,34 @@ export default function OrderTracking() {
         #statusCard .step-meta{ font-size:12px; }
       `}</style>
 
-      {/* SIDEBAR */}
-      <aside
-        className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3"
-      >
-        <div className="mt-1 mb-1 text-center">
-          <span className="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
-            <i data-feather="shield" />
-          </span>
-          <div className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
-        </div>
-        <div className="flex flex-col items-center gap-4">
-          <button className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ">
-            <i data-feather="home" />
-          </button>
-          <button className="w-10 h-10 rounded-xl grid place-items-center text-blue-600 bg-blue-50 ring-1 ring-blue-200" title="Theo dõi đơn">
-            <i data-feather="map" />
-          </button>
-          <button className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử">
-            <i data-feather="file-text" />
-          </button>
-          <button className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
-            <i data-feather="bell" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-          <button className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Tài khoản">
-            <i data-feather="user" />
-          </button>
-          <button className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt">
-            <i data-feather="settings" />
-          </button>
-        </div>
-      </aside>
-
-      {/* HEADER */}
-      <header
-        id="topbar"
-        ref={topbarRef}
-        className="fixed top-0 z-40 border-b md:py-1 bg-white/95 backdrop-blur bg-gradient-to-l from-blue-900 via-sky-200 to-white"
-        style={{ marginLeft: "var(--sidebar-w)", width: "calc(100% - var(--sidebar-w))" }}
-      >
-        <div className="px-3 md:px-5 py-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 max-w-2xl mr-3 md:mr-6">
-              <div className="relative">
-                <i data-feather="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input
-                  className="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Search by User id, User Name, Date etc"
-                />
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"
-                  title="Filter"
-                >
-                  <i data-feather="filter" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <button className="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New">
-                <i data-feather="plus" />
-              </button>
-              <button className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications">
-                <i data-feather="bell" />
-              </button>
-              <button className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive">
-                <i data-feather="archive" />
-              </button>
-              <button
-                type="button"
-                className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
-              >
-                <img
-                  src="https://i.pravatar.cc/40?img=8"
-                  alt="Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="text-left leading-tight hidden sm:block">
-                  <div className="text-[13px] font-semibold">Harsh Vani</div>
-                  <div className="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
-                </div>
-                <i data-feather="chevron-down" className="text-slate-400" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Sidebar />
+      <div className="ml-20">
+        <Topbar />
+      </div>
 
       {/* MAIN */}
-      <main className="pt-[64px] lg:overflow-hidden" style={{ marginLeft: "var(--sidebar-w)" }}>
+      <main
+        className="lg:overflow-hidden"
+        style={{ marginLeft: "var(--sidebar-w)" }}
+      >
         <div className="p-4 grid grid-cols-12 gap-4">
           {/* LEFT */}
           <section className="col-span-12 lg:col-span-3">
             {/* giảm offset để mép trên ngang hai khối còn lại */}
-            <div className="sticky" style={{ top: "calc(var(--topbar-h,64px) - 55px)" }}>
+            <div
+              className="sticky"
+              style={{ top: "calc(var(--topbar-h,64px) - 55px)" }}
+            >
               <div className="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
                 <div className="bg-white border border-slate-200 rounded-2xl p-3 relative">
                   <div className="sticky top-0 z-10 -m-3 p-3 bg-white/95 backdrop-blur rounded-t-2xl border-b border-slate-200">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-semibold tracking-tight">ĐƠN HÀNG CỦA BẠN</h3>
-                      <span className="text-xs text-slate-500">1 đơn đang theo dõi</span>
+                      <h3 className="font-semibold tracking-tight">
+                        ĐƠN HÀNG CỦA BẠN
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        1 đơn đang theo dõi
+                      </span>
                     </div>
                   </div>
 
@@ -174,7 +107,9 @@ export default function OrderTracking() {
                         </span>
                         <div className="text-sm min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-slate-800">ORDERID 0112</span>
+                            <span className="font-semibold text-slate-800">
+                              ORDERID 0112
+                            </span>
                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-white text-blue-700 ring-1 ring-blue-300">
                               ĐANG VẬN CHUYỂN
                             </span>
@@ -182,7 +117,9 @@ export default function OrderTracking() {
                           <div className="text-[11px] text-slate-500 leading-snug">
                             279 Nguyễn Tri Phương, Q10 → 777 Lê Lai, Hà Nội
                           </div>
-                          <div className="mt-2 mini-progress"><span style={{ transform: "scaleX(.62)" }} /></div>
+                          <div className="mt-2 mini-progress">
+                            <span style={{ transform: "scaleX(.62)" }} />
+                          </div>
                         </div>
                       </div>
                       <button
@@ -194,9 +131,13 @@ export default function OrderTracking() {
                     </div>
                     <div className="mt-3 flex items-center justify-between text-[12px] text-slate-600">
                       <div className="flex items-center gap-1">
-                        <i data-feather="clock" className="w-4 h-4" /> Dự kiến: 20/10/2025 16:30
+                        <i data-feather="clock" className="w-4 h-4" /> Dự kiến:
+                        20/10/2025 16:30
                       </div>
-                      <a className="text-blue-600 hover:underline inline-flex items-center gap-1" href="#">
+                      <a
+                        className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                        href="#"
+                      >
                         <i data-feather="download" className="w-4 h-4" />
                         Hóa đơn
                       </a>
@@ -204,7 +145,9 @@ export default function OrderTracking() {
                   </article>
 
                   <div className="mt-4 p-3 rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-sky-50 to-white">
-                    <div className="text-sm font-semibold text-slate-800">Mẹo giao nhận an toàn</div>
+                    <div className="text-sm font-semibold text-slate-800">
+                      Mẹo giao nhận an toàn
+                    </div>
                     <ul className="mt-1 text-[12px] text-slate-600 list-disc pl-5 space-y-1">
                       <li>Luôn xác minh mã đơn/OTP khi nhận.</li>
                       <li>Ưu tiên thanh toán không tiền mặt.</li>
@@ -263,10 +206,16 @@ export default function OrderTracking() {
                   <circle cx="730" cy="190" r="12" fill="#2563eb" />
                 </svg>
                 <div className="absolute left-3 bottom-3 bg-white/95 backdrop-blur rounded-xl shadow-soft ring-1 ring-slate-200 p-3 flex items-center gap-3">
-                  <img src="https://i.pravatar.cc/48?img=12" className="w-10 h-10 rounded-full" alt="driver" />
+                  <img
+                    src="https://i.pravatar.cc/48?img=12"
+                    className="w-10 h-10 rounded-full"
+                    alt="driver"
+                  />
                   <div className="text-sm">
                     <div className="font-semibold">Tài xế: Quang Trè</div>
-                    <div className="text-xs text-slate-500">Xe tải 6.5T • DL04MP7045</div>
+                    <div className="text-xs text-slate-500">
+                      Xe tải 6.5T • DL04MP7045
+                    </div>
                   </div>
                   <a
                     href="tel:0900000000"
@@ -282,18 +231,28 @@ export default function OrderTracking() {
 
           {/* RIGHT */}
           <section className="col-span-12 lg:col-span-3">
-            <div className="sticky" style={{ top: "calc(var(--topbar-h,64px) + 16px)" }}>
+            <div
+              className="sticky"
+              style={{ top: "calc(var(--topbar-h,64px) + 16px)" }}
+            >
               <div className="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
                 <div className="space-y-4">
                   {/* STATUS */}
                   <div
                     id="statusCard"
                     className="bg-white border border-slate-200 rounded-2xl p-3"
-                    style={{ height: "var(--map-h)", display: "flex", flexDirection: "column", ["--nudge"]: "8px" }}
+                    style={{
+                      height: "var(--map-h)",
+                      display: "flex",
+                      flexDirection: "column",
+                      ["--nudge"]: "8px",
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">Status</h3>
-                      <button className="px-3 py-1.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 text-sm">Làm mới</button>
+                      <button className="px-3 py-1.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 text-sm">
+                        Làm mới
+                      </button>
                     </div>
 
                     <div className="mt-3 grid grid-cols-4 text-xs text-slate-600">
@@ -333,9 +292,15 @@ export default function OrderTracking() {
                             <span className="dot done" />
                             <div className="card step-card ring-1 ring-slate-200 bg-white p-3 rounded-2xl">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-900 font-semibold">Departure</span>
+                                <span className="text-slate-900 font-semibold">
+                                  Departure
+                                </span>
                                 <span className="inline-flex items-center gap-1 step-meta text-slate-600">
-                                  <i data-feather="calendar" className="w-4 h-4" /> 17/7/2024, 10:00
+                                  <i
+                                    data-feather="calendar"
+                                    className="w-4 h-4"
+                                  />{" "}
+                                  17/7/2024, 10:00
                                 </span>
                               </div>
                               <div className="mt-1 step-meta text-slate-600">
@@ -348,15 +313,24 @@ export default function OrderTracking() {
                             <span className="dot current" />
                             <div className="card step-card ring-1 ring-blue-200 bg-blue-50/60 p-3 rounded-2xl">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-900 font-semibold">Stop</span>
+                                <span className="text-slate-900 font-semibold">
+                                  Stop
+                                </span>
                                 <span className="inline-flex items-center gap-1 step-meta text-slate-700">
-                                  <i data-feather="calendar" className="w-4 h-4" /> 17/7/2024, 12:00
+                                  <i
+                                    data-feather="calendar"
+                                    className="w-4 h-4"
+                                  />{" "}
+                                  17/7/2024, 12:00
                                 </span>
                               </div>
-                              <div className="mt-1 step-meta text-slate-700">76 Nguyễn Tất Thành, Quảng Ngãi</div>
+                              <div className="mt-1 step-meta text-slate-700">
+                                76 Nguyễn Tất Thành, Quảng Ngãi
+                              </div>
                               <div className="mt-2 flex items-center gap-2">
                                 <span className="text-[10px] px-2 py-1 rounded-full bg-white text-blue-700 ring-1 ring-blue-300 inline-flex items-center gap-1">
-                                  <i data-feather="clock" className="w-4 h-4" /> Đang xử lý (15’)
+                                  <i data-feather="clock" className="w-4 h-4" />{" "}
+                                  Đang xử lý (15’)
                                 </span>
                                 <span className="text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700 ring-1 ring-green-300">
                                   ON TIME
@@ -369,25 +343,44 @@ export default function OrderTracking() {
                             <span className="dot future" />
                             <div className="card step-card ring-1 ring-slate-200 bg-white p-3 rounded-2xl">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-800 font-semibold">Stop</span>
+                                <span className="text-slate-800 font-semibold">
+                                  Stop
+                                </span>
                                 <span className="inline-flex items-center gap-1 step-meta text-slate-500">
-                                  <i data-feather="calendar" className="w-4 h-4" /> 17/7/2024, 20:00
+                                  <i
+                                    data-feather="calendar"
+                                    className="w-4 h-4"
+                                  />{" "}
+                                  17/7/2024, 20:00
                                 </span>
                               </div>
-                              <div className="mt-1 step-meta text-slate-600">36 Phạm Văn Đồng, Thanh Hóa</div>
+                              <div className="mt-1 step-meta text-slate-600">
+                                36 Phạm Văn Đồng, Thanh Hóa
+                              </div>
                             </div>
                           </li>
 
                           <li>
-                            <span className="dot future" style={{ opacity: ".85" }} />
+                            <span
+                              className="dot future"
+                              style={{ opacity: ".85" }}
+                            />
                             <div className="card step-card ring-1 ring-slate-200 bg-slate-50 p-3 rounded-2xl">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-600 font-semibold">Arrival</span>
+                                <span className="text-slate-600 font-semibold">
+                                  Arrival
+                                </span>
                                 <span className="inline-flex items-center gap-1 step-meta text-slate-500">
-                                  <i data-feather="calendar" className="w-4 h-4" /> 21/7/2024, 10:00
+                                  <i
+                                    data-feather="calendar"
+                                    className="w-4 h-4"
+                                  />{" "}
+                                  21/7/2024, 10:00
                                 </span>
                               </div>
-                              <div className="mt-1 step-meta text-slate-500">777 Lê Lợi, P.3, Q.1, TP.Hà Nội</div>
+                              <div className="mt-1 step-meta text-slate-500">
+                                777 Lê Lợi, P.3, Q.1, TP.Hà Nội
+                              </div>
                             </div>
                           </li>
                         </ol>
@@ -424,17 +417,22 @@ export default function OrderTracking() {
                     <h3 className="font-semibold">Tóm tắt</h3>
                     <div className="mt-2 text-sm">
                       <div className="flex items-center justify-between py-1">
-                        <span>Kiện hàng</span><span className="font-semibold">3</span>
+                        <span>Kiện hàng</span>
+                        <span className="font-semibold">3</span>
                       </div>
                       <div className="flex items-center justify-between py-1">
-                        <span>Khối lượng</span><span className="font-semibold">120 kg</span>
+                        <span>Khối lượng</span>
+                        <span className="font-semibold">120 kg</span>
                       </div>
                       <div className="flex items-center justify-between py-1">
-                        <span>Phí vận chuyển</span><span className="font-semibold">420.000₫</span>
+                        <span>Phí vận chuyển</span>
+                        <span className="font-semibold">420.000₫</span>
                       </div>
                       <div className="border-t mt-2 pt-2 flex items-center justify-between">
                         <span className="font-semibold">Tổng thanh toán</span>
-                        <span className="font-bold text-slate-900">420.000₫</span>
+                        <span className="font-bold text-slate-900">
+                          420.000₫
+                        </span>
                       </div>
                     </div>
                   </div>

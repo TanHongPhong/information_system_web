@@ -3,7 +3,11 @@ import Stars from "./Stars";
 
 export default function CompaniesTable({ list, fmtVND, onSelect }) {
   return (
-    <div className="border-t border-slate-200" role="table" aria-label="Danh sách công ty">
+    <div
+      className="border-t border-slate-200"
+      role="table"
+      aria-label="Danh sách công ty"
+    >
       <div
         className="hidden md:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 pt-3 pb-2 text-slate-500 font-semibold"
         role="row"
@@ -28,7 +32,9 @@ export default function CompaniesTable({ list, fmtVND, onSelect }) {
                 key={c.name}
                 className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 py-4 border-t border-slate-200 animate-in"
               >
-                <div className="font-medium flex items-center gap-2">{c.name}</div>
+                <div className="font-medium flex items-center gap-2">
+                  {c.name}
+                </div>
                 <div className="min-w-0 font-medium truncate">{c.area}</div>
                 <div className="font-medium text-center">
                   {fmtVND(c.cost)}/KM
