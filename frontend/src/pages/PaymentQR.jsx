@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import feather from "feather-icons";
 import QrCard from "../components/payment/QrCard";
 import StatusSection from "../components/payment/StatusSection";
 import OrderDetails from "../components/payment/OrderDetails";
+import { buildSepayQrUrl } from "../lib/sepay"; // <— HÀM TẠO URL ẢNH SePay
 
 export default function QrPayment({
   amount = 10_000_000,
   companyName = "Công ty Gemadept",
   orderId = "322138483848",
   orderDesc = "Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025",
-  qrSrc = "/qr.jpg",
 }) {
   // ==== STATE ====
   const [remain, setRemain] = useState(15 * 60);
@@ -20,7 +20,12 @@ export default function QrPayment({
   const [toastMsg, setToastMsg] = useState("");
 
   // ==== HELPERS ====
-  const fmtCurrency = (v) => Number(v).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+  const fmtCurrency = (v) =>
+    Number(v).toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    });
   const mmss = (secs) => {
     const m = String(Math.floor(secs / 60)).padStart(2, "0");
     const s = String(secs % 60).padStart(2, "0");
@@ -28,8 +33,9 @@ export default function QrPayment({
   };
 
   // ==== EFFECTS ====
-  useEffect(() => { feather.replace({ width: 21, height: 21 }); }, []);
-  useEffect(() => { feather.replace({ width: 18, height: 18 }); });
+  useEffect(() => {
+    feather.replace({ width: 21, height: 21 });
+  }, []); // chỉ gọi 1 lần là đủ
 
   // Countdown
   useEffect(() => {
@@ -41,27 +47,60 @@ export default function QrPayment({
   }, [status]);
 
   // Hết giờ
-            useEffect(() => { if (remain === 0 && status === "pending") setStatus("expired"); }, [remain, status]);
+  useEffect(() => {
+    if (remain === 0 && status === "pending") setStatus("expired");
+  }, [remain, status]);
 
   // Toast auto-hide
-  useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToastMsg(""), 1600); return () => clearTimeout(t); }, [toastMsg]);
+  useEffect(() => {
+    if (!toastMsg) return;
+    const t = setTimeout(() => setToastMsg(""), 1600);
+    return () => clearTimeout(t);
+  }, [toastMsg]);
+
+  // ==== DERIVED ====
+  const note = useMemo(() => `GMD-${orderId}`, [orderId]);
+  const qrPayload = useMemo(
+    () => `VIETQR|GEMADEPT|${amount}|${note}`,
+    [amount, note]
+  );
+
+  // Tạo URL ảnh QR SePay ĐỘNG từ ENV + amount + note
+  const qrSrc = useMemo(() => {
+    const ACC = import.meta.env.VITE_SEPAY_ACC;                    // .env
+    const BANK = import.meta.env.VITE_SEPAY_BANK;                  // .env
+    const TEMPLATE = import.meta.env.VITE_SEPAY_TEMPLATE || "qronly";
+    return buildSepayQrUrl({
+      acc: ACC,
+      bank: BANK,
+      amount,
+      des: note,
+      template: TEMPLATE,
+    });
+  }, [amount, note]);
 
   // ==== ACTIONS ====
   const onDownloadQr = () => {
     const a = document.createElement("a");
-    a.href = qrSrc; a.download = "gemadept-vietqr.jpg"; a.click();
+    a.href = qrSrc;
+    a.download = `vietqr-${orderId}.jpg`;
+    a.click();
   };
   const copyText = async (text) => {
-    try { await navigator.clipboard.writeText(text); setToastMsg("Đã copy vào clipboard"); }
-    catch { setToastMsg("Không copy được."); }
+    try {
+      await navigator.clipboard.writeText(text);
+      setToastMsg("Đã copy vào clipboard");
+    } catch {
+      setToastMsg("Không copy được.");
+    }
   };
-  const onRefresh = () => { setRemain(15 * 60); setStatus("pending"); setSuccessBar(false); };
+  const onRefresh = () => {
+    setRemain(15 * 60);
+    setStatus("pending");
+    setSuccessBar(false);
+  };
   const onCancel = () => setToastMsg("Bạn đã huỷ thanh toán (demo).");
   const onSupport = () => setToastMsg("Đã mở kênh hỗ trợ (demo).");
-
-  // ==== DERIVED ====
-  const note = `GMD-${orderId}`;
-  const qrPayload = `VIETQR|GEMADEPT|${amount}|${note}`;
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
@@ -184,8 +223,8 @@ export default function QrPayment({
               orderDesc={orderDesc}
               amount={amount}
               fmtCurrency={fmtCurrency}
-              note={`GMD-${orderId}`}
-              onCopyNote={() => copyText(`GMD-${orderId}`)}
+              note={note}
+              onCopyNote={() => copyText(note)}
               onCancel={onCancel}
               onSupport={onSupport}
             />

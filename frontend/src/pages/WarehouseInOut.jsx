@@ -546,7 +546,7 @@ function StatusBadge({ status }) {
   );
 }
 
-/* =============== QR Camera (no external lib) =============== */
+/* =============== QR Camera (BarcodeDetector + Fallback jsQR) =============== */
 function QRCameraPanel() {
   const [mode, setMode] = useState("IN"); // IN | OUT
   const [cameras, setCameras] = useState([]);
@@ -557,14 +557,26 @@ function QRCameraPanel() {
 
   const videoRef = useRef(null);
   const overlayRef = useRef(null);
+  const decodeCanvasRef = useRef(null); // canvas ẩn để giải mã khi fallback
   const streamRef = useRef(null);
-  const detectorRef = useRef(null);
+  const detectorRef = useRef(null);     // BarcodeDetector nếu có
+  const jsqrRef = useRef(null);         // jsQR nếu fallback
   const rafRef = useRef(null);
 
   // Refresh feather icons when the panel changes
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, [mode, running, cameras.length]);
+
+  // Tạo canvas ẩn
+  useEffect(() => {
+    if (!decodeCanvasRef.current) {
+      const c = document.createElement("canvas");
+      c.width = 1;
+      c.height = 1;
+      decodeCanvasRef.current = c;
+    }
+  }, []);
 
   // Sync overlay size with video box
   const resizeOverlay = () => {
@@ -580,6 +592,10 @@ function QRCameraPanel() {
   useEffect(() => {
     (async () => {
       try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          setErrorMsg("Trình duyệt không hỗ trợ camera API.");
+          return;
+        }
         await navigator.mediaDevices
           .getUserMedia({ video: true, audio: false })
           .then((s) => s.getTracks().forEach((t) => t.stop()))
@@ -640,7 +656,6 @@ function QRCameraPanel() {
     const c = overlayRef.current;
     if (!v || !c || !bbox) return;
     const ctx = c.getContext("2d");
-
     const sx = c.width / (v.videoWidth || 1);
     const sy = c.height / (v.videoHeight || 1);
 
@@ -652,30 +667,96 @@ function QRCameraPanel() {
     ctx.shadowBlur = 0;
   };
 
+  const drawPoly = (points) => {
+    const v = videoRef.current;
+    const c = overlayRef.current;
+    if (!v || !c || !points || !points.length) return;
+    const ctx = c.getContext("2d");
+    const sx = c.width / (v.videoWidth || 1);
+    const sy = c.height / (v.videoHeight || 1);
+
+    ctx.lineWidth = Math.max(3, Math.floor(c.width / 240));
+    ctx.strokeStyle = "rgba(16,185,129,0.95)";
+    ctx.shadowColor = "rgba(16,185,129,0.6)";
+    ctx.shadowBlur = 12;
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * sx, points[0].y * sy);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x * sx, points[i].y * sy);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  };
+
+  // nạp jsQR khi cần
+  const loadJsQR = () =>
+    new Promise((resolve, reject) => {
+      if (window.jsQR) return resolve(window.jsQR);
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      s.async = true;
+      s.onload = () => resolve(window.jsQR);
+      s.onerror = () => reject(new Error("Không thể nạp jsQR từ CDN."));
+      document.head.appendChild(s);
+    });
+
   const scanLoop = async () => {
     try {
-      if (!running || !videoRef.current || !detectorRef.current) return;
-      const results = await detectorRef.current.detect(videoRef.current);
+      if (!running || !videoRef.current) return;
+
       drawGuide();
 
-      if (results && results.length) {
-        const hit = results[0];
-        const code = hit.rawValue || "";
-        if (hit.boundingBox) drawBox(hit.boundingBox);
-
-        if (code) {
-          setLastResult(code);
-          window.dispatchEvent(
-            new CustomEvent("qr-scan", {
-              detail: { code, mode, ts: Date.now() },
-            })
-          );
-          await pause(); // stop immediately after a successful scan
-          return;
+      // 1) Ưu tiên BarcodeDetector nếu có
+      if (detectorRef.current) {
+        const results = await detectorRef.current.detect(videoRef.current);
+        if (results && results.length) {
+          const hit = results[0];
+          const code = hit.rawValue || "";
+          if (hit.boundingBox) drawBox(hit.boundingBox);
+          if (code) {
+            setLastResult(code);
+            window.dispatchEvent(
+              new CustomEvent("qr-scan", { detail: { code, mode, ts: Date.now() } })
+            );
+            await pause();
+            return;
+          }
+        }
+      }
+      // 2) Fallback jsQR
+      else if (jsqrRef.current) {
+        const v = videoRef.current;
+        const dc = decodeCanvasRef.current;
+        if (v.videoWidth && v.videoHeight) {
+          dc.width = v.videoWidth;
+          dc.height = v.videoHeight;
+          const dctx = dc.getContext("2d", { willReadFrequently: true });
+          dctx.drawImage(v, 0, 0, dc.width, dc.height);
+          const img = dctx.getImageData(0, 0, dc.width, dc.height);
+          const res = jsqrRef.current(img.data, img.width, img.height, {
+            inversionAttempts: "attemptBoth",
+          });
+          if (res && res.data) {
+            setLastResult(res.data);
+            const loc = res.location;
+            drawPoly([
+              loc.topLeftCorner,
+              loc.topRightCorner,
+              loc.bottomRightCorner,
+              loc.bottomLeftCorner,
+            ]);
+            window.dispatchEvent(
+              new CustomEvent("qr-scan", { detail: { code: res.data, mode, ts: Date.now() } })
+            );
+            await pause();
+            return;
+          }
         }
       }
     } catch {
-      // ignore transient frame errors
+      // bỏ qua lỗi khung hình tạm thời
     }
     rafRef.current = requestAnimationFrame(scanLoop);
   };
@@ -683,12 +764,31 @@ function QRCameraPanel() {
   const start = async () => {
     if (running) return;
     setErrorMsg("");
+    setLastResult("");
 
-    const supported = "BarcodeDetector" in window;
-    if (!supported) {
-      setErrorMsg(
-        "Trình duyệt không hỗ trợ BarcodeDetector. Hãy dùng Chrome/Edge mới hoặc bật Experimental Web Platform Features."
-      );
+    let usingDetector = false;
+
+    // Thử khởi tạo BarcodeDetector nếu có
+    if ("BarcodeDetector" in window) {
+      try {
+        detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+        usingDetector = true;
+      } catch {
+        detectorRef.current = null;
+      }
+    }
+
+    // Nếu không có detector -> nạp jsQR
+    if (!usingDetector) {
+      try {
+        jsqrRef.current = await loadJsQR();
+        setErrorMsg("Đang dùng chế độ fallback (jsQR). Bạn vẫn có thể quét QR bình thường.");
+      } catch {
+        setErrorMsg(
+          "Trình duyệt thiếu BarcodeDetector và không nạp được jsQR. Hãy dùng Chrome/Edge mới hoặc kiểm tra mạng."
+        );
+        return;
+      }
     }
 
     try {
@@ -714,17 +814,8 @@ function QRCameraPanel() {
       resizeOverlay();
       drawGuide();
 
-      if (supported) {
-        try {
-          detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
-        } catch {
-          detectorRef.current = new window.BarcodeDetector();
-        }
-        setRunning(true);
-        rafRef.current = requestAnimationFrame(scanLoop);
-      } else {
-        setRunning(true); // show video even without scanning capability
-      }
+      setRunning(true);
+      rafRef.current = requestAnimationFrame(scanLoop);
     } catch (err) {
       console.error(err);
       setErrorMsg("Không thể khởi động camera này. Hãy thử đổi camera hoặc kiểm tra quyền truy cập.");
@@ -761,7 +852,7 @@ function QRCameraPanel() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Camera – không dùng thư viện ngoài)
+        <i data-feather="grid" className="w-4 h-4" /> QR Check-in/out (Hỗ trợ mọi trình duyệt)
       </div>
 
       <div className="flex flex-col gap-3" aria-label="Khu vực camera quét mã QR nhập/xuất">
@@ -869,7 +960,7 @@ function QRCameraPanel() {
         ) : (
           <p className="text-[12px] text-slate-500 mt-1">
             Tip: chạy trên <strong>HTTPS</strong> hoặc <strong>http://localhost</strong> để camera hoạt động.
-            Nên chọn “Camera 2” (thường là camera sau của điện thoại).
+            Nếu nhiều camera, thử chọn “Camera 2” (thường là camera sau).
           </p>
         )}
       </div>
