@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
+import feather from "feather-icons";
 
-export default function VehicleCard({ item, company, route }) {
+export default function VehicleCard({ item, company, route, onSelect }) {
+  useEffect(() => {
+    feather.replace();
+  }, [item]);
+
   const pct = Math.max(0, Math.min(100, Number(item.percent) || 0));
 
   const tagColor = (p) => {
@@ -27,11 +32,14 @@ export default function VehicleCard({ item, company, route }) {
   };
   const c = tagColor(pct);
 
-  const dateFmt = new Date(`${item.depart}T00:00:00`).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFmt = new Date(`${item.depart}T00:00:00`).toLocaleDateString(
+    "vi-VN",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }
+  );
 
   return (
     <article className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 md:p-6 flex flex-col animate-in">
@@ -51,17 +59,20 @@ export default function VehicleCard({ item, company, route }) {
           <span className="text-slate-300">•</span>
           <span>{route}</span>
         </div>
-        <span className={`text-xs px-2 py-1 rounded-md ${c.bg} ${c.text} ring-1 ${c.ring}`}>
+        <span
+          className={`text-xs px-2 py-1 rounded-md ${c.bg} ${c.text} ring-1 ${c.ring}`}
+        >
           {item.status}
         </span>
       </div>
 
-      {/* Truck visual */}
+      {/* Truck visual (giữ hình xe cũ) */}
       <div className="relative w-full max-w-[700px] mx-auto mt-4 truck-wrap">
         <img
           src="https://png.pngtree.com/thumb_back/fh260/background/20231007/pngtree-d-rendering-of-an-isolated-white-truck-seen-from-the-side-image_13518507.png"
           alt="Xe tải"
           className="w-full h-auto select-none"
+          draggable="false"
         />
         <div className="trailer-overlay">
           <div className="trailer-frame">
@@ -99,7 +110,11 @@ export default function VehicleCard({ item, company, route }) {
       </ul>
 
       {/* Actions */}
-      <button className="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2">
+      <button
+        className="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2"
+        onClick={() => onSelect?.(item)}
+        title="Chọn xe"
+      >
         Chọn xe
       </button>
     </article>

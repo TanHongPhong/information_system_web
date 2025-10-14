@@ -2,16 +2,18 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 import Stars from "./Stars";
-import { Link } from "react-router-dom";
 
 export default function CompanyModal({ company, onClose, fmtVND }) {
   const c = company;
   const navigate = useNavigate();
 
   const goNext = () => {
-    console.log("[CompanyModal] goNext click");
-    onClose?.(); // gỡ overlay/overflow-hidden
-    navigate("/vehicle-list");
+    console.log("[CompanyModal] goNext click", company);
+    onClose?.(); // đóng modal, xoá overlay
+    // Delay nhẹ để tránh lỗi khi overlay đang ẩn
+    setTimeout(() => {
+      navigate("/vehicle-list", { state: { selectedCompany: company } });
+    }, 150);
   };
 
   useEffect(() => {
@@ -316,14 +318,14 @@ export default function CompanyModal({ company, onClose, fmtVND }) {
               >
                 Đóng
               </button>
-              {/* Điều hướng thẳng sang /vehicle_list */}
-              <Link
-                to="/vehicle_list"
-                onClick={onClose}
+
+              <button
+                type="button"
+                onClick={goNext}
                 className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
               >
                 Tiếp tục đặt
-              </Link>
+              </button>
             </div>
           </div>
         </div>

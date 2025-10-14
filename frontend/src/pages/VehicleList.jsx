@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
+import Sidebar from "../components/Sidebar";
 import FilterBtn from "../components/vehicle/FilterBtn";
 import VehicleCard from "../components/vehicle/VehicleCard";
 
 export default function VehiclesList() {
   const COMPANY = "Gemadept Logistics";
   const ROUTE = "HCM → Hà Nội";
+  const navigate = useNavigate();
+  const PAYMENT_QR_PATH = "/payment-qr"; // đổi thành "/payment_qr" nếu route của bạn dùng dấu "_"
 
   const [data] = useState([
     {
@@ -98,11 +102,18 @@ export default function VehiclesList() {
   }, [data, filter, sort]);
 
   useEffect(() => {
-    feather.replace({ width: 21, height: 21 }); // sidebar/header
+    feather.replace({ width: 21, height: 21 });
   }, []);
   useEffect(() => {
-    feather.replace(); // refresh icons inside grid
+    feather.replace();
   }, [list, filter, sort]);
+
+  // --- handlers ---
+  const handleCancel = () => navigate("/"); // về HomePage
+  const handleSelect = (item) =>
+    navigate(PAYMENT_QR_PATH, {
+      state: { vehicleId: item.id, plate: item.plate },
+    });
 
   return (
     <div className="bg-slate-50 text-slate-900">
@@ -114,59 +125,10 @@ export default function VehiclesList() {
         }
       `}</style>
 
-      {/* SIDEBAR */}
-      <aside className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
-        <div className="mt-1 mb-1 text-center">
-          <span className="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
-            <i data-feather="shield" className="w-6 h-6" />
-          </span>
-          <div className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">
-            LGBT
-          </div>
-        </div>
+      {/* Sidebar chung */}
+      <Sidebar />
 
-        <div className="flex flex-col items-center gap-4">
-          <button
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Trang chủ"
-          >
-            <i data-feather="home" />
-          </button>
-          <button
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Theo dõi vị trí"
-          >
-            <i data-feather="map" />
-          </button>
-          <button
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Lịch sử giao dịch"
-          >
-            <i data-feather="file-text" />
-          </button>
-          <button
-            className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Thông báo"
-          >
-            <i data-feather="bell" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-          <button
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Người dùng"
-          >
-            <i data-feather="user" />
-          </button>
-          <button
-            className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            title="Cài đặt"
-          >
-            <i data-feather="settings" />
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN */}
+      {/* MAIN (chừa chỗ w-20 của Sidebar) */}
       <main className="ml-20 min-h-screen flex flex-col">
         {/* HEADER */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
@@ -323,6 +285,7 @@ export default function VehiclesList() {
                 item={item}
                 company={COMPANY}
                 route={ROUTE}
+                onSelect={() => handleSelect(item)} // chuyển qua Payment QR
               />
             ))}
           </div>
@@ -331,7 +294,7 @@ export default function VehiclesList() {
             <button
               type="button"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-red-600 font-semibold ring-1 ring-red-300 hover:bg-red-50 shadow-soft focus:outline-none focus:ring-2 focus:ring-red-200"
-              onClick={() => {}}
+              onClick={handleCancel} // về trang HomePage
             >
               <i data-feather="x-circle" className="w-5 h-5" />
               Hủy yêu cầu
