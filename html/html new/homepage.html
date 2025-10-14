@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>6A Logistics — Đặt xe chở hàng nhanh</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CDN + Config (chuẩn mẫu) -->
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
+            colors: {
+              brand: { 25:'#f7faff',50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',500:'#2563eb',600:'#1d4ed8',700:'#1e40af',800:'#1e3a8a' }
+            },
+            borderRadius: { xl2:'1rem', blob:'38% 62% 55% 45% / 35% 44% 56% 65%' },
+            boxShadow: {
+              soft:'0 12px 40px rgba(2,6,23,.08)',
+              glow:'0 10px 30px rgba(37,99,235,.22)',
+              blueglow:'0 10px 24px rgba(37,99,235,.32)'
+            },
+            backgroundImage: {
+              dots:'radial-gradient(rgba(37,99,235,.10) 1px, transparent 1px)',
+              grid:'linear-gradient(rgba(37,99,235,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,.05) 1px, transparent 1px)',
+              ribbon:'linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa,#f472b6,#f59e0b)'
+            },
+            backgroundSize: { dots:'18px 18px', grid:'22px 22px' },
+            keyframes: {
+              fadeIn:{ from:{opacity:0, transform:'translateY(8px)'}, to:{opacity:1, transform:'translateY(0)'} },
+              float:{ from:{ transform:'translateY(0)'}, to:{ transform:'translateY(-8px)'} },
+              pulseUp:{ '0%':{transform:'scale(1)'}, '50%':{transform:'scale(1.03)'}, '100%':{transform:'scale(1)'} },
+              blob:{ '0%':{ borderRadius:'38% 62% 55% 45% / 35% 44% 56% 65%' },
+                     '50%':{ borderRadius:'55% 45% 38% 62% / 60% 35% 65% 40%' },
+                     '100%':{ borderRadius:'38% 62% 55% 45% / 35% 44% 56% 65%' } },
+              shine:{ to:{ backgroundPosition:'200% 0' } },
+              aurora:{
+                '0%':  { transform:'translate3d(0,0,0) scale(1)',      opacity:.9  },
+                '50%': { transform:'translate3d(2%,-2%,0) scale(1.04)', opacity:.95 },
+                '100%':{ transform:'translate3d(0,0,0) scale(1)',      opacity:.9  }
+              }
+            },
+            animation: {
+              fadeIn:'fadeIn .32s ease-out both',
+              float:'float 3.2s ease-in-out infinite alternate',
+              pulseUp:'pulseUp 3.8s ease-in-out infinite',
+              blob:'blob 9s ease-in-out infinite',
+              shine:'shine 2.2s linear infinite',
+              aurora:'aurora 16s ease-in-out infinite'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    :root{
+      --a1: rgba(96,165,250,.22);   /* blue-400 */
+      --a2: rgba(59,130,246,.18);   /* blue-500 */
+      --a3: rgba(99,102,241,.16);   /* indigo-500 */
+      --a4: rgba(34,211,238,.14);   /* cyan-400 */
+      --a5: rgba(167,139,250,.14);  /* violet-400 */
+    }
+
+    .nice-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+    .nice-scroll::-webkit-scrollbar-thumb { background: rgba(37,99,235,.35); border-radius: 999px; }
+    .nice-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    .glass { background: rgba(255,255,255,.68); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+    /* curve divider – thêm cả mask & -webkit-mask */
+    .section-curve{
+      mask: radial-gradient(200% 100% at 50% 0%, transparent 49%, #000 50%);
+      -webkit-mask: radial-gradient(200% 100% at 50% 0%, transparent 49%, #000 50%);
+    }
+
+    /* Nav underline chạy */
+    .link-ux{
+      position:relative;
+      background-image: linear-gradient(90deg, rgba(37,99,235,0), rgba(37,99,235,1), rgba(37,99,235,0));
+      background-repeat:no-repeat; background-size:0% 2px; background-position:50% 100%;
+      transition: background-size .25s ease, color .18s ease, transform .18s ease;
+    }
+    .link-ux:hover{ background-size:100% 2px; transform: translateY(-1px); }
+
+    /* Nút shine + glow xanh */
+    .btn-shine{ position:relative; overflow:hidden; isolation:isolate; }
+    .btn-shine::after{
+      content:""; position:absolute; inset:-1px;
+      background: linear-gradient(120deg, rgba(255,255,255,.0) 20%, rgba(255,255,255,.55) 45%, rgba(255,255,255,.0) 65%);
+      transform: skewX(-20deg); background-size:200% 100%; animation: shine 2.4s linear infinite;
+      mix-blend-mode: overlay; pointer-events:none;
+    }
+    .btn-blue{
+      background: linear-gradient(180deg,#3b82f6,#2563eb);
+      box-shadow: 0 6px 18px rgba(37,99,235,.35);
+    }
+    .btn-blue:hover{ filter: brightness(1.03); box-shadow: 0 8px 24px rgba(37,99,235,.45); }
+
+    /* Header effects */
+    .is-scrolled{ box-shadow: 0 10px 30px rgba(2,6,23,.08) inset, 0 10px 30px rgba(2,6,23,.08); }
+
+    /* Progress bar top */
+    #progressBar{ height:3px; background:linear-gradient(90deg,#60a5fa,#3b82f6,#818cf8); background-size:200% 100%; animation: shine 3s linear infinite; width:0; }
+
+    /* Card hover viền gradient mảnh – thêm mask chuẩn + -webkit */
+    .card-grad{ position:relative; }
+    .card-grad::before{
+      content:""; position:absolute; inset:0; border-radius:1rem; padding:1px;
+      background: linear-gradient(120deg, rgba(96,165,250,.35), rgba(167,139,250,.35), rgba(34,211,238,.35));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask:         linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      opacity:0; transition:.25s;
+      border-radius: 1rem;
+    }
+    .card-grad:hover::before{ opacity:1; }
+
+    /* Gradient text nhấn nhá */
+    .title-grad{ background: linear-gradient(90deg,#0f172a,#1e3a8a 40%,#312e81 80%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .subtitle-soft{ color:#334155; }
+
+    @media (max-width: 640px){ .mobile-sticky{ position:sticky; bottom:0; } }
+  </style>
+</head>
+
+<body class="text-slate-800 font-sans">
+  <!-- ===== GLOBAL BACKGROUND: Aurora Blue + Grid + Dots ===== -->
+  <div class="fixed inset-0 -z-50">
+    <!-- Base gradient dịu -->
+    <div class="absolute inset-0 bg-[radial-gradient(1200px_800px_at_0%_0%,#eef5ff_0%,transparent_55%),radial-gradient(1200px_800px_at_100%_100%,#eaf2ff_0%,transparent_55%),linear-gradient(to_bottom_right,#ffffff_0%,#f6faff_45%,#eef5ff_100%)]"></div>
+    <!-- Aurora blobs động -->
+    <div class="absolute -top-36 -left-32 w-[720px] h-[720px] rounded-full blur-3xl animate-aurora"
+         style="background: radial-gradient(circle at 30% 40%, var(--a1), transparent 56%),
+                          radial-gradient(circle at 70% 60%, var(--a2), transparent 62%),
+                          radial-gradient(circle at 50% 50%, var(--a3), transparent 68%);"></div>
+    <div class="absolute -bottom-40 -right-40 w-[820px] h-[820px] rounded-full blur-3xl animate-aurora [animation-delay:3s]"
+         style="background: radial-gradient(circle at 40% 50%, var(--a4), transparent 60%),
+                          radial-gradient(circle at 60% 50%, var(--a5), transparent 65%),
+                          radial-gradient(circle at 50% 50%, rgba(59,130,246,.10), transparent 70%);"></div>
+    <!-- Grid + Dots -->
+    <div class="absolute inset-0 mix-blend-multiply opacity-[.32] bg-grid bg-[length:22px_22px]"></div>
+    <div class="absolute inset-0 opacity-[.22] bg-dots bg-[length:18px_18px]"></div>
+  </div>
+
+  <!-- ===== TOP NOTICE BAR ===== -->
+  <div class="bg-gradient-to-r from-cyan-400/20 via-indigo-400/20 to-fuchsia-400/20 border-b border-white/40 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between text-[13px]">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/75 border border-white/80 text-blue-700">
+          <i data-feather="zap" class="w-3.5 h-3.5"></i> Nhanh – Minh bạch – Đúng giờ
+        </span>
+        <span class="hidden sm:inline subtitle-soft">Ưu đãi 10% cho chuyến liên tỉnh đặt trước 24h</span>
+      </div>
+      <a href="tel:19001234" class="inline-flex items-center gap-1.5 text-blue-700 hover:text-blue-800">
+        <i data-feather="phone" class="w-4 h-4"></i> Hotline: <strong>1900 1234</strong>
+      </a>
+    </div>
+    <div class="h-[3px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header id="siteHeader" class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 transition-shadow">
+    <!-- Progress theo cuộn -->
+    <div id="progressBar"></div>
+
+    <div class="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:block leading-tight">
+          <div class="font-extrabold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
+          <div class="subtitle-soft text-sm md:text-[13px] leading-none">Đặt xe chở hàng nhanh</div>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 lg:gap-12 text-[15px] lg:text-[17px] font-medium">
+        <a class="px-2.5 py-1.5 rounded-md text-slate-900 link-ux" href="#">Tổng quan</a>
+        <a class="px-2.5 py-1.5 rounded-md text-slate-700 hover:text-blue-600 link-ux" href="#features">Tính năng</a>
+        <a class="px-2.5 py-1.5 rounded-md text-slate-700 hover:text-blue-600 link-ux" href="#routes">Tuyến</a>
+        <a class="px-2.5 py-1.5 rounded-md text-slate-700 hover:text-blue-600 link-ux" href="#pricing">Giá</a>
+        <a class="px-2.5 py-1.5 rounded-md text-slate-700 hover:text-blue-600 link-ux" href="#faq">FAQ</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <button class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-white text-sm shadow-soft btn-shine btn-blue">
+          <i data-feather="log-in" class="w-4 h-4"></i> Đăng nhập
+        </button>
+        <a href="#booking" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/85 border border-slate-200 text-slate-700 hover:border-blue-200 hover:text-blue-700 shadow-soft btn-shine">
+          <i data-feather="user-plus" class="w-4 h-4"></i> Đăng ký
+        </a>
+      </div>
+    </div>
+    <div class="h-[2px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute -top-24 -left-24 w-[560px] h-[560px] bg-gradient-to-br from-brand-100 to-brand-50 rounded-blob animate-blob"></div>
+      <div class="absolute -bottom-24 -right-24 w-[620px] h-[620px] bg-gradient-to-br from-brand-100 to-white rounded-blob animate-blob [animation-delay:2s]"></div>
+      <div class="absolute inset-0 bg-dots opacity-60"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <div class="animate-fadeIn">
+          <span class="inline-flex items-center gap-2 text-[11px] font-medium text-brand-700 bg-brand-50 border border-brand-100 px-3 py-1 rounded-full">
+            <i data-feather="zap" class="w-4 h-4"></i> Nhanh — Minh bạch — Đúng giờ
+          </span>
+          <h1 class="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight title-grad leading-tight">
+            Đặt xe chở hàng nhanh — minh bạch & đúng giờ
+          </h1>
+          <p class="mt-4 subtitle-soft text-base leading-relaxed">
+            Kết nối đội xe 500kg – 2.5 tấn. Giá theo km & tải trọng rõ ràng, theo dõi realtime, hỗ trợ nội thành & liên tỉnh (HCM ↔ Đồng Nai, Bình Dương…).
+          </p>
+
+          <div class="mt-6 grid grid-cols-3 gap-3 max-w-md">
+            <div class="p-4 rounded-xl bg-white/80 border border-slate-200 text-center shadow-soft animate-pulseUp">
+              <div class="text-2xl font-extrabold text-blue-600">1.2k+</div>
+              <div class="text-xs text-slate-500">Tài xế đối tác</div>
+            </div>
+            <div class="p-4 rounded-xl bg-white/80 border border-slate-200 text-center shadow-soft">
+              <div class="text-2xl font-extrabold text-blue-600">98.7%</div>
+              <div class="text-xs text-slate-500">Đúng giờ</div>
+            </div>
+            <div class="p-4 rounded-xl bg-white/80 border border-slate-200 text-center shadow-soft">
+              <div class="text-2xl font-extrabold text-blue-600">4.8/5</div>
+              <div class="text-xs text-slate-500">Đánh giá</div>
+            </div>
+          </div>
+
+          <div class="mt-8 flex items-center gap-3">
+            <a href="#booking" class="px-5 py-3 rounded-xl bg-white text-brand-700 font-semibold border border-brand-200 hover:bg-brand-50 shadow-soft">Đặt xe ngay</a>
+            <a href="#pricing" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-soft btn-shine">Xem bảng giá</a>
+          </div>
+        </div>
+
+        <!-- Booking card -->
+        <div id="booking" class="glass rounded-2xl border border-white/80 p-6 lg:p-7 animate-float">
+          <div class="text-lg font-semibold text-blue-600">Đặt chuyến nhanh</div>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-slate-600">Nơi gửi hàng</label>
+              <input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200" placeholder="VD: 12 Nguyễn Huệ, Q.1, HCM">
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Nơi nhận hàng</label>
+              <input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200" placeholder="VD: KCN Long Thành, Đồng Nai">
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Ngày & giờ</label>
+              <input type="datetime-local" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200">
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Loại xe</label>
+              <select class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200">
+                <option>Van 500kg</option><option>Xe tải 750kg</option><option>Xe tải 1 tấn</option><option>Xe tải 1.5 tấn</option><option>Xe tải 2.5 tấn</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Trọng lượng ước tính</label>
+              <input type="number" min="1" placeholder="kg" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200">
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Ghi chú</label>
+              <input placeholder="Hàng dễ vỡ / có bốc xếp" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-brand-200">
+            </div>
+          </div>
+          <div class="mt-5 flex items-center justify-between">
+            <a href="#pricing" class="text-sm font-medium text-blue-600 underline underline-offset-4">Ước tính chi phí</a>
+            <button class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold shadow-blueglow btn-shine btn-blue">
+              <i data-feather="search" class="w-4 h-4"></i> Tìm chuyến
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Giá hiển thị trước khi đặt, có thể thay đổi theo km, tải trọng và dịch vụ thêm.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-10 section-curve bg-white"></div>
+  </section>
+
+  <!-- ===== FLEET ===== -->
+  <section id="fleet" class="relative scroll-mt-24 pt-14 pb-16 lg:pt-20 lg:pb-20 bg-brand-25 border-y border-brand-100">
+    <div class="absolute inset-x-0 -top-1 h-[2px] w-full bg-ribbon bg-[length:200%_100%] animate-shine opacity-70"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-blue-600 font-semibold">Dịch vụ vận tải</p>
+          <h2 class="mt-1 text-3xl md:text-3xl font-extrabold title-grad leading-tight">Đa dạng loại xe</h2>
+          <p class="mt-2 subtitle-soft text-sm">Từ Van 500kg đến xe tải 2.5 tấn — phù hợp mọi nhu cầu giao nhận nội thành & liên tỉnh.</p>
+        </div>
+        <a href="#pricing" class="hidden md:inline-flex items-center gap-2 text-sm text-blue-600 underline underline-offset-4">Xem bảng giá</a>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        <span class="text-xs px-3 py-1 rounded-full bg-white border border-brand-100 text-slate-700">Hàng nhẹ</span>
+        <span class="text-xs px-3 py-1 rounded-full bg-white border border-brand-100 text-slate-700">Hàng cồng kềnh</span>
+        <span class="text-xs px-3 py-1 rounded-full bg-white border border-brand-100 text-slate-700">Giao nhanh</span>
+        <span class="text-xs px-3 py-1 rounded-full bg-white border border-brand-100 text-slate-700">Liên tỉnh</span>
+      </div>
+
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <!-- 1 -->
+        <div class="card-grad group relative overflow-hidden rounded-2xl bg-white border border-slate-200 transition">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-50"></div>
+          <div class="p-5 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Nhỏ gọn</span>
+              <i data-feather="truck" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-semibold text-slate-900">Van 500kg</h3>
+            <ul class="mt-2 text-sm subtitle-soft space-y-1.5">
+              <li>Hàng nhỏ, tài liệu, linh kiện</li>
+              <li>Kích thước ~ <span class="font-medium text-slate-800">1.7 × 1.2 × 1.1m</span></li>
+              <li>Giao nội thành linh hoạt</li>
+            </ul>
+            <div class="mt-4 flex items-center justify-between">
+              <a href="#pricing" class="text-sm text-blue-600 underline">Bảng giá</a>
+              <!-- đổi sang xanh lá -->
+              <a href="#booking" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium btn-shine">Đặt nhanh</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 -->
+        <div class="card-grad group relative overflow-hidden rounded-2xl bg-white border border-slate-200 transition">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-50"></div>
+          <div class="p-5 relative">
+            <div class="flex items-center justify-between">
+              <span class="text:[11px] text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Phổ biến</span>
+              <i data-feather="truck" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-semibold text-slate-900">Xe tải 750kg</h3>
+            <ul class="mt-2 text-sm subtitle-soft space-y-1.5">
+              <li>Văn phòng phẩm, hàng hộp</li>
+              <li>Kích thước ~ <span class="font-medium text-slate-800">2.1 × 1.4 × 1.4m</span></li>
+              <li>Tiết kiệm chi phí</li>
+            </ul>
+            <div class="mt-4 flex items-center justify-between">
+              <a href="#pricing" class="text-sm text-blue-600 underline">Bảng giá</a>
+              <!-- xanh lá -->
+              <a href="#booking" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium btn-shine">Đặt nhanh</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 -->
+        <div class="card-grad group relative overflow-hidden rounded-2xl bg-white border border-slate-200 transition">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-50"></div>
+          <div class="p-5 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Đa dụng</span>
+              <i data-feather="truck" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-semibold text-slate-900">Xe tải 1 tấn</h3>
+            <ul class="mt-2 text-sm subtitle-soft space-y-1.5">
+              <li>Thiết bị điện tử, nội thất nhỏ</li>
+              <li>Kích thước ~ <span class="font-medium text-slate-800">2.6 × 1.5 × 1.6m</span></li>
+              <li>Nội thành & liên tỉnh gần</li>
+            </ul>
+            <div class="mt-4 flex items-center justify-between">
+              <a href="#pricing" class="text-sm text-blue-600 underline">Bảng giá</a>
+              <!-- xanh lá -->
+              <a href="#booking" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium btn-shine">Đặt nhanh</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 -->
+        <div class="card-grad group relative overflow-hidden rounded-2xl bg-white border border-slate-200 transition">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-50"></div>
+          <div class="p-5 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Cồng kềnh</span>
+              <i data-feather="truck" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-semibold text-slate-900">Xe tải 1.5 tấn</h3>
+            <ul class="mt-2 text-sm subtitle-soft space-y-1.5">
+              <li>Nội thất, máy móc vừa</li>
+              <li>Kích thước ~ <span class="font-medium text-slate-800">3.2 × 1.6 × 1.7m</span></li>
+              <li>Ổn định cho liên tỉnh</li>
+            </ul>
+            <div class="mt-4 flex items-center justify-between">
+              <a href="#pricing" class="text-sm text-blue-600 underline">Bảng giá</a>
+              <!-- xanh lá -->
+              <a href="#booking" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium btn-shine">Đặt nhanh</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 -->
+        <div class="card-grad group relative overflow-hidden rounded-2xl bg-white border border-slate-200 transition">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-50"></div>
+          <div class="p-5 relative">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Liên tỉnh</span>
+              <i data-feather="truck" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-semibold text-slate-900">Xe tải 2.5 tấn</h3>
+            <ul class="mt-2 text-sm subtitle-soft space-y-1.5">
+              <li>Máy móc, hàng cồng kềnh</li>
+              <li>Kích thước ~ <span class="font-medium text-slate-800">3.8 × 1.8 × 1.8m</span></li>
+              <li>Chạy cao tốc ổn định</li>
+            </ul>
+            <div class="mt-4 flex items-center justify-between">
+              <a href="#pricing" class="text-sm text-blue-600 underline">Bảng giá</a>
+              <!-- xanh lá -->
+              <a href="#booking" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium btn-shine">Đặt nhanh</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 md:hidden">
+        <a href="#booking" class="w-full inline-flex justify-center px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-soft btn-shine">
+          Chọn loại xe & đặt ngay
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section id="features" class="py-12 lg:py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Vì sao chọn <span class="text-blue-700">6A Logistics</span>?</h2>
+      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="p-6 rounded-2xl bg-gradient-to-b from-white to-brand-50 border border-brand-100 hover:shadow-blueglow transition">
+          <i data-feather="cpu" class="w-6 h-6 text-brand-600"></i>
+          <div class="mt-3 font-semibold">Tự động & thông minh</div>
+          <p class="mt-1 text-sm subtitle-soft">Gợi ý xe theo cân nặng, tính km tối ưu, cảnh báo giờ cao điểm.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-gradient-to-b from-white to-brand-50 border border-brand-100 hover:shadow-blueglow transition">
+          <i data-feather="map" class="w-6 h-6 text-brand-600"></i>
+          <div class="mt-3 font-semibold">Phủ rộng tuyến</div>
+          <p class="mt-1 text-sm subtitle-soft">Nội thành & liên tỉnh: HCM, Đồng Nai, Bình Dương, BR-VT…</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-gradient-to-b from-white to-brand-50 border border-brand-100 hover:shadow-blueglow transition">
+          <i data-feather="shield" class="w-6 h-6 text-brand-600"></i>
+          <div class="mt-3 font-semibold">An toàn & minh bạch</div>
+          <p class="mt-1 text-sm subtitle-soft">Tài xế xác thực, hành trình ghi nhận, giá công khai.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-gradient-to-b from-white to-brand-50 border border-brand-100 hover:shadow-blueglow transition">
+          <i data-feather="headphones" class="w-6 h-6 text-brand-600"></i>
+          <div class="mt-3 font-semibold">Hỗ trợ 24/7</div>
+          <p class="mt-1 text-sm subtitle-soft">Đội CSKH theo dõi đơn, xử lý sự cố nhanh chóng.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ROUTES ===== -->
+  <section id="routes" class="py-12 lg:py-16 bg-gradient-to-b from-white to-brand-50/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between">
+        <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Tuyến phổ biến</h2>
+        <a href="#" class="text-sm text-blue-600 underline">Xem tất cả</a>
+      </div>
+      <div class="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div class="rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-blueglow transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-brand-700 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-full">Liên tỉnh</span>
+            <span class="text-xs text-slate-500">≈ 35–50km</span>
+          </div>
+          <div class="mt-3 text-lg font-semibold">TP.HCM ↔ Đồng Nai (Biên Hòa/Long Thành)</div>
+          <p class="mt-1 text-sm subtitle-soft">Cao tốc HCM–LT–DG, QL51 • 500kg → 2.5t</p>
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm subtitle-soft">Từ <span class="font-semibold text-slate-900">~105.000đ / 4km</span></div>
+            <!-- đổi thành xanh dương đậm -->
+            <button class="px-3 py-1.5 rounded-lg text-white text-sm font-medium btn-shine bg-blue-600 hover:bg-blue-700">Đặt nhanh</button>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-blueglow transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-brand-700 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-full">Nội vùng</span>
+            <span class="text-xs text-slate-500">≈ 15–30km</span>
+          </div>
+          <div class="mt-3 text-lg font-semibold">HCM ↔ Bình Dương (Thuận An/Dĩ An)</div>
+          <p class="mt-1 text-sm subtitle-soft">QL13, DT743 • khung giờ linh hoạt</p>
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm subtitle-soft">Từ <span class="font-semibold text-slate-900">~120.000đ / 4km</span></div>
+            <!-- xanh dương -->
+            <button class="px-3 py-1.5 rounded-lg text-white text-sm font-medium btn-shine bg-blue-600 hover:bg-blue-700">Đặt nhanh</button>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-blueglow transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-brand-700 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-full">Liên vùng</span>
+            <span class="text-xs text-slate-500">≈ 80–100km</span>
+          </div>
+          <div class="mt-3 text-lg font-semibold">HCM ↔ Bà Rịa – Vũng Tàu</div>
+          <p class="mt-1 text-sm subtitle-soft">QL51 • hỗ trợ giao gấp</p>
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm subtitle-soft">Từ <span class="font-semibold text-slate-900">~340.000đ / 40km</span></div>
+            <!-- xanh dương -->
+            <button class="px-3 py-1.5 rounded-lg text-white text-sm font-medium btn-shine bg-blue-600 hover:bg-blue-700">Đặt nhanh</button>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-xs text-slate-500">Giá mang tính minh hoạ UI; hệ thống sẽ báo giá chính xác theo km & tải trọng.</p>
+    </div>
+  </section>
+
+  <!-- ===== PRICING ===== -->
+  <section id="pricing" class="py-12 lg:py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between">
+        <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Bảng giá theo tải trọng</h2>
+        <a href="#" class="text-sm font-light text-blue-700 underline">Cách tính phí</a>
+      </div>
+      <div class="mt-6 grid md:grid-cols-3 gap-6">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 hover:shadow-blueglow transition">
+          <div class="text-sm font-semibold text-brand-700">Van</div>
+          <div class="mt-1 text-3xl font-extrabold text-slate-900">~105k<span class="text-base text-slate-500"> / 4km</span></div>
+          <ul class="mt-3 text-sm subtitle-soft space-y-1">
+            <li>≤ 500kg • hàng nhỏ gọn</li><li>Giao nội thành nhanh</li><li>Phí chờ minh bạch</li>
+          </ul>
+          <!-- xanh lá -->
+          <button class="mt-4 w-full py-2.5 rounded-xl text-white font-semibold btn-shine bg-green-600 hover:bg-green-700">Chọn</button>
+        </div>
+        <div class="rounded-2xl border-2 border-brand-200 bg-gradient-to-b from-brand-50 to-white p-6 shadow-blueglow">
+          <div class="inline-flex text-xs font-semibold text-brand-700 bg-white/70 border border-brand-100 px-2 py-0.5 rounded-full">Phổ biến</div>
+          <div class="mt-2 text-sm font-semibold text-brand-700">Xe tải nhỏ</div>
+          <div class="mt-1 text-3xl font-extrabold text-slate-900">~150k<span class="text-base text-slate-500"> / 4km</span></div>
+          <ul class="mt-3 text-sm subtitle-soft space-y-1">
+            <li>750kg – 1 tấn</li><li>Đồ điện tử, văn phòng</li><li>Tuỳ chọn bốc xếp</li>
+          </ul>
+          <!-- xanh lá -->
+          <button class="mt-4 w-full py-2.5 rounded-xl text-white font-semibold btn-shine bg-green-600 hover:bg-green-700">Chọn</button>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 hover:shadow-blueglow transition">
+          <div class="text-sm font-semibold text-brand-700">Xe tải trung</div>
+          <div class="mt-1 text-3xl font-extrabold text-slate-900">~220k<span class="text-base text-slate-500"> / 4km</span></div>
+          <ul class="mt-3 text-sm subtitle-soft space-y-1">
+            <li>1.5 – 2.5 tấn</li><li>Hàng cồng kềnh, máy móc</li><li>Giao liên tỉnh ổn định</li>
+          </ul>
+          <!-- xanh lá -->
+          <button class="mt-4 w-full py-2.5 rounded-xl text-white font-semibold btn-shine bg-green-600 hover:bg-green-700">Chọn</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TIMELINE ===== -->
+  <section class="py-12 lg:py-16 bg-brand-25">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Quy trình 3 bước</h2>
+      <ol class="mt-8 grid md:grid-cols-3 gap-6">
+        <li class="p-6 bg-white rounded-2xl border border-slate-200 relative overflow-hidden">
+          <span class="absolute -top-5 -right-5 w-20 h-20 bg-brand-100 rounded-full"></span>
+          <div class="flex items-center gap-2 text-brand-700 font-semibold"><span class="w-7 h-7 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center">1</span> Nhập điểm đi/đến</div>
+          <p class="mt-2 text-sm subtitle-soft">Địa chỉ lấy/giao + người nhận.</p>
+        </li>
+        <li class="p-6 bg-white rounded-2xl border border-slate-200 relative overflow-hidden">
+          <span class="absolute -top-5 -right-5 w-20 h-20 bg-brand-100 rounded-full"></span>
+          <div class="flex items-center gap-2 text-brand-700 font-semibold"><span class="w-7 h-7 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center">2</span> Chọn xe & xem giá</div>
+          <p class="mt-2 text-sm subtitle-soft">Gợi ý loại xe theo cân nặng.</p>
+        </li>
+        <li class="p-6 bg-white rounded-2xl border border-slate-200 relative overflow-hidden">
+          <span class="absolute -top-5 -right-5 w-20 h-20 bg-brand-100 rounded-full"></span>
+          <div class="flex items-center gap-2 text-brand-700 font-semibold"><span class="w-7 h-7 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center">3</span> Xác nhận & theo dõi</div>
+          <p class="mt-2 text-sm subtitle-soft">Realtime ETA, trạng thái đơn.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== TESTIMONIALS ===== -->
+  <section class="py-12 lg:py-16 bg-gradient-to-b from-white to-brand-50/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between">
+        <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Khách hàng nói gì?</h2>
+        <a href="#" class="text-sm text-blue-600 underline">Xem thêm</a>
+      </div>
+      <div class="mt-6 grid md:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur hover:shadow-blueglow transition">
+          <div class="text-amber-500" aria-label="5 sao">★★★★★</div>
+          <p class="mt-2 text-sm text-slate-700">Tài xế đúng giờ, giao HCM ↔ Biên Hòa nhẹ nhàng, giá rõ ràng.</p>
+          <div class="mt-3 text-xs text-slate-500">Chị Mai • Nội thất</div>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur hover:shadow-blueglow transition">
+          <div class="text-amber-500">★★★★★</div>
+          <p class="mt-2 text-sm text-slate-700">Có bốc xếp tận nơi, thao tác đặt xe rất nhanh.</p>
+          <div class="mt-3 text-xs text-slate-500">Anh Toàn • Văn phòng phẩm</div>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur hover:shadow-blueglow transition">
+          <div class="text-amber-500">★★★★★</div>
+          <p class="mt-2 text-sm text-slate-700">Theo dõi realtime & lưu lịch sử đơn rất tiện.</p>
+          <div class="mt-3 text-xs text-slate-500">Công ty ABC • Kho Sóng Thần</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section id="faq" class="py-12 lg:py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl md:text-3xl font-extrabold title-grad">Câu hỏi thường gặp</h2>
+      <div class="mt-6 grid md:grid-cols-2 gap-5">
+        <details class="bg-white border border-slate-200 rounded-2xl p-5 open:shadow-blueglow transition">
+          <summary class="cursor-pointer font-semibold text-slate-800">Giá tính thế nào?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Giá theo km + loại xe + dịch vụ thêm (bốc xếp, 2 chiều...). Hệ thống báo giá trước khi xác nhận.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Có hỗ trợ liên tỉnh?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Có. Các tuyến phổ biến: HCM ↔ Đồng Nai/Bình Dương/BR-VT… và nhiều tỉnh thành khác.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Theo dõi đơn thế nào?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Sau khi đặt, bạn nhận link theo dõi realtime: vị trí xe, ETA, trạng thái, lịch sử chuyển.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Có bốc xếp không?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Có tuỳ chọn: tài xế hỗ trợ hoặc đội bốc xếp chuyên nghiệp theo giờ.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Thời gian chờ miễn phí?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Miễn phí 15 phút đầu. Sau đó tính theo block 15 phút, hiển thị rõ trong chi tiết giá.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Phụ phí cấm giờ/cao tốc?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Nếu tuyến đi qua cao tốc/cấm giờ, hệ thống tự cộng phụ phí (nếu có) vào báo giá trước khi đặt.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Hủy chuyến có mất phí?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Huỷ trước khi tài xế bắt đầu di chuyển: miễn phí. Sau mốc này có thể phát sinh phí công di chuyển.</p>
+        </details>
+        <details class="bg-white border border-slate-200 rounded-2xl p-5">
+          <summary class="cursor-pointer font-semibold text-slate-800">Có xuất hoá đơn & bảo hiểm hàng?</summary>
+          <p class="mt-2 text-sm subtitle-soft">Có xuất hoá đơn VAT theo yêu cầu. Hàng hóa được bảo hiểm cơ bản; bạn có thể mua thêm gói mở rộng.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Service Promise ===== -->
+  <section class="relative py-12 lg:py-16">
+    <div class="absolute inset-0 -z-10">
+      <div class="h-full w-full bg-[radial-gradient(1000px_600px_at_20%_10%,rgba(59,130,246,.10),transparent_55%),radial-gradient(900px_500px_at_90%_40%,rgba(167,139,250,.10),transparent_55%)]"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="rounded-2xl border border-brand-100/60 bg-white/80 backdrop-blur p-6 md:p-8 shadow-soft">
+        <div class="flex items-start md:items-center justify-between gap-6 flex-col md:flex-row">
+          <div>
+            <h3 class="text-xl md:text-2xl font-extrabold title-grad">Cam kết dịch vụ</h3>
+            <p class="subtitle-soft mt-1">Giá minh bạch • Tài xế xác thực • Bảo hiểm hàng hóa • Hỗ trợ 24/7</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <a href="#booking" class="px-5 py-2.5 rounded-xl text-white font-semibold shadow-blueglow btn-shine btn-blue">Đặt xe ngay</a>
+            <a href="tel:19001234" class="px-4 py-2 rounded-xl border border-brand-200 text-brand-700 bg-white hover:bg-brand-50 font-medium">Hotline 1900 1234</a>
+          </div>
+        </div>
+
+        <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 rounded-xl bg-gradient-to-b from-white to-brand-50/60 border border-brand-100">
+            <div class="flex items-center gap-2 text-brand-700 font-semibold">
+              <i data-feather="badge-check" class="w-5 h-5"></i> Giá minh bạch
+            </div>
+            <p class="text-sm subtitle-soft mt-1">Hiển thị chi tiết phí trước khi xác nhận, không phí ẩn.</p>
+          </div>
+          <div class="p-5 rounded-xl bg-gradient-to-b from-white to-brand-50/60 border border-brand-100">
+            <div class="flex items-center gap-2 text-brand-700 font-semibold">
+              <i data-feather="shield" class="w-5 h-5"></i> Tài xế xác thực
+            </div>
+            <p class="text-sm subtitle-soft mt-1">Đối tác lái xe có hồ sơ được kiểm chứng & đánh giá.</p>
+          </div>
+          <div class="p-5 rounded-xl bg-gradient-to-b from-white to-brand-50/60 border border-brand-100">
+            <div class="flex items-center gap-2 text-brand-700 font-semibold">
+              <i data-feather="package" class="w-5 h-5"></i> Bảo hiểm hàng
+            </div>
+            <p class="text-sm subtitle-soft mt-1">Bảo hiểm cơ bản; có thể mua thêm gói mở rộng theo giá trị.</p>
+          </div>
+          <div class="p-5 rounded-xl bg-gradient-to-b from-white to-brand-50/60 border border-brand-100">
+            <div class="flex items-center gap-2 text-brand-700 font-semibold">
+              <i data-feather="headphones" class="w-5 h-5"></i> Hỗ trợ 24/7
+            </div>
+            <p class="text-sm subtitle-soft mt-1">Theo dõi đơn & xử lý sự cố nhanh chóng mọi khung giờ.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="mt-auto border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="grid md:grid-cols-4 gap-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center text-white font-extrabold shadow-blueglow">6A</div>
+            <div class="font-semibold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
+          </div>
+          <p class="mt-3 subtitle-soft text-sm">Nền tảng đặt xe chở hàng nhanh, minh bạch và an toàn.</p>
+        </div>
+
+        <div>
+          <div class="font-semibold mb-2 text-blue-700">Dịch vụ</div>
+          <ul class="space-y-1 text-sm subtitle-soft">
+            <li><a class="hover:text-brand-600" href="#">Nội thành</a></li>
+            <li><a class="hover:text-brand-600" href="#">Liên tỉnh</a></li>
+            <li><a class="hover:text-brand-600" href="#">Bốc xếp</a></li>
+            <li><a class="hover:text-brand-600" href="#">Giao 2 chiều</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="font-semibold mb-2 text-blue-700">Hỗ trợ</div>
+          <ul class="space-y-1 text-sm subtitle-soft">
+            <li><a class="hover:text-brand-600" href="#faq">FAQ</a></li>
+            <li><a class="hover:text-brand-600" href="#">Liên hệ</a></li>
+            <li><a class="hover:text-brand-600" href="#">Chính sách</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="font-semibold mb-2 text-blue-700">Kết nối</div>
+          <div class="flex items-center gap-3 subtitle-soft">
+            <i data-feather="facebook" class="w-5 h-5"></i>
+            <i data-feather="instagram" class="w-5 h-5"></i>
+            <i data-feather="twitter" class="w-5 h-5"></i>
+          </div>
+          <p class="mt-3 text-sm subtitle-soft">Hỗ trợ 24/7: <a class="text-brand-600 underline" href="tel:19001234">1900 1234</a></p>
+        </div>
+      </div>
+      <div class="mt-8 text-xs text-slate-500">© 2025 6A Logistics. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- ===== Mobile sticky CTA ===== -->
+  <div class="md:hidden mobile-sticky z-30">
+    <div class="mx-4 mb-4 rounded-2xl shadow-blueglow border border-brand-200 bg-white/95 backdrop-blur p-3 flex items-center justify-between">
+      <div class="text-sm">
+        <div class="font-semibold text-slate-900">Đặt xe ngay</div>
+        <div class="text-[11px] text-slate-500">Giá hiển thị rõ — nhận xe nhanh</div>
+      </div>
+      <a href="#booking" class="px-4 py-2 rounded-xl text-white text-sm font-semibold btn-shine btn-blue">Bắt đầu</a>
+    </div>
+  </div>
+
+  <script>
+    feather.replace();
+
+    // Shadow cho header khi cuộn + progress bar
+    const header = document.getElementById('siteHeader');
+    const progress = document.getElementById('progressBar');
+    function onScroll(){
+      if (window.scrollY > 8) header.classList.add('is-scrolled'); else header.classList.remove('is-scrolled');
+      const h = document.documentElement;
+      const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight);
+      progress.style.width = (scrolled * 100).toFixed(2) + '%';
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  </script>
+</body>
+</html>

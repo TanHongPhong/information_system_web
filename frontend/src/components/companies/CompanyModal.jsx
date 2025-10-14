@@ -1,10 +1,18 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 import Stars from "./Stars";
 import { Link } from "react-router-dom";
 
 export default function CompanyModal({ company, onClose, fmtVND }) {
   const c = company;
+  const navigate = useNavigate();
+
+  const goNext = () => {
+    console.log("[CompanyModal] goNext click");
+    onClose?.(); // gỡ overlay/overflow-hidden
+    navigate("/vehicle-list");
+  };
 
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
@@ -18,12 +26,12 @@ export default function CompanyModal({ company, onClose, fmtVND }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div className="fixed inset-0 z-50">
       {/* overlay đóng modal */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 z-10" onClick={onClose} />
       {/* khối modal; chặn nổi bọt để overlay không nhận click của nút */}
       <div
-        className="relative z-[61] w-full h-full grid place-items-center p-4"
+        className="relative z-20   w-full h-full grid place-items-center p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -311,7 +319,8 @@ export default function CompanyModal({ company, onClose, fmtVND }) {
               {/* Điều hướng thẳng sang /vehicle_list */}
               <Link
                 to="/vehicle_list"
-                className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700 grid place-items-center"
+                onClick={onClose}
+                className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
               >
                 Tiếp tục đặt
               </Link>

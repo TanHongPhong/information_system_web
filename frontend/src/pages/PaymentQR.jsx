@@ -1,9 +1,13 @@
+// src/pages/QrPayment.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import feather from "feather-icons";
+
 import QrCard from "../components/payment/QrCard";
 import StatusSection from "../components/payment/StatusSection";
 import OrderDetails from "../components/payment/OrderDetails";
-import { buildSepayQrUrl } from "../lib/sepay"; // <— HÀM TẠO URL ẢNH SePay
+import { buildSepayQrUrl } from "../lib/sepay"; // named export
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 
 export default function QrPayment({
   amount = 10_000_000,
@@ -26,16 +30,19 @@ export default function QrPayment({
       currency: "VND",
       maximumFractionDigits: 0,
     });
+
   const mmss = (secs) => {
-    const m = String(Math.floor(secs / 60)).padStart(2, "0");
-    const s = String(secs % 60).padStart(2, "0");
+    const sInt = Math.max(0, Math.floor(secs));
+    const m = String(Math.floor(sInt / 60)).padStart(2, "0");
+    const s = String(sInt % 60).padStart(2, "0");
     return `${m}:${s}`;
   };
 
   // ==== EFFECTS ====
+  // Feather: chỉ cần chạy 1 lần khi mount
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
-  }, []); // chỉ gọi 1 lần là đủ
+  }, []);
 
   // Countdown
   useEffect(() => {
@@ -65,11 +72,13 @@ export default function QrPayment({
     [amount, note]
   );
 
-  // Tạo URL ảnh QR SePay ĐỘNG từ ENV + amount + note
+  // Tạo URL ảnh QR SePay từ ENV + amount + note
   const qrSrc = useMemo(() => {
-    const ACC = import.meta.env.VITE_SEPAY_ACC;                    // .env
-    const BANK = import.meta.env.VITE_SEPAY_BANK;                  // .env
+    const ACC = import.meta.env.VITE_SEPAY_ACC;
+    const BANK = import.meta.env.VITE_SEPAY_BANK;
     const TEMPLATE = import.meta.env.VITE_SEPAY_TEMPLATE || "qronly";
+    // Fallback ảnh cục bộ nếu thiếu ENV (tránh crash khi dev)
+    if (!ACC || !BANK) return "/qr.jpg";
     return buildSepayQrUrl({
       acc: ACC,
       bank: BANK,
@@ -84,8 +93,11 @@ export default function QrPayment({
     const a = document.createElement("a");
     a.href = qrSrc;
     a.download = `vietqr-${orderId}.jpg`;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
   };
+
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -94,17 +106,20 @@ export default function QrPayment({
       setToastMsg("Không copy được.");
     }
   };
+
   const onRefresh = () => {
     setRemain(15 * 60);
     setStatus("pending");
     setSuccessBar(false);
+    setToastMsg("Đã làm mới mã QR.");
   };
+
   const onCancel = () => setToastMsg("Bạn đã huỷ thanh toán (demo).");
   const onSupport = () => setToastMsg("Đã mở kênh hỗ trợ (demo).");
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
-      {/* Local styles (giữ như bản gốc) */}
+      {/* Local styles */}
       <style>{`
         html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
         :is(button,a,select,input,details,summary):focus-visible{outline:2px solid #2563eb;outline-offset:2px}
@@ -114,61 +129,21 @@ export default function QrPayment({
         #order-id{font-variant-numeric:tabular-nums;display:inline-block;line-height:1.45}
       `}</style>
 
-      {/* SIDEBAR (giữ nguyên) */}
-      <aside className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3">
-        <div className="mt-1 mb-1 text-center">
-          <span className="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm">
-            <i data-feather="shield" className="w-6 h-6" />
-          </span>
-          <div className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">LGBT</div>
-        </div>
-        <div className="flex flex-col items-center gap-4">
-          <a href="#" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Trang chủ"><i data-feather="home" /></a>
-          <a href="#" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Theo dõi vị trí"><i data-feather="map" /></a>
-          <a href="#" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Lịch sử giao dịch"><i data-feather="file-text" /></a>
-          <button className="relative w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Thông báo">
-            <i data-feather="bell" /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          <a href="#" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Người dùng"><i data-feather="user" /></a>
-          <a href="#" className="w-10 h-10 rounded-xl grid place-items-center text-slate-400 hover:text-slate-600 hover:bg-slate-50" title="Cài đặt"><i data-feather="settings" /></a>
-        </div>
-      </aside>
+      <Sidebar />
 
       <main className="ml-20">
-        {/* HEADER (giữ nguyên) */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
-          <div className="flex items-center justify-between px-3 md:px-5 py-2.5">
-            <div className="flex-1 max-w-2xl mr-3 md:mr-6">
-              <div className="relative">
-                <i data-feather="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input className="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200" placeholder="Tìm giao dịch, mã đơn, số tiền…" />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" title="Filter">
-                  <i data-feather="filter" className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <button className="h-9 w-9 rounded-lg grid place-items-center ring-1 ring-blue-200 text-blue-600 bg-white hover:bg-blue-50" title="New"><i data-feather="plus" className="w-4 h-4" /></button>
-              <button className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" className="w-4 h-4" /></button>
-              <button className="h-9 w-9 rounded-lg grid bg-blue-50 place-items-center border border-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" className="w-4 h-4" /></button>
-              <button type="button" className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
-                <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-                <div className="text-left leading-tight hidden sm:block">
-                  <div className="text-[13px] font-semibold">Harsh Vani</div>
-                  <div className="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
-                </div>
-                <i data-feather="chevron-down" className="w-4 h-4 text-slate-400" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <Topbar />
 
         {/* CONTENT */}
         <section className="p-6 md:p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Thanh toán QR</h1>
-              <p className="text-slate-600">Quét mã để hoàn tất giao dịch an toàn, nhanh chóng.</p>
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                Thanh toán QR
+              </h1>
+              <p className="text-slate-600">
+                Quét mã để hoàn tất giao dịch an toàn, nhanh chóng.
+              </p>
             </div>
           </div>
 
@@ -180,16 +155,23 @@ export default function QrPayment({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="inline-grid place-items-center w-10 h-10 rounded-xl bg-white/90 ring-1 ring-slate-200">
-                      <i data-feather="smartphone" className="w-5 h-5 text-blue-700" />
+                      <i
+                        data-feather="smartphone"
+                        className="w-5 h-5 text-blue-700"
+                      />
                     </span>
                     <div>
-                      <div className="text-sm text-slate-600">Thanh toán cho</div>
+                      <div className="text-sm text-slate-600">
+                        Thanh toán cho
+                      </div>
                       <div className="font-bold">{companyName}</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-slate-600">Số tiền</div>
-                    <div className="text-2xl font-extrabold">{fmtCurrency(amount)}</div>
+                    <div className="text-2xl font-extrabold">
+                      {fmtCurrency(amount)}
+                    </div>
                   </div>
                 </div>
               </div>
