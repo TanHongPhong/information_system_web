@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Pages
 import HomePage from "./pages/HomePage.jsx";
 import NotFound from "./pages/NotFound.jsx";
-import WarehouseInOut from "./pages/WarehouseInOut.jsx";
+import WareHouse from "./pages/WareHouse.jsx";
 import OrderTracking from "./pages/OrderTracking.jsx";
 import PaymentQR from "./pages/PaymentQR.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
@@ -11,6 +11,10 @@ import TransportCompanies from "./pages/TransportCompanies.jsx";
 import VehicleList from "./pages/VehicleList.jsx";
 import OrderTrackingCustomner from "./pages/OrderTrackingCustomer.jsx";
 import Supplier from "./pages/Supplier.jsx";
+import NhapIn4 from "./pages/NhapIn4.jsx";
+import ChiTietDonHang from "./pages/ChiTietDonHang.jsx";
+import SignIn from "./pages/SignIn.jsx";
+
 
 export default function App() {
   return (
@@ -23,7 +27,12 @@ export default function App() {
         <Route path="/payment-history" element={<PaymentHistory />} />
         <Route path="/payment-qr" element={<PaymentQR />} />
         <Route path="/order-tracking" element={<OrderTracking />} />
-        <Route path="/warehouse-in-out" element={<WarehouseInOut />} />
+        <Route path="/warehouse" element={<WareHouse />} />
+        <Route path="/nhap-in4" element={<NhapIn4 />} />
+        <Route path="/chi-tiet-don-hang" element={<ChiTietDonHang />} />
+        <Route path="/home-page" element={<HomePage />} />
+        <Route path="/sign-in" element={<SignIn />} />
+
         <Route
           path="/order-tracking-customer"
           element={<OrderTrackingCustomner />}
