@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+// src/pages/QrPayment.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import feather from "feather-icons";
+
 import QrCard from "../components/payment/QrCard";
 import StatusSection from "../components/payment/StatusSection";
 import OrderDetails from "../components/payment/OrderDetails";
+import { buildSepayQrUrl } from "../lib/sepay"; // named export
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
@@ -11,7 +14,6 @@ export default function QrPayment({
   companyName = "Công ty Gemadept",
   orderId = "322138483848",
   orderDesc = "Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025",
-  qrSrc = "/qr.jpg",
 }) {
   // ==== STATE ====
   const [remain, setRemain] = useState(15 * 60);
@@ -28,19 +30,19 @@ export default function QrPayment({
       currency: "VND",
       maximumFractionDigits: 0,
     });
+
   const mmss = (secs) => {
-    const m = String(Math.floor(secs / 60)).padStart(2, "0");
-    const s = String(secs % 60).padStart(2, "0");
+    const sInt = Math.max(0, Math.floor(secs));
+    const m = String(Math.floor(sInt / 60)).padStart(2, "0");
+    const s = String(sInt % 60).padStart(2, "0");
     return `${m}:${s}`;
   };
 
   // ==== EFFECTS ====
+  // Feather: chỉ cần chạy 1 lần khi mount
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, []);
-  useEffect(() => {
-    feather.replace({ width: 18, height: 18 });
-  });
 
   // Countdown
   useEffect(() => {
@@ -63,13 +65,39 @@ export default function QrPayment({
     return () => clearTimeout(t);
   }, [toastMsg]);
 
+  // ==== DERIVED ====
+  const note = useMemo(() => `GMD-${orderId}`, [orderId]);
+  const qrPayload = useMemo(
+    () => `VIETQR|GEMADEPT|${amount}|${note}`,
+    [amount, note]
+  );
+
+  // Tạo URL ảnh QR SePay từ ENV + amount + note
+  const qrSrc = useMemo(() => {
+    const ACC = import.meta.env.VITE_SEPAY_ACC;
+    const BANK = import.meta.env.VITE_SEPAY_BANK;
+    const TEMPLATE = import.meta.env.VITE_SEPAY_TEMPLATE || "qronly";
+    // Fallback ảnh cục bộ nếu thiếu ENV (tránh crash khi dev)
+    if (!ACC || !BANK) return "/qr.jpg";
+    return buildSepayQrUrl({
+      acc: ACC,
+      bank: BANK,
+      amount,
+      des: note,
+      template: TEMPLATE,
+    });
+  }, [amount, note]);
+
   // ==== ACTIONS ====
   const onDownloadQr = () => {
     const a = document.createElement("a");
     a.href = qrSrc;
-    a.download = "gemadept-vietqr.jpg";
+    a.download = `vietqr-${orderId}.jpg`;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
   };
+
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -78,21 +106,20 @@ export default function QrPayment({
       setToastMsg("Không copy được.");
     }
   };
+
   const onRefresh = () => {
     setRemain(15 * 60);
     setStatus("pending");
     setSuccessBar(false);
+    setToastMsg("Đã làm mới mã QR.");
   };
+
   const onCancel = () => setToastMsg("Bạn đã huỷ thanh toán (demo).");
   const onSupport = () => setToastMsg("Đã mở kênh hỗ trợ (demo).");
 
-  // ==== DERIVED ====
-  const note = `GMD-${orderId}`;
-  const qrPayload = `VIETQR|GEMADEPT|${amount}|${note}`;
-
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
-      {/* Local styles (giữ như bản gốc) */}
+      {/* Local styles */}
       <style>{`
         html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
         :is(button,a,select,input,details,summary):focus-visible{outline:2px solid #2563eb;outline-offset:2px}
@@ -178,8 +205,8 @@ export default function QrPayment({
               orderDesc={orderDesc}
               amount={amount}
               fmtCurrency={fmtCurrency}
-              note={`GMD-${orderId}`}
-              onCopyNote={() => copyText(`GMD-${orderId}`)}
+              note={note}
+              onCopyNote={() => copyText(note)}
               onCancel={onCancel}
               onSupport={onSupport}
             />
