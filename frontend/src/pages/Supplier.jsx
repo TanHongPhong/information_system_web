@@ -1,12 +1,16 @@
 // Supplier.jsx — single-file compact version (no hooks/lib/data folders)
 // All components and data are co-located here for portability.
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import feather from "feather-icons";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Sidebar from "@/components/tracking/Sidebar";
-import Topbar from "@/components/tracking/Topbar";
+
+// ⬇️ Dùng sidebar/topbar CHUNG của system
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
+
 import {
   Chart,
   LineController,
@@ -373,13 +377,14 @@ function LatestShippingTable({ rows = [] }) {
   return (
     <section className="card h-[calc(100vh-180px)] flex flex-col overflow-hidden">
       <div className="px-6 py-4 flex items-center justify-between">
-        <h3 className="font-semibold text-lg">Latest Shipping</h3>
-        <a
-          href="#"
+        <h3 className="font-semibold text-lg">Shipping</h3>
+        {/* Điều hướng sang /order-tracking */}
+        <Link
+          to="/order-tracking"
           className="text-sm font-medium text-blue-600 hover:underline"
         >
           Xem tất cả
-        </a>
+        </Link>
       </div>
       <div className="overflow-x-auto flex-1 min-h-0">
         <div className="h-full overflow-y-auto nice-scroll">
@@ -562,9 +567,7 @@ function OrderCard({ req, onDetail }) {
           <div className="font-medium text-sm">{req.name}</div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-100">
-            Từ chối
-          </button>
+          {/* BỎ nút Từ chối — chỉ còn Xem chi tiết */}
           <button
             onClick={() =>
               onDetail &&
@@ -582,7 +585,7 @@ function OrderCard({ req, onDetail }) {
             }
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
           >
-            Chi tiết
+            Xem chi tiết
           </button>
         </div>
       </div>
@@ -590,7 +593,18 @@ function OrderCard({ req, onDetail }) {
   );
 }
 
+// ---- Search helper (chuẩn hoá để tìm theo ID, bỏ khoảng trắng, không phân biệt hoa-thường)
+const norm = (s) =>
+  (s || "").toString().toLowerCase().replace(/\s+/g, "").trim();
+
 function OrderRequests({ list = [], onDetail }) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const nq = norm(q);
+    if (!nq) return list;
+    return list.filter((it) => norm(it.orderCode).includes(nq));
+  }, [list, q]);
+
   return (
     <section className="card h-222 flex flex-col min-h-0">
       <div className="p-4 md:p-5 flex items-center justify-between gap-3 border-b border-slate-100">
@@ -601,8 +615,11 @@ function OrderRequests({ list = [], onDetail }) {
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
           ></i>
           <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100"
-            placeholder="Tìm kiếm đơn hàng"
+            placeholder="Tìm theo ID (ví dụ: ORDERID 0112)"
+            aria-label="Tìm kiếm đơn hàng theo ID"
           />
         </div>
       </div>
@@ -610,9 +627,15 @@ function OrderRequests({ list = [], onDetail }) {
         Yêu cầu đặt hàng gần đây
       </div>
       <div className="p-4 md:p-5 pt-2 flex-1 min-h-0 overflow-y-auto nice-scroll space-y-4">
-        {list.map((req) => (
-          <OrderCard key={req.orderCode} req={req} onDetail={onDetail} />
-        ))}
+        {filtered.length === 0 ? (
+          <div className="text-sm text-slate-500">
+            Không tìm thấy đơn hàng phù hợp.
+          </div>
+        ) : (
+          filtered.map((req) => (
+            <OrderCard key={req.orderCode} req={req} onDetail={onDetail} />
+          ))
+        )}
       </div>
       <div className="px-4 md:px-5 py-3 border-t border-slate-100 flex items-center justify-between">
         <div className="text-[11px] text-slate-400">
@@ -628,6 +651,7 @@ function OrderRequests({ list = [], onDetail }) {
           contributors.
         </div>
         <div className="flex items-center gap-2">
+          {/* Giữ các nút tổng nếu bạn vẫn cần — không thuộc yêu cầu bỏ */}
           <button className="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-100">
             Từ chối tất cả
           </button>
@@ -655,35 +679,15 @@ export default function Supplier() {
     document.body.style.overflow = ""; // trả lại scroll
   };
 
-  // đóng bằng phím Esc (tùy chọn)
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && closeSheet();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-  const topbarRef = useRef(null);
-
-  // Feather + sync CSS var for topbar height
+  // Feather icons
   useEffect(() => {
     feather.replace();
-    const syncTopbar = () => {
-      if (topbarRef.current) {
-        document.documentElement.style.setProperty(
-          "--topbar-h",
-          `${topbarRef.current.offsetHeight}px`
-        );
-      }
-    };
-    syncTopbar();
-    window.addEventListener("resize", syncTopbar);
-    return () => window.removeEventListener("resize", syncTopbar);
   }, []);
 
   return (
     <div className="text-slate-800">
       {/* Global styles */}
       <style>{`
-        :root{ --sidebar-w:80px; }
         html,body{height:100%}
         body{ background: linear-gradient(180deg,#f8fafc 0%, #eef2f7 60%, #eef2f7 100%); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; scrollbar-gutter: stable both-edges; }
         .card{ background:#fff; border:1px solid rgb(226 232 240); border-radius:1rem; box-shadow:0 10px 28px rgba(2,6,23,.08) }
@@ -697,16 +701,14 @@ export default function Supplier() {
         .pro-table tbody tr:hover{ background:#eff6ff }
         .mini-map{ pointer-events:none; }
         .mini-map .leaflet-control-attribution{ display:none; }
-        .container-padding { padding-top: clamp(8px, calc(var(--topbar-h,64px) - 56px), 18px); }
+        .container-padding { padding-top: clamp(8px, 8px, 18px); } /* giữ nhẹ phần padding top */
         .mini-map{
-          position: relative;       /* tạo stacking context */
-          z-index: 0;               /* khóa z-index con nằm trong context này */
-          overflow: hidden;         /* clip tile theo border-radius */
-          pointer-events: none;     /* như bạn đang dùng để disable tương tác */
-          border-radius: 0.5rem;    /* backup cho trường hợp thiếu rounded trên div */
+          position: relative;
+          z-index: 0;
+          overflow: hidden;
+          pointer-events: none;
+          border-radius: 0.5rem;
         }
-
-        /* Ép các pane của Leaflet không “vượt” z-index ra ngoài */ 
         .mini-map .leaflet-pane,
         .mini-map .leaflet-tile-pane,
         .mini-map .leaflet-overlay-pane,
@@ -716,25 +718,17 @@ export default function Supplier() {
         .mini-map .leaflet-popup-pane {
           z-index: 0 !important;
         }
-
-        /* Tránh nền trắng của container Leaflet gây “mảng” đè */
         .mini-map .leaflet-container {
           background: transparent !important;
         }
-
       `}</style>
 
+      {/* Sidebar & Topbar chung */}
       <Sidebar />
-      <Topbar />
+      <Topbar title="Dashboard" />
 
-      <main
-        id="main"
-        className="container-padding"
-        style={{
-          marginLeft: "var(--sidebar-w)",
-          paddingTop: "var(--topbar-h, 64px)",
-        }}
-      >
+      {/* MAIN: chừa chỗ cho sidebar chung w-20 */}
+      <main id="main" className="ml-20 pt-4">
         <div className="max-w-[120rem] mx-auto p-4 md:p-6 pt-3">
           <header className="flex items-center justify-between gap-4">
             <div>
@@ -920,6 +914,7 @@ export default function Supplier() {
           </footer>
         </div>
       </main>
+
       {/* Backdrop */}
       {sheet.open && (
         <div

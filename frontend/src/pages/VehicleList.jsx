@@ -9,7 +9,7 @@ export default function VehiclesList() {
   const COMPANY = "Gemadept Logistics";
   const ROUTE = "HCM → Hà Nội";
   const navigate = useNavigate();
-  const PAYMENT_QR_PATH = "/payment-qr"; // đổi thành "/payment_qr" nếu route của bạn dùng dấu "_"
+  const NHAP_IN4 = "/nhap-in4"; // đổi thành "/payment_qr" nếu route của bạn dùng dấu "_"
 
   const [data] = useState([
     {
@@ -109,9 +109,9 @@ export default function VehiclesList() {
   }, [list, filter, sort]);
 
   // --- handlers ---
-  const handleCancel = () => navigate("/"); // về HomePage
+  const handleCancel = () => navigate("/transport-companies"); // về HomePage
   const handleSelect = (item) =>
-    navigate(PAYMENT_QR_PATH, {
+    navigate(NHAP_IN4, {
       state: { vehicleId: item.id, plate: item.plate },
     });
 
@@ -285,7 +285,7 @@ export default function VehiclesList() {
                 item={item}
                 company={COMPANY}
                 route={ROUTE}
-                onSelect={() => handleSelect(item)} // chuyển qua Payment QR
+                onSelect={() => handleSelect(item)} // chuyển qua Nhập thông tin
               />
             ))}
           </div>

@@ -2,39 +2,40 @@ import React from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
-const HomePage = () => {
+// Import từng component (đổi đường dẫn cho khớp dự án của bạn)
+import HomeLocalStyles from "../components/home/HomeLocalStyles";
+import GlobalBackground from "../components/home/GlobalBackground";
+import NoticeBar from "../components/home/NoticeBar";
+import HeroBooking from "../components/home/HeroBooking";
+import FleetSection from "../components/home/FleetSection";
+import FeaturesSection from "../components/home/FeaturesSection";
+import RoutesSection from "../components/home/RoutesSection";
+import PricingSection from "../components/home/PricingSection";
+import TimelineSection from "../components/home/TimelineSection";
+import TestimonialsSection from "../components/home/TestimonialsSection";
+import ServicePromise from "../components/home/ServicePromise";
+import MobileStickyCTA from "../components/home/MobileStickyCTA";
+
+export default function HomePage() {
   return (
-    <div className="bg-slate-50 text-slate-900">
-      {/* Sidebar chung */}
-      <Sidebar />
+    <div className="text-slate-800 font-sans">
+      {/* Local CSS + nền global */}
+      <HomeLocalStyles />
+      <GlobalBackground />
 
-      {/* Main chừa chỗ sidebar w-20 */}
-      <main className="ml-20 min-h-screen flex flex-col">
-        {/* Topbar chung */}
-        <Topbar title="Home" />
+      {/* Các section đặc trưng (không gồm sidebar/header/topbar) */}
+      <NoticeBar />
+      <HeroBooking />
+      <FleetSection />
+      <FeaturesSection />
+      <RoutesSection />
+      <PricingSection />
+      <TimelineSection />
+      <TestimonialsSection />
+      <ServicePromise />
 
-        {/* Nội dung trang */}
-        <section className="p-4 md:p-6">
-          <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200">
-              <h3 className="font-semibold mb-2">Chỉ số nhanh</h3>
-              <p className="text-sm text-slate-600">
-                Đặt nội dung dashboard tại đây (cards, charts, v.v.).
-              </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200">
-              <h3 className="font-semibold mb-2">Đơn vận chuyển gần đây</h3>
-              <p className="text-sm text-slate-600">…</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white ring-1 ring-slate-200">
-              <h3 className="font-semibold mb-2">Thông báo</h3>
-              <p className="text-sm text-slate-600">…</p>
-            </div>
-          </div>
-        </section>
-      </main>
+      {/* CTA dính dưới mobile */}
+      <MobileStickyCTA />
     </div>
   );
-};
-
-export default HomePage;
+}

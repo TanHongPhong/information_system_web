@@ -451,7 +451,7 @@ export default function TransportCompanies() {
                 <div>Transport company</div>
                 <div>Service area</div>
                 <div className="text-center">Cost</div>
-                <div className="text-center">Đánh giá</div>
+                <div className="text-center">Rate</div>
                 <div className="text-center">Information</div>
               </div>
 
