@@ -1,14 +1,17 @@
-import React from "react";
+import { useEffect } from "react";
+import feather from "feather-icons";
 
 export default function FilterBar({
-  q, setQ,
-  fromDate, setFromDate,
-  toDateStr, setToDateStr,
-  company, setCompany,
-  status, setStatus,
-  sortBy, setSortBy,
-  onReset,
+  q, onQ,
+  from, onFrom,
+  to, onTo,
+  company, onCompany,
+  status, onStatus,
+  sortBy, onSortBy,
+  onClear,
 }) {
+  useEffect(() => { feather.replace({ width: 18, height: 18 }); });
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-soft">
       <div className="grid lg:grid-cols-12 gap-3 md:gap-4">
@@ -16,9 +19,9 @@ export default function FilterBar({
           <label className="text-sm text-slate-600">Tìm kiếm</label>
           <div className="mt-1 relative">
             <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
               type="text"
+              value={q}
+              onChange={(e)=>onQ(e.target.value)}
               placeholder="Mã đơn / công ty / số tiền…"
               className="w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500 pl-9"
             />
@@ -30,18 +33,18 @@ export default function FilterBar({
           <div>
             <label className="text-sm text-slate-600">Từ ngày</label>
             <input
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
               type="date"
+              value={from}
+              onChange={(e)=>onFrom(e.target.value)}
               className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
           <div>
             <label className="text-sm text-slate-600">Đến ngày</label>
             <input
-              value={toDateStr}
-              onChange={(e) => setToDateStr(e.target.value)}
               type="date"
+              value={to}
+              onChange={(e)=>onTo(e.target.value)}
               className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
@@ -52,7 +55,7 @@ export default function FilterBar({
             <label className="text-sm text-slate-600">Công ty</label>
             <select
               value={company}
-              onChange={(e) => setCompany(e.target.value)}
+              onChange={(e)=>onCompany(e.target.value)}
               className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">Tất cả</option>
@@ -66,7 +69,7 @@ export default function FilterBar({
             <label className="text-sm text-slate-600">Trạng thái</label>
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e)=>onStatus(e.target.value)}
               className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">Tất cả</option>
@@ -82,7 +85,7 @@ export default function FilterBar({
             <label className="text-sm text-slate-600">Sắp xếp</label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e)=>onSortBy(e.target.value)}
               className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="date_desc">Ngày ↓</option>
@@ -92,12 +95,7 @@ export default function FilterBar({
             </select>
           </div>
           <div className="flex items-end">
-            <button
-              onClick={onReset}
-              className="w-full h-[42px] rounded-xl border border-slate-300 hover:bg-slate-50"
-            >
-              Xóa lọc
-            </button>
+            <button onClick={onClear} className="w-full h-[42px] rounded-xl border border-slate-300 hover:bg-slate-50">Xóa lọc</button>
           </div>
         </div>
       </div>
