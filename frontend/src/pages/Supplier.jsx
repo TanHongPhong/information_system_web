@@ -652,9 +652,7 @@ function OrderRequests({ list = [], onDetail }) {
         </div>
         <div className="flex items-center gap-2">
           {/* Giữ các nút tổng nếu bạn vẫn cần — không thuộc yêu cầu bỏ */}
-          <button className="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-100">
-            Từ chối tất cả
-          </button>
+
           <button className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700">
             Chấp nhận tất cả
           </button>

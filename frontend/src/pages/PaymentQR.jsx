@@ -1,5 +1,6 @@
 // src/pages/QrPayment.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 
 import QrCard from "../components/payment/QrCard";
@@ -15,6 +16,8 @@ export default function QrPayment({
   orderId = "322138483848",
   orderDesc = "Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025",
 }) {
+  const nav = useNavigate(); // <-- thêm
+
   // ==== STATE ====
   const [remain, setRemain] = useState(15 * 60);
   const [status, setStatus] = useState("pending"); // 'pending' | 'success' | 'expired'
@@ -39,12 +42,10 @@ export default function QrPayment({
   };
 
   // ==== EFFECTS ====
-  // Feather: chỉ cần chạy 1 lần khi mount
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, []);
 
-  // Countdown
   useEffect(() => {
     if (status !== "pending") return;
     const id = setInterval(() => {
@@ -53,12 +54,10 @@ export default function QrPayment({
     return () => clearInterval(id);
   }, [status]);
 
-  // Hết giờ
   useEffect(() => {
     if (remain === 0 && status === "pending") setStatus("expired");
   }, [remain, status]);
 
-  // Toast auto-hide
   useEffect(() => {
     if (!toastMsg) return;
     const t = setTimeout(() => setToastMsg(""), 1600);
@@ -72,12 +71,10 @@ export default function QrPayment({
     [amount, note]
   );
 
-  // Tạo URL ảnh QR SePay từ ENV + amount + note
   const qrSrc = useMemo(() => {
     const ACC = import.meta.env.VITE_SEPAY_ACC;
     const BANK = import.meta.env.VITE_SEPAY_BANK;
     const TEMPLATE = import.meta.env.VITE_SEPAY_TEMPLATE || "qronly";
-    // Fallback ảnh cục bộ nếu thiếu ENV (tránh crash khi dev)
     if (!ACC || !BANK) return "/qr.jpg";
     return buildSepayQrUrl({
       acc: ACC,
@@ -114,7 +111,11 @@ export default function QrPayment({
     setToastMsg("Đã làm mới mã QR.");
   };
 
-  const onCancel = () => setToastMsg("Bạn đã huỷ thanh toán (demo).");
+  // ⬇️ Quan trọng: Huỷ thanh toán → quay về trang nhập thông tin hàng (/nhap-in4)
+  const onCancel = () => {
+    nav("/nhap-in4");
+  };
+
   const onSupport = () => setToastMsg("Đã mở kênh hỗ trợ (demo).");
 
   return (
@@ -177,7 +178,7 @@ export default function QrPayment({
               </div>
 
               <div className="p-5 md:p-7 grid lg:grid-cols-[minmax(280px,360px)_1fr] gap-6 items-start">
-                {/* QR CARD (component) */}
+                {/* QR CARD */}
                 <QrCard
                   remainText={mmss(remain)}
                   qrSrc={qrSrc}
@@ -186,7 +187,7 @@ export default function QrPayment({
                   onRefresh={onRefresh}
                 />
 
-                {/* STATUS + HDSD + METHODS (component) */}
+                {/* STATUS + HDSD + METHODS */}
                 <StatusSection
                   status={status}
                   orderId={orderId}
@@ -198,7 +199,7 @@ export default function QrPayment({
               </div>
             </div>
 
-            {/* RIGHT: ORDER DETAILS (component) */}
+            {/* RIGHT: ORDER DETAILS */}
             <OrderDetails
               companyName={companyName}
               orderId={orderId}
@@ -207,7 +208,7 @@ export default function QrPayment({
               fmtCurrency={fmtCurrency}
               note={note}
               onCopyNote={() => copyText(note)}
-              onCancel={onCancel}
+              onCancel={onCancel} // <-- gọi nav('/nhap-in4')
               onSupport={onSupport}
             />
           </div>
