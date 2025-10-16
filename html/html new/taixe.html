@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Tài xế — 6A Logistics</title>
+
+  <!-- Font + Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter","ui-sans-serif","system-ui"] },
+            colors: { brand: { 25:"#f7faff", 50:"#eff6ff", 100:"#dbeafe", 500:"#2563eb", 600:"#1d4ed8" } },
+            boxShadow: { soft: "0 12px 40px rgba(2,6,23,.08)" },
+            borderRadius: { xl2: "1rem" }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    body {
+      min-height: 100svh;
+      background:
+        radial-gradient(1200px 600px at -10% -10%, rgba(37,99,235,.08), transparent 60%),
+        radial-gradient(900px 500px at 110% -10%, rgba(37,99,235,.06), transparent 60%),
+        #ffffff;
+    }
+    .header-gradient{
+      background: linear-gradient(90deg, #c8efff 0%, #9ccdf7 45%, #759cea 100%);
+      position: relative; isolation: isolate;
+    }
+    .header-gradient::after{
+      content:""; position:absolute; inset:0;
+      background: linear-gradient(90deg, rgba(0,0,0,.18), rgba(0,0,0,.08) 40%, rgba(0,0,0,0) 65%);
+      pointer-events:none; z-index:-1;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased selection:bg-brand-100 selection:text-slate-900">
+  <div class="mx-auto max-w-sm min-h-svh flex flex-col">
+    <!-- Header gradient -->
+    <header class="sticky top-0 z-10 shadow-sm">
+      <div class="header-gradient px-4 pt-[env(safe-area-inset-top)] py-3 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-white/15 ring-1 ring-inset ring-white/10">
+            <i data-feather="truck" class="w-5 h-5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,.45)]"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-semibold leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,.5)]">Trang tài xế</h1>
+            <p class="text-xs/5 text-white/95 mt-0.5 drop-shadow-[0_1px_1px_rgba(0,0,0,.45)]">Thông tin chuyến & hàng hóa</p>
+          </div>
+        </div>
+        <button class="p-2 rounded-lg hover:bg-white/10 active:scale-95 transition ring-1 ring-inset ring-white/10">
+          <i data-feather="more-horizontal" class="w-5 h-5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,.45)]"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 py-4 space-y-4">
+      <!-- Biển số + tuyến đường -->
+      <section class="bg-white rounded-xl2 shadow-soft p-4">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-brand-50 to-sky-50">
+              <i data-feather="credit-card" class="w-5 h-5 text-brand-600"></i>
+            </span>
+            <div>
+              <p class="text-xs uppercase tracking-wide text-slate-500">Biển số</p>
+              <p class="text-2xl font-extrabold tracking-widest text-slate-900">51C-789.45</p>
+            </div>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Đang hoạt động</span>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-xs uppercase tracking-wide text-slate-500 mb-2">Tuyến đường</p>
+          <div class="bg-brand-25 border border-brand-100 rounded-lg p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="inline-flex w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-sm font-semibold text-slate-800 truncate">TP. Hồ Chí Minh</span>
+              </div>
+              <div class="mx-2 shrink-0 text-slate-400">
+                <i data-feather="arrow-right" class="w-4 h-4"></i>
+              </div>
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="inline-flex w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                <span class="text-sm font-semibold text-slate-800 truncate">Hà Nội</span>
+              </div>
+            </div>
+
+            <!-- THAY THẾ: 2 nút hành động -->
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button class="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-blue-600 active:scale-[.98]">
+                <i data-feather="play" class="w-4 h-4"></i> Xuất phát
+              </button>
+              <button class="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200 active:scale-[.98]">
+                <i data-feather="home" class="w-4 h-4"></i> Đã tới kho
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hàng trong xe (tổng quan) -->
+      <section class="bg-white rounded-xl2 shadow-soft p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold">Hàng trong xe</h2>
+          <span class="text-xs text-slate-500">Cập nhật: 10:30</span>
+        </div>
+
+        <div class="mt-3 grid grid-cols-3 gap-2">
+          <div class="rounded-lg border border-slate-200 p-2 text-center">
+            <p class="text-[11px] text-slate-500">Số kiện</p>
+            <p class="text-sm font-bold">24</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 p-2 text-center">
+            <p class="text-[11px] text-slate-500">Khối lượng</p>
+            <p class="text-sm font-bold">7.2 tấn</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 p-2 text-center">
+            <p class="text-[11px] text-slate-500">Thể tích</p>
+            <p class="text-sm font-bold">28 m³</p>
+          </div>
+        </div>
+
+        <ul class="mt-3 divide-y divide-slate-100">
+          <li class="py-3 flex items-start gap-3">
+            <span class="mt-0.5 inline-flex w-9 h-9 items-center justify-center rounded-lg bg-gradient-to-br from-brand-50 to-sky-50">
+              <i data-feather="cpu" class="w-4 h-4 text-brand-600"></i>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-medium">Điện tử</p>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">12 kiện</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1 truncate">Laptop, màn hình — yêu cầu chống sốc, xếp giữa xe</p>
+            </div>
+          </li>
+
+          <li class="py-3 flex items-start gap-3">
+            <span class="mt-0.5 inline-flex w-9 h-9 items-center justify-center rounded-lg bg-gradient-to-br from-brand-50 to-sky-50">
+              <i data-feather="box" class="w-4 h-4 text-brand-600"></i>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-medium">Thực phẩm khô</p>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">8 thùng</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1 truncate">Bảo quản khô ráo — ưu tiên dỡ ở điểm 1</p>
+            </div>
+          </li>
+
+          <li class="py-3 flex items-start gap-3">
+            <span class="mt-0.5 inline-flex w-9 h-9 items-center justify-center rounded-lg bg-gradient-to-br from-brand-50 to-sky-50">
+              <i data-feather="alert-triangle" class="w-4 h-4 text-brand-600"></i>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-medium">Dễ vỡ</p>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100">4 kiện</span>
+              </div>
+              <p class="text-xs text-rose-600 mt-1">⚠️ Dán nhãn FRAGILE — buộc nép sát vách, chèn xốp</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="mt-2 flex flex-wrap gap-2">
+          <span class="text-xs px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-100">Có hàng dễ vỡ</span>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Niêm phong đủ</span>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Lộ trình 2 điểm dỡ</span>
+        </div>
+      </section>
+
+      <!-- Gợi ý thao tác (giữ nguyên) -->
+      <section class="bg-white rounded-xl2 shadow-soft p-4">
+        <div class="flex items-center gap-3">
+          <i data-feather="check-circle" class="w-5 h-5 text-emerald-600"></i>
+          <div class="text-sm">
+            Xác nhận: <span class="text-slate-600">Hàng đã chằng buộc an toàn, đủ niêm phong.</span>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button class="w-full text-sm font-semibold rounded-lg py-2.5 bg-gradient-to-r from-brand-600 to-blue-600 text-white active:scale-[.98]">Đã rời bến</button>
+          <button class="w-full text-sm font-semibold rounded-lg py-2.5 bg-slate-100 text-slate-800 active:scale-[.98]">Sự cố / Ghi chú</button>
+        </div>
+      </section>
+
+      <!-- Đơn hàng chi tiết (màu nền bắt mắt) -->
+      <section class="bg-white rounded-xl2 shadow-soft p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold">Đơn hàng chi tiết trên xe</h2>
+          <span class="text-xs text-slate-500">5 đơn</span>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 gap-3">
+          <article class="rounded-lg p-3 bg-sky-50 ring-1 ring-inset ring-sky-200">
+            <div class="flex items-center justify-between text-[11px] text-slate-600">
+              <span class="font-medium">ID:ORDER 0155</span>
+              <i data-feather="more-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
+                <i data-feather="box" class="w-4 h-4 text-sky-600"></i>
+              </span>
+              <p class="text-xl font-bold text-slate-900 leading-none">88,9 kg</p>
+            </div>
+            <p class="mt-2 text-sm text-slate-800">Bình Định – Đà Nẵng</p>
+            <p class="text-xs text-slate-600">11/9/2025</p>
+          </article>
+
+          <article class="rounded-lg p-3 bg-indigo-50 ring-1 ring-inset ring-indigo-200">
+            <div class="flex items-center justify-between text-[11px] text-slate-600">
+              <span class="font-medium">ID:ORDER 7723</span>
+              <i data-feather="more-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
+                <i data-feather="box" class="w-4 h-4 text-indigo-600"></i>
+              </span>
+              <p class="text-xl font-bold text-slate-900 leading-none">76 kg</p>
+            </div>
+            <p class="mt-2 text-sm text-slate-800">Bình Định – Đà Nẵng</p>
+            <p class="text-xs text-slate-600">11/9/2025</p>
+          </article>
+
+          <article class="rounded-lg p-3 bg-emerald-50 ring-1 ring-inset ring-emerald-200">
+            <div class="flex items-center justify-between text-[11px] text-slate-600">
+              <span class="font-medium">ID:ORDER 0856</span>
+              <i data-feather="more-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
+                <i data-feather="box" class="w-4 h-4 text-emerald-600"></i>
+              </span>
+              <p class="text-xl font-bold text-slate-900 leading-none">88,9 kg</p>
+            </div>
+            <p class="mt-2 text-sm text-slate-800">Bình Định – Đà Nẵng</p>
+            <p class="text-xs text-slate-600">11/9/2025</p>
+          </article>
+
+          <article class="rounded-lg p-3 bg-amber-50 ring-1 ring-inset ring-amber-200">
+            <div class="flex items-center justify-between text-[11px] text-slate-700">
+              <span class="font-medium">ID:ORDER 6655</span>
+              <i data-feather="more-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
+                <i data-feather="box" class="w-4 h-4 text-amber-600"></i>
+              </span>
+              <p class="text-xl font-bold text-slate-900 leading-none">96 kg</p>
+            </div>
+            <p class="mt-2 text-sm text-slate-800">Bình Định – Đà Nẵng</p>
+            <p class="text-xs text-slate-700">11/9/2025</p>
+          </article>
+
+          <article class="rounded-lg p-3 bg-rose-50 ring-1 ring-inset ring-rose-200">
+            <div class="flex items-center justify-between text-[11px] text-slate-700">
+              <span class="font-medium">ID:ORDER 0152</span>
+              <i data-feather="more-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
+                <i data-feather="box" class="w-4 h-4 text-rose-600"></i>
+              </span>
+              <p class="text-xl font-bold text-slate-900 leading-none">99 kg</p>
+            </div>
+            <p class="mt-2 text-sm text-slate-800">Quy Nhơn – Đà Nẵng</p>
+            <p class="text-xs text-slate-700">10/9/2025</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="px-4 pb-[env(safe-area-inset-bottom)] pt-2">
+      <p class="text-center text-[11px] text-slate-400">6A Logistics · mobile</p>
+    </footer>
+  </div>
+
+  <script>feather.replace();</script>
+</body>
+</html>
