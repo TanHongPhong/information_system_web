@@ -1,29 +1,28 @@
-import React from "react";
+import LoginGlobalStyles from "../components/login/LoginGlobalStyles";
 import NoticeBar from "../components/login/NoticeBar";
-import HeaderBrand from "../components/login/HeaderBrand";
+import Header from "../components/login/Header";
 import LoginForm from "../components/login/LoginForm";
-import RoleAccessPanel from "../components/login/RoleAccessPanel";
-import BrandFooter from "../components/login/BrandFooter";
-import LoginLocalStyles from "../components/login/LoginLocalStyles";
+import RolePanel from "../components/login/RolePanel";
+import Footer from "../components/login/Footer";
 
-export default function LoginPage() {
+export default function SignIn() {
   return (
-    <div className="text-slate-800 font-sans">
-      <LoginLocalStyles />
+    <div className="text-slate-800 font-sans bg-white">
+      <LoginGlobalStyles />
 
       <NoticeBar />
-      <HeaderBrand />
+      <Header />
 
       <main>
         <section className="py-10 lg:py-16">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-6">
             <LoginForm />
-            <RoleAccessPanel />
+            <RolePanel />
           </div>
         </section>
       </main>
 
-      <BrandFooter />
+      <Footer />
     </div>
   );
 }

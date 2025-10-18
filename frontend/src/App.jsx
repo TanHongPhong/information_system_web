@@ -14,6 +14,8 @@ import Supplier from "./pages/Supplier.jsx";
 import NhapIn4 from "./pages/NhapIn4.jsx";
 import ChiTietDonHang from "./pages/ChiTietDonHang.jsx";
 import SignIn from "./pages/SignIn.jsx";
+import QuanLiDoiXe from "./pages/QuanLiDoiXe.jsx";
+import Driver from "./pages/Driver.jsx";
 
 
 export default function App() {
@@ -32,6 +34,9 @@ export default function App() {
         <Route path="/chi-tiet-don-hang" element={<ChiTietDonHang />} />
         <Route path="/home-page" element={<HomePage />} />
         <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/quan-li-doi-xe" element={<QuanLiDoiXe />} />
+        <Route path="/supplier" element={<Supplier />} />
+        <Route path="/driver" element={<Driver />} />
 
         <Route
           path="/order-tracking-customer"
