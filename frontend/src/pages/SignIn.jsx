@@ -1,15 +1,15 @@
-import LoginGlobalStyles from "../components/login/LoginGlobalStyles";
-import NoticeBar from "../components/login/NoticeBar";
-import Header from "../components/login/Header";
-import LoginForm from "../components/login/LoginForm";
-import RolePanel from "../components/login/RolePanel";
-import Footer from "../components/login/Footer";
+// src/pages/SignIn.jsx
+import Styles from "../components/sign in/Styles";
+import NoticeBar from "../components/sign in/NoticeBar";
+import Header from "../components/sign in/Header";
+import LoginForm from "../components/sign in/LoginForm";
+import RolePanel from "../components/sign in/RolePanel";
+import Footer from "../components/sign in/Footer";
 
 export default function SignIn() {
   return (
-    <div className="text-slate-800 font-sans bg-white">
-      <LoginGlobalStyles />
-
+    <>
+      <Styles />
       <NoticeBar />
       <Header />
 
@@ -23,6 +23,6 @@ export default function SignIn() {
       </main>
 
       <Footer />
-    </div>
+    </>
   );
 }

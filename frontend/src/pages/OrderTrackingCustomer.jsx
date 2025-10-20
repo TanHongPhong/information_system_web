@@ -1,98 +1,88 @@
 import { useEffect } from "react";
 import feather from "feather-icons";
-import OrderItem from "../components/tracking_customer/OrderItem.jsx";
-import MapTracker from "../components/tracking_customer/MapTracker.jsx";
-import StatusTimeline from "../components/tracking_customer/StatusTimeline.jsx";
+import Sidebar from "../components/tracking_customer/Sidebar";
+import Topbar from "../components/tracking_customer/Topbar";
+import OrderList from "../components/tracking_customer/OrderList";
+import MapPanel from "../components/tracking_customer/MapPanel";
+import StatusCard from "../components/tracking_customer/StatusCard";
+import SummaryCard from "../components/tracking_customer/SummaryCard";
 
-export default function TrackingContent() {
-  useEffect(() => { feather.replace({ width: 18, height: 18 }); });
+export default function CustomerTrack() {
+  useEffect(() => {
+    const setVars = () => {
+      const top = document.getElementById("topbar");
+      if (top) document.documentElement.style.setProperty("--topbar-h", `${top.offsetHeight}px`);
+      const map = document.getElementById("mapPanel");
+      if (map) document.documentElement.style.setProperty("--map-h", `${map.offsetHeight}px`);
+    };
+    setVars();
+    feather.replace({ width: 21, height: 21 });
+    window.addEventListener("resize", setVars);
+    return () => window.removeEventListener("resize", setVars);
+  }, []);
 
   return (
-    <main className="pt-[64px] lg:overflow-hidden" style={{ marginLeft: "var(--sidebar-w)" }}>
-      <div className="p-4 grid grid-cols-12 gap-4">
-        {/* LEFT */}
-        <section className="col-span-12 lg:col-span-3">
-          <div className="sticky top-[calc(var(--topbar-h,64px)-55px)]">
-            <div className="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
-              <div className="bg-white border border-slate-200 rounded-2xl p-3 relative">
-                <div className="sticky top-0 z-10 -m-3 p-3 bg-white/95 backdrop-blur rounded-t-2xl border-b border-slate-200">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold tracking-tight">ĐƠN HÀNG CỦA BẠN</h3>
-                    <span className="text-xs text-slate-500">1 đơn đang theo dõi</span>
-                  </div>
+    <div className="bg-slate-50 text-slate-900">
+      <style>{`
+        :root{ --sidebar-w: 80px; }
+        @media (min-width:1024px){ html, body{ overflow: hidden; } }
+
+        .nice-scroll{ scrollbar-width:thin; scrollbar-color:#cbd5e1 #f1f5f9 }
+        .nice-scroll::-webkit-scrollbar{ width:10px }
+        .nice-scroll::-webkit-scrollbar-track{ background:#f1f5f9; border-radius:9999px }
+        .nice-scroll::-webkit-scrollbar-thumb{ background:#c7d2fe; border-radius:9999px; border:3px solid #f8fafc }
+
+        .mini-progress{height:8px;border-radius:9999px;background:#e5edff;position:relative;overflow:hidden}
+        .mini-progress > span{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,#2563eb 0%,#60a5fa 100%)}
+
+        #status ol{ position:relative; padding-left:44px; }
+        #status .rail{ position:absolute; left:20px; top:0; bottom:0; width:2px; background:linear-gradient(#93c5fd 0 45%, #e5e7eb 45% 100%); }
+        #status li{ position:relative; margin-bottom:12px; }
+        #status .dot{ position:absolute; left:14px; top:18px; width:12px; height:12px; border-radius:9999px; background:#fff; border:3px solid #93c5fd; box-shadow:0 0 0 3px #fff }
+        #status .dot.done, #status .dot.current{ border-color:#2563eb; background:#2563eb }
+        #status .dot.current{ box-shadow:0 0 0 6px rgba(37,99,235,.18) }
+        #status .dot.future{ border-color:#cbd5e1; background:#fff }
+
+        /* StatusCard (cột phải) */
+        #statusCard .steps-wrap{ overflow:visible !important; }
+        #statusCard .steps-outer{ display:flex; justify-content:center; width:100%; }
+        #statusCard .steps{ --nudge: 8px; position:relative; width:100%; max-width:380px; margin:0 auto; padding-left:0; transform: translateX(calc(var(--nudge) * -1)); }
+        #statusCard .rail{ position:absolute; left:16px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#93c5fd 0%,#1e66ff 45%,#e5e7eb 45%); }
+        #statusCard .steps li{ position:relative; padding-left:48px; margin-bottom:12px; }
+        #statusCard .steps li > .dot{ position:absolute; left:9px; top:18px; width:10px; height:10px; border-radius:9999px; background:#fff; border:2px solid #93c5fd; box-shadow:0 0 0 2px #fff; }
+        #statusCard .steps li > .dot.done{ background:#1E66FF; border-color:#1E66FF; }
+        #statusCard .steps li > .dot.current{ background:#1E66FF; border-color:#1E66FF; box-shadow:0 0 0 4px rgba(30,102,255,.16); }
+        #statusCard .steps li > .dot.future{ border-color:#cbd5e1; }
+        #statusCard .step-card{ margin-left:0; }
+        #statusCard .step-meta{ font-size:12px; }
+      `}</style>
+
+      <Sidebar />
+
+      <Topbar />
+
+      <main className="pt-[64px] lg:overflow-hidden" style={{ marginLeft: "var(--sidebar-w)" }}>
+        <div className="p-4 grid grid-cols-12 gap-4">
+          <section className="col-span-12 lg:col-span-3">
+            <OrderList />
+          </section>
+
+          <section className="col-span-12 lg:col-span-6">
+            <MapPanel />
+          </section>
+
+          <section className="col-span-12 lg:col-span-3">
+            <div className="sticky top-[calc(var(--topbar-h,64px)+16px)]">
+              <div className="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
+                <div className="space-y-4">
+                  <StatusCard />
+                  <SummaryCard />
                 </div>
-
-                <OrderItem
-                  id="ORDERID 0112"
-                  route="279 Nguyễn Tri Phương, Q10 → 777 Lê Lai, Hà Nội"
-                  percent={62}
-                  eta="20/10/2025 16:30"
-                  statusBadge="ĐANG VẬN CHUYỂN"
-                />
-
-                <div className="mt-4 p-3 rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-sky-50 to-white">
-                  <div className="text-sm font-semibold text-slate-800">Mẹo giao nhận an toàn</div>
-                  <ul className="mt-1 text-[12px] text-slate-600 list-disc pl-5 space-y-1">
-                    <li>Luôn xác minh mã đơn/OTP khi nhận.</li>
-                    <li>Ưu tiên thanh toán không tiền mặt.</li>
-                    <li>Kiểm tra niêm phong trước khi ký.</li>
-                  </ul>
-                </div>
-
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* CENTER */}
-        <section className="col-span-12 lg:col-span-6">
-          <MapTracker
-            orderId="ORDERID 0112"
-            kpis={[
-              { icon: "check-circle", text: "Không trễ", tone: "emerald" },
-              { icon: "clock", text: "ETA 3h15’", tone: "blue" },
-              { icon: "navigation", text: "78 km còn lại", tone: "indigo" },
-            ]}
-            driver={{ name: "Quang Trè", meta: "Xe tải 6.5T • DL04MP7045", phone: "0900000000", avatar: "https://i.pravatar.cc/48?img=12" }}
-            mapImg="https://s3.cloud.cmctelecom.vn/tinhte2/2020/08/5100688_ban_do_tphcm.jpg"
-          />
-        </section>
-
-        {/* RIGHT */}
-        <section className="col-span-12 lg:col-span-3">
-          <div className="sticky top-[calc(var(--topbar-h,64px)+16px)]">
-            <div className="nice-scroll max-h-[calc(100dvh-var(--topbar-h,64px)-2rem)] overflow-y-auto pr-1">
-              <div className="space-y-4">
-                <StatusTimeline
-                  segments={4}
-                  fillPct={60}
-                  milestones={["TP.HCM", "Quảng Ngãi", "Thanh Hóa", "Hà Nội"]}
-                  etaLabel="12 Hrs Left"
-                  steps={[
-                    { type: "done",    title: "Departure", time: "17/7/2024, 10:00", note: "279 Nguyễn Trị Phương, P.8, Q.10, TP.HCM" },
-                    { type: "current", title: "Stop",       time: "17/7/2024, 12:00", note: "76 Nguyễn Tất Thành, Quảng Ngãi", chips: ["Đang xử lý (15’)", "ON TIME"] },
-                    { type: "future",  title: "Stop",       time: "17/7/2024, 20:00", note: "36 Phạm Văn Đồng, Thanh Hóa" },
-                    { type: "future",  title: "Arrival",    time: "21/7/2024, 10:00", note: "777 Lê Lợi, P.3, Q.1, TP.Hà Nội", dim: true },
-                  ]}
-                />
-
-                {/* Tóm tắt đơn (nhẹ) */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-3">
-                  <h3 className="font-semibold">Tóm tắt</h3>
-                  <div className="mt-2 text-sm">
-                    <div className="flex items-center justify-between py-1"><span>Kiện hàng</span><span className="font-semibold">3</span></div>
-                    <div className="flex items-center justify-between py-1"><span>Khối lượng</span><span className="font-semibold">120 kg</span></div>
-                    <div className="flex items-center justify-between py-1"><span>Phí vận chuyển</span><span className="font-semibold">420.000₫</span></div>
-                    <div className="border-t mt-2 pt-2 flex items-center justify-between"><span className="font-semibold">Tổng thanh toán</span><span className="font-bold text-slate-900">420.000₫</span></div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-    </main>
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

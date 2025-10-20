@@ -1,16 +1,5 @@
-// SVG icons inline (không cần lib)
-const IconBase = ({ className = "w-5 h-5", children }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none"
-       stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {children}
-  </svg>
-);
-const Zap = ({ className }) => (
-  <IconBase className={className}><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></IconBase>
-);
-const Phone = ({ className }) => (
-  <IconBase className={className}><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></IconBase>
-);
+// src/components/login/NoticeBar.jsx
+import { Zap, Phone } from "./Icons";
 
 export default function NoticeBar() {
   return (
@@ -26,10 +15,7 @@ export default function NoticeBar() {
           <Phone className="w-4 h-4" /> Hotline: <strong>1900 1234</strong>
         </a>
       </div>
-      <div
-        className="h-[3px] w-full animate-[shine_2.2s_linear_infinite]"
-        style={{ backgroundImage: "linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa,#f472b6,#f59e0b)", backgroundSize: "200% 100%" }}
-      />
+      <div className="h-[3px] w-full bg-ribbon animate-shine" />
     </div>
   );
 }

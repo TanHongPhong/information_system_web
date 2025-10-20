@@ -1,74 +1,70 @@
-import { useEffect } from "react";
-import feather from "feather-icons";
-
-// StarRating gọn (copy nhẹ để không phải import thêm)
-function StarRating({ rating = 0, size = 16 }) {
-  const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
-  const GRAY =
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d1d5db' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E\")";
-  const AMBER =
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f59e0b' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E\")";
-  return (
-    <span aria-hidden style={{ position: "relative", display: "inline-block", width: size * 5, height: size }}>
-      <span style={{ position: "absolute", inset: 0, backgroundRepeat: "repeat-x", backgroundSize: `${size}px ${size}px`, backgroundImage: GRAY }} />
-      <span style={{ position: "absolute", inset: 0, width: `${pct}%`, overflow: "hidden", backgroundRepeat: "repeat-x", backgroundSize: `${size}px ${size}px`, backgroundImage: AMBER }} />
-    </span>
-  );
-}
+import React, { useEffect } from "react";
+import { X, CheckCircle, Truck, MapPin, Phone, Mail, Globe } from "lucide-react";
+import Stars from "./Stars";
 
 export default function CompanyModal({ company, onClose }) {
   useEffect(() => {
     if (!company) return;
-    feather.replace();
     const onEsc = (e) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onEsc);
     document.documentElement.classList.add("overflow-hidden");
+    window.addEventListener("keydown", onEsc);
     return () => {
-      document.removeEventListener("keydown", onEsc);
       document.documentElement.classList.remove("overflow-hidden");
+      window.removeEventListener("keydown", onEsc);
     };
   }, [company, onClose]);
 
   if (!company) return null;
 
   const badges = [
-    company.services.cold && "Xe lạnh",
-    company.services.danger && "Hàng nguy hiểm",
-    company.services.loading && "Bốc xếp",
-    company.services.insurance && "Bảo hiểm",
+    company.services?.cold && "Xe lạnh",
+    company.services?.danger && "Hàng nguy hiểm",
+    company.services?.loading && "Bốc xếp",
+    company.services?.insurance && "Bảo hiểm",
   ].filter(Boolean);
-
-  const priceStr = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(company.cost);
 
   return (
     <div className="fixed inset-0 z-[60]">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative z-[61] w-full h-full grid place-items-center p-4">
-        <div className="w-full max-w-[960px] lg:max-w-[1040px] bg-white rounded-2xl shadow-soft border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="w-full max-w-[960px] lg:max-w-[1040px] bg-white rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,.08)] border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-[in_.25s_ease-out_both]">
           {/* Header */}
           <div className="relative">
             <div className="px-5 md:px-6 mt-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <img src="https://i.pravatar.cc/120?u=company-1" alt="Company avatar" className="w-16 h-16 rounded-2xl ring-2 ring-white object-cover shadow" />
+                <img
+                  src={`https://i.pravatar.cc/120?u=${encodeURIComponent(company.name)}`}
+                  alt="Company avatar"
+                  className="w-16 h-16 rounded-2xl ring-2 ring-white object-cover shadow"
+                />
                 <div>
-                  <h3 className="text-xl md:text-2xl font-extrabold leading-none text-slate-900">{company.name}</h3>
+                  <h3 id="modal-title" className="text-xl md:text-2xl font-extrabold leading-none text-slate-900">
+                    {company.name}
+                  </h3>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                      <i data-feather="check-circle" className="w-4 h-4" /> Đã xác minh
+                      <CheckCircle className="w-4 h-4" /> Đã xác minh
                     </span>
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200">
-                      <i data-feather="truck" className="w-4 h-4" /> Cross-dock / FTL / LTL
+                      <Truck className="w-4 h-4" /> Cross-dock / FTL / LTL
                     </span>
                     <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-                      <StarRating rating={company.rating} />
-                      <span className="text-xs font-semibold">({company.reviews.toLocaleString("vi-VN")} đánh giá)</span>
+                      <Stars rating={company.rating} />{" "}
+                      <span className="text-xs font-semibold">
+                        ({company.reviews.toLocaleString("vi-VN")} đánh giá)
+                      </span>
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="h-9 w-9 grid place-items-center rounded-xl hover:bg-slate-50" onClick={onClose} aria-label="Đóng" title="Đóng">
-                  <i data-feather="x" className="w-5 h-5" />
+                <button
+                  className="h-9 w-9 grid place-items-center rounded-xl hover:bg-slate-50"
+                  onClick={onClose}
+                  aria-label="Đóng"
+                  title="Đóng"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -76,24 +72,10 @@ export default function CompanyModal({ company, onClose }) {
             {/* Quick stats */}
             <div className="px-5 md:px-6 py-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-xs text-slate-500">Đơn hoàn tất (12 tháng)</div>
-                  <div className="mt-1 text-lg font-bold">{(company.stats?.orders12m ?? "—").toLocaleString("vi-VN")}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-xs text-slate-500">Tỉ lệ đúng hẹn</div>
-                  <div className="mt-1 text-lg font-bold text-emerald-600">
-                    {company.stats?.ontimeRate != null ? `${company.stats.ontimeRate}%` : "—"}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-xs text-slate-500">Điểm phản hồi (CSAT)</div>
-                  <div className="mt-1 text-lg font-bold">{company.stats?.csat != null ? `${company.stats.csat}/5` : "—"}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-xs text-slate-500">Phạm vi</div>
-                  <div className="mt-1 text-lg font-bold">{company.area || "—"}</div>
-                </div>
+                <StatBox label="Đơn hoàn tất (12 tháng)" value={company.stats?.orders12m?.toLocaleString("vi-VN") ?? "—"} />
+                <StatBox label="Tỉ lệ đúng hẹn" value={company.stats?.ontimeRate != null ? `${company.stats.ontimeRate}%` : "—"} accent />
+                <StatBox label="Điểm phản hồi (CSAT)" value={company.stats?.csat != null ? `${company.stats.csat}/5` : "—"} />
+                <StatBox label="Phạm vi" value={company.area ?? "—"} />
               </div>
             </div>
           </div>
@@ -101,8 +83,8 @@ export default function CompanyModal({ company, onClose }) {
           {/* Body */}
           <div className="p-5 md:p-6 overflow-auto">
             <div className="flex flex-wrap gap-2 text-sm mb-4">
-              {badges.map((b, i) => (
-                <span key={i} className="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200">
+              {badges.map((b) => (
+                <span key={b} className="px-2.5 py-1 rounded-full bg-slate-50 ring-1 ring-slate-200">
                   {b}
                 </span>
               ))}
@@ -113,7 +95,8 @@ export default function CompanyModal({ company, onClose }) {
                 <div className="rounded-2xl border border-slate-200 p-4">
                   <h4 className="font-semibold mb-2">Giới thiệu</h4>
                   <p className="text-sm text-slate-700">
-                    Đơn vị vận tải chuyên tuyến, thế mạnh cold-chain, FMCG, last-mile nội thành. Hỗ trợ API đồng bộ đơn, tracking thời gian thực.
+                    Đơn vị vận tải chuyên tuyến, thế mạnh cold-chain, FMCG, last-mile nội thành. Hỗ trợ API đồng bộ đơn,
+                    tracking thời gian thực.
                   </p>
                 </div>
 
@@ -121,8 +104,8 @@ export default function CompanyModal({ company, onClose }) {
                   <h4 className="font-semibold mb-2">Năng lực</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     <li>Phủ tuyến: {company.area}</li>
-                    <li>Loại xe: {company.sizes.join(", ")}</li>
-                    <li>Giá tham chiếu: {priceStr}/KM</li>
+                    <li>Loại xe: {company.sizes?.join(", ")}</li>
+                    <li>Giá tham chiếu: {fmtVND(company.cost)}/KM</li>
                     <li>Đánh giá: {company.rating.toFixed(1)}/5</li>
                   </ul>
                 </div>
@@ -142,14 +125,14 @@ export default function CompanyModal({ company, onClose }) {
                     <li>
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Coopmart DC</span>
-                        <StarRating rating={Math.min(5, company.rating)} />
+                        <Stars rating={Math.min(5, company.rating)} />
                       </div>
                       <p className="text-slate-600">Đúng giờ, chứng từ đầy đủ, xử lý khiếu nại nhanh.</p>
                     </li>
                     <li>
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Big C Miền Đông</span>
-                        <StarRating rating={Math.min(5, company.rating + 0.1)} />
+                        <Stars rating={Math.min(5, company.rating + 0.1)} />
                       </div>
                       <p className="text-slate-600">Cold-chain ổn định, tài xế chuyên nghiệp.</p>
                     </li>
@@ -161,39 +144,47 @@ export default function CompanyModal({ company, onClose }) {
                 <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
                   <h4 className="font-semibold mb-2">Liên hệ</h4>
                   <div className="space-y-2 text-[13px]">
-                    <div className="flex items-center gap-2"><i data-feather="map-pin" className="w-4 h-4" /><span>{company.address || "Đang cập nhật"}</span></div>
-                    <div className="flex items-center gap-2"><i data-feather="phone" className="w-4 h-4" /><a href={company.phone ? `tel:${company.phone.replace(/\s/g,"")}` : "#"} className="underline decoration-dotted">{company.phone || "—"}</a></div>
-                    <div className="flex items-center gap-2"><i data-feather="mail" className="w-4 h-4" /><a href="mailto:sales@company.vn" className="underline decoration-dotted">sales@company.vn</a></div>
-                    <div className="flex items-center gap-2"><i data-feather="globe" className="w-4 h-4" /><a href="#" className="underline decoration-dotted">company.vn</a></div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{company.address || "Đang cập nhật"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      {company.phone ? (
+                        <a className="underline decoration-dotted" href={`tel:${company.phone.replace(/\s/g, "")}`}>
+                          {company.phone}
+                        </a>
+                      ) : (
+                        <span>—</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      <a className="underline decoration-dotted" href="mailto:sales@company.vn">
+                        sales@company.vn
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4" />
+                      <a className="underline decoration-dotted" href="#" onClick={(e) => e.preventDefault()}>
+                        company.vn
+                      </a>
+                    </div>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl bg-white border border-slate-200 p-2"><div className="text-[11px] text-slate-500">SLA</div><div className="font-semibold">24h</div></div>
-                    <div className="rounded-xl bg-white border border-slate-200 p-2"><div className="text-[11px] text-slate-500">Tối đa tải</div><div className="font-semibold">15T</div></div>
-                    <div className="rounded-xl bg-white border border-slate-200 p-2"><div className="text-[11px] text-slate-500">Bảo hiểm</div><div className="font-semibold">Có</div></div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button className="flex-1 h-9 rounded-xl border border-slate-300 bg-white hover:bg-slate-50">Báo giá nhanh</button>
-                    <button className="flex-1 h-9 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Nhắn Zalo</button>
+                    <MiniStat label="SLA" value="24h" />
+                    <MiniStat label="Tối đa tải" value="15T" />
+                    <MiniStat label="Bảo hiểm" value="Có" />
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl border border-slate-200">
                   <h4 className="font-semibold mb-2">Giờ làm việc</h4>
                   <ul className="text-[13px] text-slate-700 space-y-1">
-                    <li>Thứ 2–6: 08:00–18:00</li><li>Thứ 7: 08:00–12:00</li><li>CN: Hỗ trợ trực hotline</li>
+                    <li>Thứ 2–6: 08:00–18:00</li>
+                    <li>Thứ 7: 08:00–12:00</li>
+                    <li>CN: Hỗ trợ trực hotline</li>
                   </ul>
-                </div>
-
-                <div className="p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-semibold mb-2">Tài liệu</h4>
-                  <div className="flex flex-col gap-2">
-                    <button className="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2">
-                      <i data-feather="file-text" className="w-4 h-4" /> Hồ sơ năng lực.pdf
-                    </button>
-                    <button className="h-9 rounded-xl border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2">
-                      <i data-feather="shield" className="w-4 h-4" /> Bảo hiểm hàng hóa.pdf
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -211,4 +202,26 @@ export default function CompanyModal({ company, onClose }) {
       </div>
     </div>
   );
+}
+
+function StatBox({ label, value, accent }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className={`mt-1 text-lg font-bold ${accent ? "text-emerald-600" : ""}`}>{value}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-xl bg-white border border-slate-200 p-2">
+      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className="font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function fmtVND(n) {
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 }
