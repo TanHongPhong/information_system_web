@@ -1,4 +1,3 @@
-// src/pages/QrPayment.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
@@ -6,27 +5,25 @@ import feather from "feather-icons";
 import QrCard from "../components/payment/QrCard";
 import StatusSection from "../components/payment/StatusSection";
 import OrderDetails from "../components/payment/OrderDetails";
-import { buildSepayQrUrl } from "../lib/sepay"; // named export
+import { buildSepayQrUrl } from "../lib/sepay";
 import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
+import Topbar from "@/components/Topbar";
 
-export default function QrPayment({
+export default function PaymentQR({
   amount = 10_000_000,
   companyName = "Công ty Gemadept",
   orderId = "322138483848",
   orderDesc = "Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025",
 }) {
-  const nav = useNavigate(); // <-- thêm
+  const nav = useNavigate();
 
-  // ==== STATE ====
   const [remain, setRemain] = useState(15 * 60);
-  const [status, setStatus] = useState("pending"); // 'pending' | 'success' | 'expired'
+  const [status, setStatus] = useState("pending");
   const [successBar, setSuccessBar] = useState(false);
   const [orderTime, setOrderTime] = useState("—");
-  const [activeMethod, setActiveMethod] = useState(null); // 'momo' | 'vietqr' | 'zalo'
+  const [activeMethod, setActiveMethod] = useState(null);
   const [toastMsg, setToastMsg] = useState("");
 
-  // ==== HELPERS ====
   const fmtCurrency = (v) =>
     Number(v).toLocaleString("vi-VN", {
       style: "currency",
@@ -41,16 +38,13 @@ export default function QrPayment({
     return `${m}:${s}`;
   };
 
-  // ==== EFFECTS ====
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, []);
 
   useEffect(() => {
     if (status !== "pending") return;
-    const id = setInterval(() => {
-      setRemain((r) => (r <= 1 ? 0 : r - 1));
-    }, 1000);
+    const id = setInterval(() => setRemain((r) => (r <= 1 ? 0 : r - 1)), 1000);
     return () => clearInterval(id);
   }, [status]);
 
@@ -64,7 +58,6 @@ export default function QrPayment({
     return () => clearTimeout(t);
   }, [toastMsg]);
 
-  // ==== DERIVED ====
   const note = useMemo(() => `GMD-${orderId}`, [orderId]);
   const qrPayload = useMemo(
     () => `VIETQR|GEMADEPT|${amount}|${note}`,
@@ -85,7 +78,6 @@ export default function QrPayment({
     });
   }, [amount, note]);
 
-  // ==== ACTIONS ====
   const onDownloadQr = () => {
     const a = document.createElement("a");
     a.href = qrSrc;
@@ -111,31 +103,15 @@ export default function QrPayment({
     setToastMsg("Đã làm mới mã QR.");
   };
 
-  // ⬇️ Quan trọng: Huỷ thanh toán → quay về trang nhập thông tin hàng (/nhap-in4)
-  const onCancel = () => {
-    nav("/nhap-in4");
-  };
-
+  const onCancel = () => nav("/nhap-in4");
   const onSupport = () => setToastMsg("Đã mở kênh hỗ trợ (demo).");
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
-      {/* Local styles */}
-      <style>{`
-        html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-        :is(button,a,select,input,details,summary):focus-visible{outline:2px solid #2563eb;outline-offset:2px}
-        .qr-grad{background:linear-gradient(150deg,#7dd3fc 0%, #e0e7ff 40%, #ffffff 100%)}
-        .no-scrollbar::-webkit-scrollbar{display:none}
-        .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-        #order-id{font-variant-numeric:tabular-nums;display:inline-block;line-height:1.45}
-      `}</style>
-
       <Sidebar />
-
       <main className="ml-20">
         <Topbar />
 
-        {/* CONTENT */}
         <section className="p-6 md:p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -149,9 +125,7 @@ export default function QrPayment({
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
-            {/* LEFT box */}
             <div className="rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden">
-              {/* Gradient header */}
               <div className="qr-grad px-5 md:px-7 py-5 border-b border-slate-200">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -178,7 +152,6 @@ export default function QrPayment({
               </div>
 
               <div className="p-5 md:p-7 grid lg:grid-cols-[minmax(280px,360px)_1fr] gap-6 items-start">
-                {/* QR CARD */}
                 <QrCard
                   remainText={mmss(remain)}
                   qrSrc={qrSrc}
@@ -186,8 +159,6 @@ export default function QrPayment({
                   onCopyPayload={() => copyText(qrPayload)}
                   onRefresh={onRefresh}
                 />
-
-                {/* STATUS + HDSD + METHODS */}
                 <StatusSection
                   status={status}
                   orderId={orderId}
@@ -199,7 +170,6 @@ export default function QrPayment({
               </div>
             </div>
 
-            {/* RIGHT: ORDER DETAILS */}
             <OrderDetails
               companyName={companyName}
               orderId={orderId}
@@ -208,12 +178,11 @@ export default function QrPayment({
               fmtCurrency={fmtCurrency}
               note={note}
               onCopyNote={() => copyText(note)}
-              onCancel={onCancel} // <-- gọi nav('/nhap-in4')
+              onCancel={onCancel}
               onSupport={onSupport}
             />
           </div>
 
-          {/* Success banner */}
           {successBar && (
             <div className="animate-in">
               <div className="max-w-3xl mx-auto">
@@ -230,13 +199,6 @@ export default function QrPayment({
           © 2025 Gemadept – Mẫu giao diện demo thanh toán QR.
         </footer>
       </main>
-
-      {/* Tiny toast */}
-      {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg animate-in z-[60]">
-          {toastMsg}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,41 +1,40 @@
 import React from "react";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
-
-// Import từng component (đổi đường dẫn cho khớp dự án của bạn)
-import HomeLocalStyles from "../components/home/HomeLocalStyles";
+import GlobalStyles from "../components/home/GlobalStyles";
 import GlobalBackground from "../components/home/GlobalBackground";
-import NoticeBar from "../components/home/NoticeBar";
-import HeroBooking from "../components/home/HeroBooking";
-import FleetSection from "../components/home/FleetSection";
-import FeaturesSection from "../components/home/FeaturesSection";
-import RoutesSection from "../components/home/RoutesSection";
-import PricingSection from "../components/home/PricingSection";
-import TimelineSection from "../components/home/TimelineSection";
-import TestimonialsSection from "../components/home/TestimonialsSection";
+import TopNoticeBar from "../components/home/TopNoticeBar";
+import Header from "../components/home/Header";
+import Hero from "../components/home/Hero";
+import Fleet from "../components/home/Fleet";
+import Features from "../components/home/Features";
+import Routes from "../components/home/Routes";
+import Pricing from "../components/home/Pricing";
+import Timeline from "../components/home/Timeline";
+import Testimonials from "../components/home/Testimonials";
+import FAQ from "../components/home/FAQ";
 import ServicePromise from "../components/home/ServicePromise";
-import MobileStickyCTA from "../components/home/MobileStickyCTA";
+import Footer from "../components/home/Footer";
+import MobileCTA from "../components/home/MobileCTA";
 
-export default function HomePage() {
+export default function App() {
   return (
     <div className="text-slate-800 font-sans">
-      {/* Local CSS + nền global */}
-      <HomeLocalStyles />
+      <GlobalStyles />
       <GlobalBackground />
-
-      {/* Các section đặc trưng (không gồm sidebar/header/topbar) */}
-      <NoticeBar />
-      <HeroBooking />
-      <FleetSection />
-      <FeaturesSection />
-      <RoutesSection />
-      <PricingSection />
-      <TimelineSection />
-      <TestimonialsSection />
-      <ServicePromise />
-
-      {/* CTA dính dưới mobile */}
-      <MobileStickyCTA />
+      <TopNoticeBar />
+      <Header />
+      <main>
+        <Hero />
+        <Fleet />
+        <Features />
+        <Routes />
+        <Pricing />
+        <Timeline />
+        <Testimonials />
+        <FAQ />
+        <ServicePromise />
+      </main>
+      <Footer />
+      <MobileCTA />
     </div>
   );
 }

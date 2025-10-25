@@ -1,9 +1,9 @@
-// src/pages/TransportCompanies.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import CompanyModal from "../components/companies/CompanyModal";
+import CompanyModal from "@/components/companies/CompanyModal";
 import feather from "feather-icons";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
+import Stars, { Star } from "@/components/companies/Stars";
 
 export default function TransportCompanies() {
   const [selectedCompany, setSelectedCompany] = useState(null);
@@ -16,14 +16,6 @@ export default function TransportCompanies() {
   const closeModal = () => {
     setIsModalOpen(false);
   };
-
-  // ===== CSS (stars) =====
-  const starsCSS = `
-    .stars{--s:18px;position:relative;display:inline-block;width:calc(var(--s)*5);height:var(--s)}
-    .stars::before,.stars-fill{content:"";position:absolute;inset:0;background-repeat:repeat-x;background-size:var(--s) var(--s)}
-    .stars::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d1d5db' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E")}
-    .stars-fill{overflow:hidden;width:0%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f59e0b' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z'/%3E%3C/svg%3E")}
-  `;
 
   // ===== DATA =====
   const companies = useMemo(
@@ -106,23 +98,6 @@ export default function TransportCompanies() {
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "")
       .toLowerCase();
-
-  const Star = ({ rating }) => {
-    const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
-    return (
-      <span
-        className="inline-flex items-center gap-1"
-        title={`${rating.toFixed(1)}/5`}
-      >
-        <span className="stars align-[-2px]" aria-hidden="true">
-          <span className="stars-fill" style={{ width: `${pct}%` }} />
-        </span>
-        <span className="text-xs font-bold text-slate-900">
-          ({rating.toFixed(1)})
-        </span>
-      </span>
-    );
-  };
 
   // ===== UI State =====
   const [fromVal, setFromVal] = useState("");
@@ -277,10 +252,7 @@ export default function TransportCompanies() {
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
-      <style>{starsCSS}</style>
-
       <Sidebar />
-
       <main className="ml-20">
         <Topbar />
 
@@ -523,67 +495,23 @@ export default function TransportCompanies() {
                   Áp dụng đơn ≥ 5 chuyến/tháng, thanh toán định kỳ.
                 </p>
               </article>
-              <article className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft">
+              <article className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft animate-in">
                 <div className="text-emerald-600 font-semibold mb-1">
-                  SLA: Dock-to-Dock ≤ 24h
+                  Gói doanh nghiệp Premium
                 </div>
                 <p className="text-sm text-slate-600">
-                  Cam kết thời gian, phạt trễ; theo dõi mốc real-time.
+                  Ưu đãi đặc biệt cho doanh nghiệp có nhu cầu vận chuyển thường
+                  xuyên.
                 </p>
               </article>
-              <article className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft">
-                <div className="text-blue-600 font-semibold mb-1">
-                  Bảo hiểm hàng hóa tới 500 triệu
+              <article className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft animate-in">
+                <div className="text-purple-600 font-semibold mb-1">
+                  Gói bảo hiểm toàn diện
                 </div>
                 <p className="text-sm text-slate-600">
-                  Tuỳ chọn nâng cấp bảo hiểm cho lô hàng giá trị cao.
+                  Bảo vệ hàng hóa tối đa với gói bảo hiểm chuyên nghiệp.
                 </p>
               </article>
-            </div>
-          </section>
-
-          {/* Compare */}
-          <section className="bg-white border border-slate-200 rounded-2xl shadow-soft p-5">
-            <h2 className="text-xl font-bold text-blue-700 mb-4">
-              So sánh nhanh 3 nhà vận tải
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-[720px] w-full text-sm">
-                <thead className="text-left text-slate-500">
-                  <tr>
-                    <th className="py-2">Tiêu chí</th>
-                    <th>Gemadept</th>
-                    <th>Transimex</th>
-                    <th>DHL</th>
-                  </tr>
-                </thead>
-                <tbody className="[&_td]:py-3 [&_td]:border-t [&_td]:border-slate-200">
-                  <tr>
-                    <td>SLA tuyến HCM ⇆ Bình Dương</td>
-                    <td>≤ 6h</td>
-                    <td>≤ 8h</td>
-                    <td>≤ 10h</td>
-                  </tr>
-                  <tr>
-                    <td>Tracking</td>
-                    <td>GPS + mốc</td>
-                    <td>GPS</td>
-                    <td>GPS + ảnh</td>
-                  </tr>
-                  <tr>
-                    <td>Bảo hiểm</td>
-                    <td>Tuỳ chọn</td>
-                    <td>Mặc định</td>
-                    <td>Tuỳ chọn</td>
-                  </tr>
-                  <tr>
-                    <td>Dịch vụ lạnh</td>
-                    <td>Có</td>
-                    <td>Có</td>
-                    <td>—</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </section>
         </section>

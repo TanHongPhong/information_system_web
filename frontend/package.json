@@ -21,6 +21,7 @@
     "cmdk": "^1.1.1",
     "feather-icon": "^0.1.0",
     "feather-icons": "^4.29.2",
+    "framer-motion": "^12.23.24",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",

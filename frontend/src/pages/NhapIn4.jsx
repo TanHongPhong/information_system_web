@@ -54,7 +54,6 @@ export default function CargoInfoPage() {
     e.preventDefault();
     nav("/payment-qr");
   };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <CargoLocalStyles />

@@ -33,9 +33,9 @@ export default function CargoForm({
   note,
   setNote,
   onSubmit,
-  onBack, // <-- thêm prop Back
-  submitText = "Thanh toán", // <-- text nút submit
-  hideContinue = true, // <-- mặc định ẩn "Tiếp tục"
+  onBack,
+  submitText = "Thanh toán",
+  hideContinue = true,
 }) {
   return (
     <section className="lg:col-span-2">
@@ -207,7 +207,6 @@ export default function CargoForm({
 
         {/* Actions */}
         <div className="flex items-center justify-between">
-          {/* Trở lại: dùng onBack, KHÔNG dùng <a href="..."> */}
           <button
             type="button"
             onClick={onBack}
@@ -217,7 +216,6 @@ export default function CargoForm({
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Nếu sau này cần “Tiếp tục”, bỏ điều kiện dưới và thêm handler riêng */}
             {!hideContinue ? (
               <button
                 type="button"
@@ -227,7 +225,6 @@ export default function CargoForm({
               </button>
             ) : null}
 
-            {/* Nút submit: nav('/payment-qr') được xử lý ở onSubmit của trang cha */}
             <button
               type="submit"
               className="btn-reset btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-soft focus:outline-none focus:ring-2 focus:ring-blue-200"

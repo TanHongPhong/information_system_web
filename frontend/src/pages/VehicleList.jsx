@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
-import Sidebar from "../components/Sidebar";
-import FilterBtn from "../components/vehicle/FilterBtn";
-import VehicleCard from "../components/vehicle/VehicleCard";
+import Sidebar from "@/components/Sidebar";
+import FilterBtn from "@/components/vehicle/FilterBtn";
+import VehicleCard from "@/components/vehicle/VehicleCard";
 
 export default function VehiclesList() {
   const COMPANY = "Gemadept Logistics";
   const ROUTE = "HCM → Hà Nội";
   const navigate = useNavigate();
-  const NHAP_IN4 = "/nhap-in4"; // đổi thành "/payment_qr" nếu route của bạn dùng dấu "_"
+  const NHAP_IN4 = "/nhap-in4"; // route when selecting vehicle
 
   const [data] = useState([
     {
@@ -104,33 +104,26 @@ export default function VehiclesList() {
   useEffect(() => {
     feather.replace({ width: 21, height: 21 });
   }, []);
+
   useEffect(() => {
     feather.replace();
   }, [list, filter, sort]);
 
-  // --- handlers ---
-  const handleCancel = () => navigate("/transport-companies"); // về HomePage
+  // handlers
+  const handleCancel = () => navigate("/transport-companies");
   const handleSelect = (item) =>
-    navigate(NHAP_IN4, {
-      state: { vehicleId: item.id, plate: item.plate },
-    });
+    navigate(NHAP_IN4, { state: { vehicleId: item.id, plate: item.plate } });
 
   return (
     <div className="bg-slate-50 text-slate-900">
       <style>{`
         body { font-family: Inter, ui-sans-serif, system-ui; }
-        #hero .title{
-          color:#1E66FF; -webkit-text-stroke:1px rgba(255,255,255,.18);
-          text-shadow:0 3px 14px rgba(0,0,0,.85), 0 1px 0 rgba(0,0,0,.35)
-        }
+        #hero .title{ color:#1E66FF; -webkit-text-stroke:1px rgba(255,255,255,.18); text-shadow:0 3px 14px rgba(0,0,0,.85), 0 1px 0 rgba(0,0,0,.35) }
       `}</style>
 
-      {/* Sidebar chung */}
       <Sidebar />
 
-      {/* MAIN (chừa chỗ w-20 của Sidebar) */}
       <main className="ml-20 min-h-screen flex flex-col">
-        {/* HEADER */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b md:py-1 bg-gradient-to-l from-blue-900 via-sky-200 to-white">
           <div className="flex items-center justify-between px-4 md:px-5 py-2.5">
             <div className="flex-1 max-w-2xl mr-3 md:mr-6">
@@ -195,20 +188,14 @@ export default function VehiclesList() {
           </div>
         </header>
 
-        {/* HERO */}
         <section
           id="hero"
           className="relative h-[220px] sm:h-[260px] md:h-[300px] overflow-hidden"
         >
-          <style>{`
-            #hero{ --hero-img:url('https://png.pngtree.com/background/20220720/original/pngtree-road-photography-in-grassland-scenic-area-picture-image_1688712.jpg'); }
-            #hero .hero-bg{ background-image:var(--hero-img); background-size:cover; background-position:center; filter:saturate(1.05) contrast(1.05) }
-          `}</style>
-
+          <style>{`#hero{ --hero-img:url('https://png.pngtree.com/background/20220720/original/pngtree-road-photography-in-grassland-scenic-area-picture-image_1688712.jpg'); } #hero .hero-bg{ background-image:var(--hero-img); background-size:cover; background-position:center; filter:saturate(1.05) contrast(1.05) }`}</style>
           <div className="hero-bg absolute inset-0" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/70" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,.35)_0%,rgba(0,0,0,0)_60%)]" />
-
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
             <h1 className="title text-2xl sm:text-3xl md:text-[34px] font-extrabold tracking-tight">
               List of transportation vehicles
@@ -224,7 +211,6 @@ export default function VehiclesList() {
           </div>
         </section>
 
-        {/* FILTER BAR */}
         <section className="sticky top-[56px] z-40 bg-white/95 backdrop-blur border-y border-slate-200">
           <div className="w-full px-4 md:px-6 py-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -276,7 +262,6 @@ export default function VehiclesList() {
           </div>
         </section>
 
-        {/* GRID */}
         <section className="w-full px-4 md:px-6 py-8 md:py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-7">
             {list.map((item) => (
@@ -285,7 +270,7 @@ export default function VehiclesList() {
                 item={item}
                 company={COMPANY}
                 route={ROUTE}
-                onSelect={() => handleSelect(item)} // chuyển qua Nhập thông tin
+                onSelect={() => handleSelect(item)}
               />
             ))}
           </div>
@@ -294,10 +279,9 @@ export default function VehiclesList() {
             <button
               type="button"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-red-600 font-semibold ring-1 ring-red-300 hover:bg-red-50 shadow-soft focus:outline-none focus:ring-2 focus:ring-red-200"
-              onClick={handleCancel} // về trang HomePage
+              onClick={handleCancel}
             >
-              <i data-feather="x-circle" className="w-5 h-5" />
-              Hủy yêu cầu
+              <i data-feather="x-circle" className="w-5 h-5" /> Hủy yêu cầu
             </button>
             <p className="mt-3 text-sm text-slate-500">
               Không thấy xe phù hợp? Gửi yêu cầu để hệ thống gợi ý hoặc mở thêm

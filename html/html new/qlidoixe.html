@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Quản lý Vận tải</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind + Feather -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+/* ===== THU NHỎ UI (có thể chỉnh) ===== */
+:root{
+  --ui-zoom: .90; --ui-scale: .90;
+
+  --primary-blue:#4A90E2; --light-blue:#E9F2FF; --dark-blue-text:#002C6C;
+  --background-color:#F8F9FD; --card-background:#FFFFFF; --border-color:#EAEBF0;
+  --text-primary:#1C2A44; --text-secondary:#697386; --text-light:#A0AEC0;
+  --status-arriving:#4A90E2; --status-arriving-bg:#E9F2FF;
+  --status-loading:#F5A623;  --status-loading-bg:#FFF8E8;
+  --status-preparing:#16A34A; --status-preparing-bg:#EAFBF0;
+  --status-unloading:#BD10E0; --status-unloading-bg:#F9E7FD;
+  --status-departed:#334155; --status-departed-bg:#EEF2F7;
+  --font-family:'Roboto',sans-serif; --shadow:0 8px 24px rgba(20,30,55,.08);
+  --border-radius:12px;
+
+  /* Xe minh họa bên phải */
+  --load: 50; /* % tải hiện tại */
+  --truck-zoom: 1.; --truck-shift-x: 6%;
+  --body-left: 20%; --body-top: 30%; --body-width: 42%; --body-height: 33%;
+  --cargo-width: 36%; --cargo-height: 24%;
+  --cargo-left: calc(var(--body-left) + (var(--body-width) - var(--cargo-width))/2);
+  --cargo-top:  calc(var(--body-top) + (var(--body-height) - var(--cargo-height))/2);
+}
+html{font-size:14px}
+@supports(zoom:1){ body{zoom:var(--ui-zoom)} }
+@supports not (zoom:1){
+  html,body{height:100%}
+  body{ transform:scale(var(--ui-scale)); transform-origin:top left;
+        width:calc(100%/var(--ui-scale)); height:calc(100%/var(--ui-scale)); overflow:auto; }
+}
+
+/* ===== Tắt bold toàn bộ ===== */
+:root{ --fw-normal:400 }
+b,strong,h1,h2,h3,h4,h5,h6,.font-bold,.font-extrabold,.font-semibold,.font-medium,
+.vehicles-header h2,.vehicle-top .id,.t-time,.status-badge,.chip,
+.lm-header h3,.stat-details .value,.cargo-label,
+.order-card .order-id,.order-card .order-weight{ font-weight:var(--fw-normal)!important }
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-family);background:var(--background-color);color:var(--text-primary);display:flex;height:100vh;overflow:hidden}
+
+/* ===== Sidebar gọn ===== */
+.sidebar-compact{ width:76px;background:#fff;border-right:1px solid var(--border-color);
+  padding:16px 0;display:flex;flex-direction:column;align-items:center;gap:14px }
+.side-logo{ width:44px;height:44px;border-radius:12px;background:var(--primary-blue);color:#fff;
+  display:grid;place-items:center;font-weight:800;letter-spacing:.5px;box-shadow:0 8px 20px rgba(74,144,226,.25) }
+.nav-compact{ list-style:none;margin:4px 0 0;display:flex;flex-direction:column;gap:18px }
+.nav-compact a{ width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#99A3B0;
+  text-decoration:none;position:relative;transition:.2s;border:1px solid transparent }
+.nav-compact a:hover{ color:var(--primary-blue);background:var(--light-blue);border-color:#d7e7ff; z-index:10000; }
+.nav-compact a[aria-current="page"]{ background:var(--primary-blue);color:#fff;box-shadow:0 10px 22px rgba(74,144,226,.28) }
+
+/* 👉 Tooltip */
+.nav-compact a .tooltip{
+  position:absolute; left:64px; top:50%; transform:translateY(-50%);
+  background:#0B5BDA; color:#fff;
+  padding:8px 12px; font-size:13px; border-radius:10px; white-space:nowrap;
+  box-shadow:0 10px 24px rgba(2,6,23,.15), 0 0 0 1px rgba(59,130,246,.15);
+  opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+  z-index:9999;
+}
+.nav-compact a .tooltip::after{
+  content:""; position:absolute; left:-6px; top:50%; transform:translateY(-50%);
+  border:6px solid transparent; border-right-color:#0B5BDA;
+  filter:drop-shadow(0 1px 1px rgba(2,6,23,.12));
+}
+.nav-compact a:hover .tooltip{ opacity:1; transform:translateY(-50%) translateX(2px); }
+
+/* ===== Main layout ===== */
+.main-content{flex:1 1 auto;padding:24px 32px;display:flex;flex-direction:column;overflow:hidden}
+.content-grid{display:grid;grid-template-columns:390px 1fr;gap:24px;flex:1 1 auto;min-height:0}
+
+/* ===== Left column ===== */
+.vehicles-column{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden}
+.vehicles-header{position:sticky;top:0;z-index:1;background:linear-gradient(#fff,#fff0);padding-bottom:4px}
+.vehicles-header h2{font-size:20px;margin-bottom:10px}
+.vehicles-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab-button{padding:8px 14px;border:none;background:#fff;border:1px solid var(--border-color);color:#52607A;border-radius:10px;cursor:pointer;font-size:13px;transition:.2s}
+.tab-button.active,.tab-button:hover{background:var(--light-blue);border-color:#CFE0FF;color:#4A90E2}
+
+/* Danh sách cuộn độc lập */
+.vehicles-list{display:flex;flex-direction:column;gap:14px;overflow:auto;padding-right:8px;min-height:0;
+  scrollbar-width:thin;scrollbar-color:#AFC7FF #F3F6FF}
+.vehicles-list::-webkit-scrollbar{width:10px}
+.vehicles-list::-webkit-scrollbar-track{background:#F3F6FF;border-radius:10px}
+.vehicles-list::-webkit-scrollbar-thumb{background:#AFC7FF;border-radius:10px;border:2px solid #F3F6FF}
+.vehicles-list::-webkit-scrollbar-thumb:hover{background:#8FB0FF}
+
+/* ===== Vehicle card ===== */
+.vehicle-card{
+  position:relative;background:#fff;border:1px solid #E6EAF2;border-radius:18px;
+  padding:16px 16px 14px;
+  display:grid;grid-template-columns:56px minmax(0,1fr);
+  gap:14px;box-shadow:0 1px 0 rgba(0,0,0,.02);
+  transition:.25s;align-items:start;flex:0 0 auto
+}
+.vehicle-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);border-color:#D7E3FF}
+.vehicle-card.selected{border:2px solid #2F6FE4;box-shadow:0 10px 26px rgba(47,111,228,.18)}
+.vehicle-icon{width:56px;height:56px;border-radius:14px;background:linear-gradient(180deg,#F4F7FF,#EEF3FF);
+  display:grid;place-items:center;border:1px solid #E4EBFF;color:#2F6FE4;font-size:26px;box-shadow:0 1px 0 rgba(16,24,40,.03)}
+
+.vehicle-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
+.status-badge{padding:5px 12px;border-radius:999px;font-size:11px;border:1px solid #CFE0FF;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);white-space:nowrap}
+.status-badge.arriving{background:var(--status-arriving-bg);color:var(--status-arriving)}
+.status-badge.loading{background:var(--status-loading-bg);color:#B36A00;border-color:#FFE3AF}
+.status-badge.preparing{background:var(--status-preparing-bg);color:#0E7B33;border-color:#CBEFD8}
+.status-badge.unloading{background:var(--status-unloading-bg);color:#BD10E0;border-color:#F0CCFA}
+.status-badge.departed{background:var(--status-departed-bg);color:#334155;border-color:#E2E8F0}
+
+.vehicle-meta{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+.chip{font-size:12px;color:#263B66;background:#F2F6FF;border:1px solid #E0E9FF;border-radius:999px;padding:6px 10px}
+
+/* Timeline */
+.timeline{list-style:none;margin-top:6px}
+.t-row{display:grid;grid-template-columns:22px max-content 1fr;align-items:center;gap:12px;margin:8px 0;line-height:1.5}
+.dot-wrap{width:22px;display:grid;place-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:#BFD1F2;box-shadow:0 0 0 2px #EDF2FF}
+.t-row.active .dot{background:#2F6FE4;box-shadow:0 0 0 3px #DCE7FF}
+.t-label{color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:80px}
+.t-time{white-space:nowrap;color:#1F2937;justify-self:end}
+
+/* Thu gọn thẻ không được chọn */
+.vehicle-card .collapsed-actions{display:none}
+.vehicle-card .collapsed-sub{display:none}
+
+.vehicle-card:not(.selected){
+  grid-template-columns:56px 1fr;
+  align-items:center; padding:12px 16px;
+}
+.vehicle-card:not(.selected) .vehicle-meta,
+.vehicle-card:not(.selected) .timeline{ display:none!important }
+.vehicle-card:not(.selected) .collapsed-sub{ display:block; font-size:13px; color:#94A3B8; margin-top:2px }
+.vehicle-card:not(.selected) .collapsed-actions{
+  display:flex; align-items:center; gap:12px; margin-left:auto;
+}
+.track-btn{ display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px;
+  background:#fff; border:1px solid #CFE0FF; color:#2F6FE4; text-decoration:none; font-size:13px;
+  box-shadow:0 1px 0 rgba(255,255,255,.6); transition:.18s }
+.track-btn:hover{ background:#F1F7FF }
+.details-link{ font-size:13px; color:#2563eb; text-decoration:none }
+.details-link:hover{ text-decoration:underline }
+
+/* ===== Right column ===== */
+.load-management-column{display:flex;flex-direction:column;min-height:0;overflow:auto}
+.truck-info-container{order:1;}
+.lm-header,.lm-scale,.lm-row,.lm-note,#ordersGrid{order:3;}
+.truck-info-container{display:flex;justify-content:space-between;gap:24px;background:#fff;border-radius:var(--border-radius);padding:24px;border:1px solid var(--border-color);box-shadow:var(--shadow);margin-bottom:18px}
+.truck-stats{display:flex;flex-direction:column;gap:18px}
+.stat-item{display:flex;align-items:center;gap:12px}
+.stat-icon{width:44px;height:44px;border-radius:10px;background:var(--light-blue);display:grid;place-items:center;color:var(--primary-blue)}
+.stat-icon svg{width:22px;height:22px}
+.stat-details .label{font-size:13px;color:var(--text-secondary);margin-bottom:2px}
+.stat-details .value{font-size:18px}
+
+/* Cụm THÔNG TIN XE */
+.stats-extra{margin-top:6px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.extra-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E5EAF2;border-radius:10px;background:#F8FBFF}
+.extra-card .ic{width:28px;height:28px;border-radius:8px;background:var(--light-blue);display:grid;place-items:center;color:var(--primary-blue);flex:0 0 auto}
+.extra-card .kv{line-height:1.25}
+.extra-card .kv .k{font-size:12px;color:#64748B}
+.extra-card .kv .v{font-size:14px;color:#0F172A;white-space:nowrap}
+
+/* Xe + thùng hàng */
+.truck-visualization{position:relative;flex:1;min-height:200px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden;border-radius:10px}
+.truck-stage{position:relative;width:clamp(360px, 40vw, 620px);transform-origin:right center;transform:translateX(var(--truck-shift-x)) scale(var(--truck-zoom));filter:drop-shadow(0 2px 6px rgba(0,0,0,.08))}
+.truck-img{display:block;width:100%;height:auto;max-width:none}
+.cargo{position:absolute;left:var(--cargo-left);top:var(--cargo-top);width:var(--cargo-width);height:var(--cargo-height);pointer-events:none}
+.cargo-inner{position:absolute;inset:0;border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);background:rgba(255,255,255,.55);backdrop-filter:blur(.5px)}
+.cargo-fill{height:100%;width:calc(var(--load)*1%);background:linear-gradient(90deg,#F5A623,#F29900);box-shadow:inset 0 0 10px rgba(0,0,0,.06)}
+.cargo-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;font-size:clamp(14px,2vw,22px);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+
+/* Load Management */
+.lm-header{ display:flex; align-items:center; gap:8px; margin:10px 0 4px; }
+.lm-header h3{ margin:0; font-size:18px; color:#0f172a; }
+.lm-help{ width:20px; height:20px; display:grid; place-items:center; border-radius:999px;
+  border:1px solid #CBD5E1; background:#fff; color:#64748B; font-size:12px; line-height:1; cursor:help; }
+
+/* Căn nhãn % trùng đúng vạch đứt của .lm-bar */
+.lm-col{ min-width:0; }
+.lm-scale{
+  position:relative;
+  height:18px;
+  margin:2px 0 6px;
+  font-size:12px;
+  color:#94A3B8;
+  pointer-events:none;
+}
+.lm-scale span{
+  position:absolute; top:0; transform:translateX(-50%);
+}
+.lm-scale .p0   { left:0;    transform:none; }
+.lm-scale .p25  { left:25%; }
+.lm-scale .p50  { left:50%; }
+.lm-scale .p75  { left:75%; }
+.lm-scale .p100 { left:100%; transform:translateX(-100%); }
+
+.lm-row{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:16px; margin-bottom:8px; }
+.lm-bar{ position:relative; height:40px; background:#EEF2F7; border-radius:10px; overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,.6); }
+.lm-fill{ position:absolute; left:0; top:0; bottom:0; width:calc(var(--load)*1%); background:linear-gradient(90deg,#0B5BDA,#63A3FF); box-shadow:inset 0 0 0 1px rgba(255,255,255,.3); }
+.lm-bar .sep{ position:absolute; top:8px; bottom:8px; width:2px; background:repeating-linear-gradient(to bottom, rgba(0,0,0,.25) 0 6px, transparent 6px 12px); opacity:.45; pointer-events:none; }
+.lm-bar .s25{ left:25%; transform:translateX(-1px); }
+.lm-bar .s50{ left:50%; transform:translateX(-1px); }
+.lm-bar .s75{ left:75%; transform:translateX(-1px); }
+.lm-total{ font-size:16px; white-space:nowrap; color:#374151; }
+.lm-strong{ font-weight:700 !important; color:#111827; margin-right:4px; }
+.lm-subtle{ color:#6B7280; }
+.lm-note{ margin-top:8px; display:flex; align-items:flex-start; gap:8px; background:#E9F2FF; color:#0F2F63; border:1px dashed var(--primary-blue); padding:12px 14px; border-radius:8px; }
+.lm-note .icon{ display:grid; place-items:center; width:20px; height:20px; border-radius:999px; border:1px solid #99C1FF; color:#1E64D0; font-weight:600; background:#fff; flex:0 0 auto; }
+
+.orders-grid{padding-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.order-card{background:#fff;border:1px solid var(--border-color);border-radius:var(--border-radius);padding:16px;display:flex;flex-direction:column;gap:12px;transition:.2s}
+.order-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);cursor:grab}
+.order-card-header{display:flex;justify-content:space-between;align-items:center}
+.order-card-header .order-id{font-size:12px;color:var(--text-secondary)}
+.order-card-header .menu-btn{background:none;border:none;color:var(--text-light);cursor:pointer}
+.order-card-main{display:flex;align-items:center;gap:12px}
+.order-icon{width:36px;height:36px;min-width:36px;border-radius:6px;background:var(--light-blue);display:grid;place-items:center;color:var(--primary-blue)}
+.order-weight{font-size:18px}
+.order-card-footer{font-size:12px;color:var(--text-secondary)}
+.order-location,.order-date{display:flex;align-items:center;gap:6px}
+.order-card-footer svg{width:14px;height:14px}
+
+/* ===== ICON POLISH – chỉ ảnh hưởng icon trong truck-stats & stats-extra ===== */
+.truck-stats .stat-icon{
+  width:44px;height:44px;border-radius:10px;display:grid;place-items:center;
+  background: linear-gradient(180deg,#eef4ff,#e6f0ff);
+  border:1px solid #d8e6ff;
+  box-shadow: 0 8px 20px rgba(37,99,235,.12), inset 0 1px 0 rgba(255,255,255,.75);
+  color:#1e4ed8;
+}
+.truck-stats .stat-icon svg, .truck-stats .stat-icon i{
+  width:22px;height:22px;stroke-width:2;
+  filter: drop-shadow(0 1px 1px rgba(30,64,175,.15));
+}
+
+.stats-extra .ic{
+  width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;
+  background: linear-gradient(180deg,#eef4ff,#e6f0ff);
+  border:1px solid #d8e6ff;
+  box-shadow: 0 6px 14px rgba(37,99,235,.10), inset 0 1px 0 rgba(255,255,255,.75);
+  color:#1e4ed8;
+}
+.stats-extra .ic svg, .stats-extra .ic i{
+  width:16px;height:16px;stroke-width:2;
+  filter: drop-shadow(0 1px 1px rgba(30,64,175,.12));
+}
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <nav class="sidebar-compact" aria-label="Dashboard">
+    <div class="side-logo">VT</div>
+    <ul class="nav-compact">
+      <li>
+        <a href="#" aria-label="Check thông tin đơn hàng" data-tab="orders-check">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 14l2 2 4-4"/></svg>
+          <span class="tooltip">Check thông tin đơn hàng</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" aria-label="Trạng thái đội xe" data-tab="fleet-status" aria-current="page">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17H5a1 1 0 0 1-1-1V6h11v5h3l3 3v2a1 1 0 0 1-1 1h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+          <span class="tooltip">Trạng thái đội xe</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" aria-label="Theo dõi đơn hàng" data-tab="order-tracking">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.33-6-10a6 6 0 1 1 12 0c0 4.67-6 10-6 10z"/><circle cx="12" cy="11" r="2.5"/></svg>
+          <span class="tooltip">Theo dõi đơn hàng</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50">
+      <div class="bg-gradient-to-r from-white via-sky-200 to-blue-700/90 backdrop-blur">
+        <div class="flex items-center justify-between px-4 md:px-6 py-2.5">
+          <div class="flex-1 max-w-3xl mr-3 md:mr-6">
+            <div class="relative">
+              <i data-feather="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              <input type="text" placeholder="Search by route, plate, driver..."
+                class="w-full h-11 pl-10 pr-14 rounded-2xl bg-white text-slate-800 placeholder:text-slate-400 ring-1 ring-white/60 shadow-[0_6px_18px_rgba(2,6,23,.06)] focus:outline-none focus:ring-2 focus:ring-blue-300"/>
+              <button class="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-9 h-9 rounded-xl bg-white ring-1 ring-slate-200 hover:bg-slate-50" title="Filter">
+                <i data-feather="filter" class="w-4 h-4 text-slate-700"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 md:gap-3">
+            <button class="h-10 w-10 rounded-xl grid place-items-center bg-white text-blue-600 ring-1 ring-blue-200 hover:bg-blue-50" title="New"><i data-feather="plus" class="w-4 h-4"></i></button>
+            <button class="h-10 w-10 rounded-xl grid place-items-center bg-white ring-1 ring-slate-200 hover:bg-slate-50" title="Notifications"><i data-feather="bell" class="w-4 h-4 text-slate-800"></i></button>
+            <button class="h-10 w-10 rounded-xl grid place-items-center bg-white ring-1 ring-slate-200 hover:bg-slate-50" title="Archive"><i data-feather="archive" class="w-4 h-4 text-slate-800"></i></button>
+            <button type="button" class="inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50">
+              <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" class="w-9 h-9 rounded-full object-cover"/>
+              <div class="text-left leading-tight hidden sm:block">
+                <div class="text-[13px]">Công ty CP Transimex</div>
+                <div class="text-[11px] text-slate-500 -mt-0.5">Transport Company</div>
+              </div>
+              <i data-feather="chevron-down" class="w-4 h-4 text-slate-400"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- GRID 2 cột -->
+    <div class="content-grid">
+      <!-- LEFT -->
+      <div class="vehicles-column">
+        <div class="vehicles-header">
+          <h2>Vehicles</h2>
+          <div class="vehicles-tabs">
+            <button class="tab-button active">Loading</button>
+            <button class="tab-button">Unloading</button>
+            <button class="tab-button">Arriving</button>
+            <button class="tab-button">Preparing</button>
+          </div>
+        </div>
+
+        <div class="vehicles-list" id="vehiclesList"><!-- Render bằng JS --></div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="load-management-column">
+        <div class="truck-info-container">
+          <div class="truck-stats">
+            <div class="stat-item">
+              <div class="stat-icon"><i data-feather="package"></i></div>
+              <div class="stat-details"><div class="label">Khối lượng tải</div><div class="value">2.5 tấn</div></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i data-feather="bar-chart-2"></i></div>
+              <div class="stat-details"><div class="label">Trọng lượng tối đa</div><div class="value">15 tấn</div></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i data-feather="inbox"></i></div>
+              <div class="stat-details"><div class="label">Còn trống</div><div class="value" id="capacity-left">—</div></div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i data-feather="clock"></i></div>
+              <div class="stat-details"><div class="label">ETA dự kiến</div><div class="value">11/9/2025, 22:00</div></div>
+            </div>
+
+            <!-- CỤM THÔNG TIN XE -->
+            <div class="stats-extra">
+              <div class="extra-card">
+                <div class="ic"><i data-feather="hash"></i></div>
+                <div class="kv"><div class="k">Biển số</div><div class="v" id="exPlate">—</div></div>
+              </div>
+              <div class="extra-card">
+                <div class="ic"><i data-feather="user"></i></div>
+                <div class="kv"><div class="k">Tài xế</div><div class="v" id="exDriver">—</div></div>
+              </div>
+              <div class="extra-card">
+                <div class="ic"><i data-feather="map-pin"></i></div>
+                <div class="kv"><div class="k">Tuyến</div><div class="v" id="exRoute">—</div></div>
+              </div>
+              <div class="extra-card">
+                <div class="ic"><i data-feather="activity"></i></div>
+                <div class="kv"><div class="k">Trạng thái</div><div class="v" id="exStatus">—</div></div>
+              </div>
+              <div class="extra-card">
+                <div class="ic"><i data-feather="clock"></i></div>
+                <div class="kv"><div class="k">Mốc kế tiếp</div><div class="v" id="exNext">—</div></div>
+              </div>
+              <div class="extra-card">
+                <div class="ic"><i data-feather="phone"></i></div>
+                <div class="kv"><div class="k">Liên hệ nhanh</div><div class="v">Gọi tài xế / Điều phối</div></div>
+              </div>
+            </div>
+            <!-- /CỤM THÔNG TIN XE -->
+          </div>
+
+          <div class="truck-visualization">
+            <div class="truck-stage">
+              <img class="truck-img" src="https://png.pngtree.com/thumb_back/fh260/background/20231007/pngtree-d-rendering-of-an-isolated-white-truck-seen-from-the-side-image_13518507.png" alt="Truck"/>
+              <div class="cargo" aria-hidden="true">
+                <div class="cargo-inner"><div class="cargo-fill"></div></div>
+                <div class="cargo-label"><span id="percent-text"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load Management -->
+        <div class="lm-header">
+          <h3>Load Management</h3>
+          <button class="lm-help" title="Quản lý tải trọng theo phần trăm">i</button>
+        </div>
+
+        <div class="lm-row">
+          <div class="lm-col">
+            <div class="lm-scale">
+              <span class="p0">0%</span>
+              <span class="p25">25%</span>
+              <span class="p50">50%</span>
+              <span class="p75">75%</span>
+              <span class="p100">100%</span>
+            </div>
+
+            <div class="lm-bar" aria-label="Tiến độ tải trọng">
+              <div class="lm-fill"></div>
+              <span class="sep s25" aria-hidden="true"></span>
+              <span class="sep s50" aria-hidden="true"></span>
+              <span class="sep s75" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <div class="lm-total" id="lmTotalText"></div>
+        </div>
+
+        <div class="lm-note">
+          <span class="icon">i</span>
+          <span>Kéo và thả các đơn hàng vào các khối trọng lượng có sẵn. Bạn cũng có thể di chuyển đơn hàng đến khối trọng lượng phù hợp. Các khối trọng lượng được đề xuất dựa trên đơn hàng bạn chọn và tính sẵn có.</span>
+        </div>
+
+        <section class="orders-grid" id="ordersGrid"></section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Sidebar active
+    document.querySelectorAll('.nav-compact a').forEach(a=>{
+      a.addEventListener('click', ()=>{
+        document.querySelectorAll('.nav-compact a[aria-current="page"]').forEach(x=>x.removeAttribute('aria-current'));
+        a.setAttribute('aria-current','page');
+      });
+    });
+
+    // % tải và "Còn trống"
+    const getLoad = () => getComputedStyle(document.documentElement).getPropertyValue('--load').trim();
+    const percentSpan = document.getElementById('percent-text');
+    const renderPercent = () => { if (percentSpan) percentSpan.textContent = `${getLoad()}%`; };
+    renderPercent();
+
+    (function updateCapacityLeft(){
+      const MAX_TON = 15;
+      const pct = parseFloat(getLoad() || '0') || 0;
+      const left = (MAX_TON * (100 - pct) / 100);
+      const el = document.getElementById('capacity-left');
+      if (el) el.textContent = `${left.toFixed(1)} tấn`;
+    })();
+
+    // Cập nhật dòng tóm tắt bên phải theo % tải
+    (function renderLoadSummary(){
+      const MAX_TON = 15;
+      const pct = parseFloat(getLoad() || '0') || 0;
+      const ton = MAX_TON * pct / 100;
+      const el = document.getElementById('lmTotalText');
+      if (el) {
+        el.innerHTML = `<span class="lm-strong">${ton.toFixed(1)} tấn</span>
+                        <span class="lm-subtle">Trong số ${MAX_TON} tấn tải trọng tối đa</span>`;
+      }
+    })();
+
+    // ====== DỮ LIỆU XE ======
+    const VEHICLES = [
+      {id:'SHIPID 02', plate:'DL04MP7045', driver:'Trần Minh', status:'arriving', route:'Bình Định–Đà Nẵng', start:[13.7765,109.2237], end:[16.0544,108.2022], times:['9/9/2025, 6:00','9/9/2025, 10:00','11/9/2025, 20:00','11/9/2025, 22:00'], active:1},
+      {id:'SHIPID 03', plate:'51D-678.90', driver:'N. Hòa', status:'loading', route:'Vũng Tàu–TPHCM', start:[10.3459,107.0843], end:[10.8231,106.6297], times:['20/7/2025, 7:00','20/7/2025, 10:00','21/7/2025, 20:00','21/7/2025, 5:00'], active:1},
+      {id:'SHIPID 04', plate:'29C-112.34', driver:'P. Hải', status:'preparing', route:'Hà Nội–Ninh Bình', start:[21.0278,105.8342], end:[20.2534,105.9750], times:['12/8/2025, 8:00','12/8/2025, 12:00','13/8/2025, 18:00','13/8/2025, 21:00'], active:0},
+      {id:'SHIPID 05', plate:'51A-889.77', driver:'V. Nam', status:'unloading', route:'TPHCM–Cần Thơ', start:[10.8231,106.6297], end:[10.0452,105.7469], times:['10/8/2025, 6:00','10/8/2025, 9:30','10/8/2025, 18:00','10/8/2025, 21:30'], active:2},
+      {id:'SHIPID 06', plate:'43C-909.10', driver:'T. Lợi', status:'arriving', route:'Đà Nẵng–Huế', start:[16.0544,108.2022], end:[16.4637,107.5909], times:['5/8/2025, 6:00','5/8/2025, 10:00','5/8/2025, 18:00','5/8/2025, 20:00'], active:3},
+      {id:'SHIPID 07', plate:'88C-335.55', driver:'Đ. Trung', status:'loading', route:'Vĩnh Phúc–Hà Nội', start:[21.3083,105.6049], end:[21.0278,105.8342], times:['2/9/2025, 7:00','2/9/2025, 9:30','2/9/2025, 14:00','2/9/2025, 16:00'], active:1},
+      {id:'SHIPID 08', plate:'72C-456.78', driver:'Q. Huy', status:'preparing', route:'Bà Rịa–Vũng Tàu', start:[10.5473,107.2429], end:[10.3459,107.0843], times:['1/9/2025, 8:00','1/9/2025, 10:00','1/9/2025, 15:00','1/9/2025, 18:00'], active:0},
+      {id:'SHIPID 09', plate:'63C-555.88', driver:'Q. Vũ', status:'preparing', route:'Hà Nội–Hải Phòng', start:[21.0278,105.8342], end:[20.8449,106.6881], times:['12/12/2025, 9:00','12/12/2025, 12:00','14/12/2025, 15:00','14/12/2025, 20:00'], active:0},
+      {id:'SHIPID 10', plate:'50F-999.11', driver:'K. Bình', status:'departed', route:'TPHCM–Đà Lạt', start:[10.8231,106.6297], end:[11.9404,108.4583], times:['8/9/2025, 6:00','8/9/2025, 9:00','8/9/2025, 17:00','8/9/2025, 22:00'], active:3},
+      {id:'SHIPID 11', plate:'36C-222.66', driver:'H. Hà', status:'loading', route:'Thanh Hóa–Nghệ An', start:[19.8067,105.7856], end:[18.6736,105.6923], times:['6/9/2025, 6:00','6/9/2025, 10:00','6/9/2025, 19:30','6/9/2025, 22:00'], active:1},
+      {id:'SHIPID 12', plate:'14C-777.00', driver:'B. Sơn', status:'arriving', route:'Quảng Ninh–Hải Phòng', start:[20.9711,107.0448], end:[20.8449,106.6881], times:['4/9/2025, 7:00','4/9/2025, 11:30','4/9/2025, 18:00','4/9/2025, 20:30'], active:2},
+      {id:'SHIPID 13', plate:'92C-313.14', driver:'T. Dũng', status:'unloading', route:'Quảng Nam–Đà Nẵng', start:[15.5736,108.4740], end:[16.0544,108.2022], times:['3/9/2025, 8:00','3/9/2025, 10:00','3/9/2025, 13:45','3/9/2025, 16:00'], active:2},
+    ];
+
+    const STATUS_BADGE_CLASS = {
+      arriving: 'status-badge arriving',
+      loading: 'status-badge loading',
+      preparing: 'status-badge preparing',
+      unloading: 'status-badge unloading',
+      departed: 'status-badge departed',
+    };
+
+    function timelineItem(label, time, active=false){
+      return `
+        <li class="t-row ${active?'active':''}">
+          <span class="dot-wrap"><span class="dot"></span></span>
+          <span class="t-label">${label}</span>
+          <span class="t-time">${time}</span>
+        </li>`;
+    }
+
+    function vehicleCardHTML(v, selected=false){
+      const badge = STATUS_BADGE_CLASS[v.status] || 'status-badge';
+      const [t1,t2,t3,t4] = v.times;
+      return `
+      <article class="vehicle-card ${selected?'selected':''}" data-ship="${v.id}">
+        <div class="vehicle-icon">🚚</div>
+        <div class="vehicle-body">
+          <div class="vehicle-top">
+            <div class="id">${v.id}</div>
+            <span class="${badge}">${v.status[0].toUpperCase()+v.status.slice(1)}</span>
+          </div>
+
+          <!-- Thu gọn -->
+          <div class="collapsed-sub">${v.plate} · Tải trọng tối đa 15 tấn</div>
+          <div class="collapsed-actions">
+            <a class="track-btn" href="#" title="Theo dõi"><i data-feather="search" class="w-4 h-4"></i> <span>Theo dõi</span></a>
+            <a class="details-link" href="#">Chi tiết</a>
+          </div>
+
+          <!-- Đầy đủ khi chọn -->
+          <div class="vehicle-meta"><span class="chip">${v.route}</span></div>
+          <ul class="timeline">
+            ${timelineItem('Preparing', t1, v.active===0)}
+            ${timelineItem('Loading',   t2, v.active===1)}
+            ${timelineItem('Unloading', t3, v.active===2)}
+            ${timelineItem('Arriving',  t4, v.active===3)}
+          </ul>
+        </div>
+      </article>`;
+    }
+
+    // Render list
+    const listEl = document.getElementById('vehiclesList');
+    let selectedId = VEHICLES[0].id;
+    function renderVehicles(){
+      listEl.innerHTML = VEHICLES.map(v => vehicleCardHTML(v, v.id===selectedId)).join('');
+      feather.replace({ width: 18, height: 18 });
+      updateTruckExtra();
+    }
+    renderVehicles();
+
+    // Chọn thẻ
+    listEl.addEventListener('click', (e)=>{
+      const card = e.target.closest('.vehicle-card');
+      if(!card) return;
+      if (e.target.closest('.track-btn,.details-link')) return;
+      selectedId = card.dataset.ship;
+      renderVehicles();
+      card.scrollIntoView({block:'nearest', behavior:'smooth'});
+    });
+
+    // Cập nhật cụm THÔNG TIN XE
+    function updateTruckExtra(){
+      const v = VEHICLES.find(x => x.id === selectedId) || VEHICLES[0];
+      const fmtStatus = v.status[0].toUpperCase() + v.status.slice(1);
+      const $ = (id) => document.getElementById(id);
+      if ($('exPlate')) $('exPlate').textContent  = v.plate;
+      if ($('exDriver')) $('exDriver').textContent = v.driver;
+      if ($('exRoute')) $('exRoute').textContent  = v.route.replace('–',' → ');
+      if ($('exStatus')) $('exStatus').textContent = fmtStatus;
+      if ($('exNext')) $('exNext').textContent    = v.times[3];
+    }
+
+    // Đơn hàng demo
+    const ORDERS=[{id:"ORDER 0155",weight:88.9,route:"Bình Định – Đà Nẵng",date:"11/9/2025"},{id:"ORDER 7723",weight:76,route:"Bình Định – Đà Nẵng",date:"11/9/2025"},{id:"ORDER 0856",weight:88.9,route:"Bình Định – Đà Nẵng",date:"11/9/2025"},{id:"ORDER 6655",weight:96,route:"Bình Định – Đà Nẵng",date:"11/9/2025"},{id:"ORDER 0152",weight:99,route:"Quy Nhơn – Đà Nẵng",date:"10/9/2025"},{id:"ORDER 2353",weight:100,route:"Quy Nhơn – Đà Nẵng",date:"10/9/2025"},{id:"ORDER 0123",weight:88.9,route:"Quy Nhơn – Đà Nẵng",date:"10/9/2025"},{id:"ORDER 0128",weight:88.9,route:"Quy Nhơn – Đà Nẵng",date:"10/9/2025"},{id:"ORDER 5923",weight:160,route:"Đà Nẵng – Huế",date:"11/9/2025"},{id:"ORDER 0156",weight:187,route:"Đà Nẵng – Huế",date:"11/9/2025"},{id:"ORDER 0178",weight:165.9,route:"Bình Dương – TP.HCM",date:"10/9/2025"},{id:"ORDER 0243",weight:88.9,route:"Bình Dương – TP.HCM",date:"10/9/2025"}];
+
+    (function renderOrders(){
+      const grid=document.getElementById('ordersGrid'); if(!grid) return;
+      grid.innerHTML='';
+      ORDERS.forEach(o=>{
+        const card=document.createElement('article');
+        card.className='order-card';
+        card.innerHTML=`
+          <div class="order-card-header"><span class="order-id">ID:${o.id}</span><button class="menu-btn" aria-label="More">...</button></div>
+          <div class="order-card-main"><div class="order-icon" aria-hidden="true">📦</div><div class="order-weight">${Number(o.weight).toLocaleString('vi-VN')} kg</div></div>
+          <div class="order-card-footer"><div class="order-location">${o.route}</div><div class="order-date">${o.date}</div></div>`;
+        grid.appendChild(card);
+      });
+    })();
+
+    // Feather icons
+    window.feather && feather.replace({ width: 18, height: 18 });
+  </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import CompanyModal from "@/components/companies/CompanyModal";
+import feather from "feather-icons";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
+import { Star } from "@/components/companies/Stars";
+
+export default function TransportCompanies() {
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const openModal = (company) => {
+    setSelectedCompany(company);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const strip = (s) =>
+    (s || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+
+  // ===== DATA =====
+  const companies = useMemo(
+    () => [
+      {
+        name: "Công ty Gemadept",
+        area: "Toàn quốc",
+        cost: 200000,
+        rating: 4.7,
+        reviews: 1248,
+        stats: { orders12m: 3482, ontimeRate: 97.2, csat: 4.8 },
+        sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
+        services: { cold: true, danger: false, loading: true, insurance: true },
+        address: "2 Hải Phòng, Q.1, TP.HCM",
+        phone: "028 1234 5678",
+      },
+      // ... other companies
+    ],
+    []
+  );
+
+  const [fromVal, setFromVal] = useState("");
+  const [toVal, setToVal] = useState("");
+  const [sizeVal, setSizeVal] = useState("");
+  const [sortVal, setSortVal] = useState("recommended");
+  const [showAdv, setShowAdv] = useState(false);
+
+  const [svcCold, setSvcCold] = useState(false);
+  const [svcDanger, setSvcDanger] = useState(false);
+  const [svcLoading, setSvcLoading] = useState(false);
+  const [svcIns, setSvcIns] = useState(false);
+  const [cargoType, setCargoType] = useState("");
+
+  const [filtered, setFiltered] = useState(companies);
+
+  // Feather icons refresh
+  useEffect(() => {
+    feather.replace({ width: 21, height: 21 });
+  }, [filtered, showAdv]);
+
+  const matchAdvanced = useCallback(
+    (c) => {
+      if (svcCold && !c.services.cold) return false;
+      if (svcDanger && !c.services.danger) return false;
+      if (svcLoading && !c.services.loading) return false;
+      if (svcIns && !c.services.insurance) return false;
+      if (cargoType === "Lạnh" && !c.services.cold) return false;
+      if (cargoType === "Nguy hiểm" && !c.services.danger) return false;
+      return true;
+    },
+    [svcCold, svcDanger, svcLoading, svcIns, cargoType]
+  );
+
+  const runSearch = useCallback(() => {
+    const f = strip(fromVal);
+    const t = strip(toVal);
+    const s = strip(sizeVal);
+    const term = `${f} ${t}`.trim();
+
+    let list = companies.filter((c) => {
+      const area = strip(c.area);
+      const areaOK =
+        area.includes("toan quoc") ||
+        (term &&
+          (area.includes("mien") ||
+            area.includes("lien tinh") ||
+            (area.includes("noi thanh hcm") &&
+              (term.includes("hcm") ||
+                term.includes("ho chi minh") ||
+                term.includes("sai gon"))))) ||
+        !term;
+
+      const sizeOK = !s || c.sizes.some((x) => strip(x).includes(s));
+      return areaOK && sizeOK && matchAdvanced(c);
+    });
+
+    switch (sortVal) {
+      case "priceAsc":
+        list.sort((a, b) => a.cost - b.cost);
+        break;
+      case "priceDesc":
+        list.sort((a, b) => b.cost - a.cost);
+        break;
+      case "ratingDesc":
+        list.sort((a, b) => b.rating - a.rating);
+        break;
+      default:
+        list.sort(
+          (a, b) => b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost)
+        );
+    }
+
+    setFiltered(list);
+  }, [companies, fromVal, toVal, sizeVal, sortVal, matchAdvanced]);
+
+  // Re-run search when inputs change
+  useEffect(() => {
+    runSearch();
+  }, [runSearch]);
+
+  // Handlers
+  const onSwap = () => {
+    setFromVal(toVal);
+    setToVal(fromVal);
+  };
+
+  const onEnter = (e) => {
+    if (e.key === "Enter") runSearch();
+  };
+
+  return (
+    <div className="bg-slate-50 text-slate-900">
+      <Sidebar />
+
+      <main className="ml-20">
+        <Topbar />
+
+        {/* Content */}
+        <section className="p-6 space-y-8">
+          {/* List */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-soft">
+            <div className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">
+                    Danh sách công ty vận tải được đề xuất
+                  </h1>
+                  <p className="text-blue-600">
+                    List of recommended transport companies
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-slate-500" htmlFor="sort">
+                    Sắp xếp
+                  </label>
+                  <select
+                    id="sort"
+                    className="h-10 px-3 rounded-xl border border-slate-200"
+                    value={sortVal}
+                    onChange={(e) => setSortVal(e.target.value)}
+                  >
+                    <option value="recommended">Phù hợp nhất</option>
+                    <option value="priceAsc">Giá ↑</option>
+                    <option value="priceDesc">Giá ↓</option>
+                    <option value="ratingDesc">Đánh giá ↓</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 p-5 pt-2">
+              <input
+                className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
+                placeholder="Chọn điểm lấy hàng"
+                value={fromVal}
+                onChange={(e) => setFromVal(e.target.value)}
+                onKeyDown={onEnter}
+              />
+              <button
+                className="size-10 rounded-xl border border-slate-200 grid place-items-center"
+                title="Đổi chiều"
+                onClick={onSwap}
+              >
+                ⇄
+              </button>
+              <input
+                className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
+                placeholder="Chọn điểm đến"
+                value={toVal}
+                onChange={(e) => setToVal(e.target.value)}
+                onKeyDown={onEnter}
+              />
+              <select
+                className="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200"
+                value={sizeVal}
+                onChange={(e) => setSizeVal(e.target.value)}
+              >
+                <option value="">Chọn kích thước</option>
+                <option>≤ 2 tấn</option>
+                <option>≤ 4 tấn</option>
+                <option>Container 20ft</option>
+                <option>Container 40ft</option>
+                <option>Xe lạnh</option>
+              </select>
+              <button
+                className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                onClick={runSearch}
+              >
+                Tìm kiếm
+              </button>
+              <button
+                className="h-10 px-3 rounded-xl border border-slate-200"
+                onClick={() => setShowAdv((s) => !s)}
+              >
+                Bộ lọc nâng cao
+              </button>
+            </div>
+
+            {/* Advanced filters */}
+            {showAdv && (
+              <div className="px-5 pb-4">
+                <div className="grid md:grid-cols-3 gap-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      checked={svcCold}
+                      onChange={(e) => setSvcCold(e.target.checked)}
+                    />
+                    Xe lạnh
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      checked={svcDanger}
+                      onChange={(e) => setSvcDanger(e.target.checked)}
+                    />
+                    Hàng nguy hiểm
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      checked={svcLoading}
+                      onChange={(e) => setSvcLoading(e.target.checked)}
+                    />
+                    Bốc xếp
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      checked={svcIns}
+                      onChange={(e) => setSvcIns(e.target.checked)}
+                    />
+                    Bảo hiểm
+                  </label>
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1">
+                      Thời gian lấy hàng
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="h-10 w-full px-3 rounded-xl border border-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1">
+                      Loại hàng
+                    </label>
+                    <select
+                      className="h-10 w-full px-3 rounded-xl border border-slate-200"
+                      value={cargoType}
+                      onChange={(e) => setCargoType(e.target.value)}
+                    >
+                      <option value="">— Chọn —</option>
+                      <option>Khô</option>
+                      <option>Lạnh</option>
+                      <option>Nguy hiểm</option>
+                      <option>Hàng cồng kềnh</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Table */}
+            <div
+              className="border-t border-slate-200"
+              role="table"
+              aria-label="Danh sách công ty"
+            >
+              <div
+                className="hidden md:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 pt-3 pb-2 text-slate-500 font-semibold"
+                role="row"
+              >
+                <div>Transport company</div>
+                <div>Service area</div>
+                <div className="text-center">Cost</div>
+                <div className="text-center">Rate</div>
+                <div className="text-center">Information</div>
+              </div>
+
+              <div id="rows">
+                {filtered.length === 0 ? (
+                  <div className="px-5 py-10 text-center text-slate-500">
+                    Không có kết quả phù hợp. Hãy chỉnh bộ lọc hoặc thử tuyến
+                    khác.
+                  </div>
+                ) : (
+                  filtered.map((c) => (
+                    <div
+                      key={c.name}
+                      className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.8fr)_160px] gap-4 items-center px-5 py-4 border-t border-slate-200"
+                    >
+                      <div className="font-medium">{c.name}</div>
+                      <div className="text-slate-600">{c.area}</div>
+                      <div className="text-center font-medium">
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                          maximumFractionDigits: 0,
+                        }).format(c.cost)}
+                        /km
+                      </div>
+                      <div className="text-center">
+                        <Star rating={c.rating} />
+                      </div>
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                          onClick={() => openModal(c)}
+                        >
+                          Chi tiết
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Modal */}
+        {selectedCompany && (
+          <CompanyModal company={selectedCompany} onClose={closeModal} />
+        )}
+      </main>
+    </div>
+  );
+}
