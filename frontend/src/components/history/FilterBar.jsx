@@ -10,19 +10,19 @@ export function FilterBar({ onChange }) {
     <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-soft">
       <div className="grid lg:grid-cols-12 gap-3 md:gap-4">
         <div className="lg:col-span-3">
-          <label className="text-sm text-slate-600">Search</label>
+          <label className="text-sm text-slate-600">Tìm kiếm</label>
           <input value={state.q} onChange={set("q")} placeholder="Order / company / amount…"
                  className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500 pl-3"/>
         </div>
 
         <div className="lg:col-span-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-sm text-slate-600">From</label>
+            <label className="text-sm text-slate-600">Từ ngày</label>
             <input type="date" value={state.from} onChange={set("from")}
                    className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"/>
           </div>
           <div>
-            <label className="text-sm text-slate-600">To</label>
+            <label className="text-sm text-slate-600">Đến ngày</label>
             <input type="date" value={state.to} onChange={set("to")}
                    className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500"/>
           </div>
@@ -30,7 +30,7 @@ export function FilterBar({ onChange }) {
 
         <div className="lg:col-span-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-sm text-slate-600">Company</label>
+            <label className="text-sm text-slate-600">Công ty</label>
             <select value={state.company} onChange={set("company")}
                     className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500">
               <option value="">All</option>
@@ -41,10 +41,10 @@ export function FilterBar({ onChange }) {
             </select>
           </div>
           <div>
-            <label className="text-sm text-slate-600">Status</label>
+            <label className="text-sm text-slate-600">Trạng thái</label>
             <select value={state.status} onChange={set("status")}
                     className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500">
-              <option value="">All</option>
+              <option value="">Tất cả</option>
               <option value="Paid">Paid</option>
               <option value="Pending">Pending</option>
               <option value="Refunded">Refunded</option>
@@ -54,13 +54,13 @@ export function FilterBar({ onChange }) {
 
         <div className="lg:col-span-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-sm text-slate-600">Sort by</label>
+            <label className="text-sm text-slate-600">Sắp xếp</label>
             <select value={state.sortBy} onChange={set("sortBy")}
                     className="mt-1 w-full h-[42px] rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500">
-              <option value="date_desc">Date ↓</option>
-              <option value="date_asc">Date ↑</option>
-              <option value="amount_desc">Amount ↓</option>
-              <option value="amount_asc">Amount ↑</option>
+              <option value="date_desc">Ngày ↓</option>
+              <option value="date_asc">Ngày ↑</option>
+              <option value="amount_desc">Số tiền ↓</option>
+              <option value="amount_asc">Số tiền ↑</option>
             </select>
           </div>
           <div className="flex items-end">
@@ -68,7 +68,7 @@ export function FilterBar({ onChange }) {
               className="w-full h-[42px] rounded-xl border border-slate-300 hover:bg-slate-50"
               onClick={() => setState({ q:"", from:"", to:"", company:"", status:"", sortBy:"date_desc" })}
             >
-              Clear
+              Xóa lọc
             </button>
           </div>
         </div>

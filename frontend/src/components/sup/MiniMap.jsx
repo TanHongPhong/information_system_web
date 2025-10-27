@@ -1,68 +1,47 @@
-"use client";
 import { useEffect, useRef } from "react";
-import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-export default function MiniMap({ latA, lngA, latB, lngB }) {
+export default function MiniMap({ latA, lngA, latB, lngB }){
   const ref = useRef(null);
 
   useEffect(() => {
-    let map, L;
-    let mounted = true;
+    if(!ref.current) return;
 
-    (async () => {
-      const leaflet = await import("leaflet");
-      if (!mounted || !ref.current) return;
-      L = leaflet;
+    // Cleanup nếu đã có map trước đó
+    if(ref.current._leaflet_id){
+      const container = L.DomUtil.get(ref.current);
+      if(container) container._leaflet_id = null;
+    }
 
-      // Fix default icon path warnings (optional)
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      });
+    const map = L.map(ref.current, {
+      attributionControl:false, zoomControl:false,
+      scrollWheelZoom:false, dragging:false,
+      doubleClickZoom:false, boxZoom:false, keyboard:false, tap:false
+    });
 
-      map = L.map(ref.current, {
-        attributionControl: false,
-        zoomControl: false,
-        scrollWheelZoom: false,
-        dragging: false,
-        doubleClickZoom: false,
-        boxZoom: false,
-        keyboard: false,
-        tap: false,
-      });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png", { maxZoom:19 }).addTo(map);
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png",
-        { maxZoom: 19 }
-      ).addTo(map);
+    const pts = [];
+    if(isFinite(latA) && isFinite(lngA)){
+      pts.push([latA, lngA]);
+      L.circleMarker([latA, lngA], { radius:6, weight:2, color:"#2563eb", fillColor:"#60a5fa", fillOpacity:.9 }).addTo(map);
+    }
+    if(isFinite(latB) && isFinite(lngB)){
+      pts.push([latB, lngB]);
+      L.circleMarker([latB, lngB], { radius:6, weight:2, color:"#059669", fillColor:"#34d399", fillOpacity:.9 }).addTo(map);
+    }
 
-      const hasA = isFinite(latA) && isFinite(lngA);
-      const hasB = isFinite(latB) && isFinite(lngB);
+    if(pts.length === 2){
+      map.fitBounds(L.latLngBounds(pts), { padding:[12,12], maxZoom:16 });
+    }else if(pts.length === 1){
+      map.setView(pts[0], 15);
+    }else{
+      map.setView([10.776,106.700], 12);
+    }
 
-      if (hasA) L.circleMarker([latA, lngA], { radius: 6, weight: 2, color: "#2563eb", fillColor: "#60a5fa", fillOpacity: 0.9 }).addTo(map);
-      if (hasB) L.circleMarker([latB, lngB], { radius: 6, weight: 2, color: "#059669", fillColor: "#34d399", fillOpacity: 0.9 }).addTo(map);
-
-      if (hasA && hasB) {
-        map.fitBounds([[latA, lngA], [latB, lngB]], { padding: [12, 12], maxZoom: 16 });
-      } else if (hasA) {
-        map.setView([latA, lngA], 15);
-      } else if (hasB) {
-        map.setView([latB, lngB], 15);
-      } else {
-        map.setView([10.776, 106.700], 12);
-      }
-
-      // ensure correct size after mount
-      setTimeout(() => map && map.invalidateSize(), 0);
-    })();
-
-    return () => {
-      mounted = false;
-      if (map) map.remove();
-    };
+    setTimeout(() => map.invalidateSize(), 0);
+    return () => map.remove();
   }, [latA, lngA, latB, lngB]);
 
-  return <div ref={ref} className="mini-map pointer-events-none w-full h-28" />;
+  return <div ref={ref} className="mini-map w-full h-full rounded-lg border border-slate-200" />;
 }

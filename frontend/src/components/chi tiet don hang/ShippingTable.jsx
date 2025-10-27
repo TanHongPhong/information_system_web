@@ -76,10 +76,9 @@ export default function ShippingTable() {
 
   return (
     <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all h-[calc(100vh-180px)] flex flex-col overflow-hidden">
+      {/* header */}
       <div className="px-6 py-4 flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-slate-800">
-          Shipping
-        </h3>
+        <h3 className="font-semibold text-lg text-slate-800">Shipping</h3>
         <a
           href="#"
           className="text-sm font-medium text-blue-600 hover:underline"
@@ -88,6 +87,7 @@ export default function ShippingTable() {
         </a>
       </div>
 
+      {/* table wrapper */}
       <div className="overflow-x-auto flex-1 min-h-0">
         <div className="h-full overflow-y-auto">
           <table className="min-w-full text-sm">

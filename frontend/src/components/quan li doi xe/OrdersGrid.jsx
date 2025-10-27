@@ -4,18 +4,36 @@ export default function OrdersGrid({ orders }) {
   return (
     <section className="pt-4 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
       {orders.map((o) => (
-        <article key={o.id} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3 hover:-translate-y-1 hover:shadow-md transition">
-          <div className="flex items-center justify-between">
-            <span className="text-[12px] text-slate-500">ID:{o.id}</span>
-            <button className="text-slate-400" aria-label="More">...</button>
+        <article
+          key={o.id}
+          className="bg-white border border-[#EAEBF0] rounded-[12px] p-4 flex flex-col gap-3 transition-all hover:-translate-y-[4px] hover:shadow-[0_8px_24px_rgba(20,30,55,.08)] cursor-grab"
+        >
+          <div className="flex items-center justify-between text-[12px] text-[#697386]">
+            <span style={{ fontWeight: 400 }}>ID:{o.id}</span>
+            <button
+              className="text-[#A0AEC0]"
+              style={{ fontWeight: 400 }}
+              aria-label="More"
+            >
+              ...
+            </button>
           </div>
+
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-[#E9F2FF] grid place-items-center text-[#4A90E2]">📦</div>
-            <div className="text-[18px]">{Number(o.weight).toLocaleString("vi-VN")} kg</div>
+            <div className="w-9 h-9 min-w-[36px] rounded-[6px] grid place-items-center bg-[#E9F2FF] text-[#4A90E2] text-[16px] leading-none">
+              📦
+            </div>
+            <div
+              className="text-[18px] text-[#1C2A44]"
+              style={{ fontWeight: 400 }}
+            >
+              {Number(o.weight).toLocaleString("vi-VN")} kg
+            </div>
           </div>
-          <div className="text-[12px] text-slate-600">
-            <div>{o.route}</div>
-            <div>{o.date}</div>
+
+          <div className="text-[12px] text-[#697386] leading-[1.4] space-y-1">
+            <div style={{ fontWeight: 400 }}>{o.route}</div>
+            <div style={{ fontWeight: 400 }}>{o.date}</div>
           </div>
         </article>
       ))}

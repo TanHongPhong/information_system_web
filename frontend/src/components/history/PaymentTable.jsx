@@ -111,12 +111,12 @@ export function PaymentTable({ rows, page, pageSize, onPrev, onNext, totalCount,
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100 text-blue-800">
             <tr className="text-left">
-              <th className="font-semibold px-5 md:px-6 py-3">Order</th>
-              <th className="font-semibold px-5 md:px-6 py-3">Date</th>
-              <th className="font-semibold px-5 md:px-6 py-3">Method</th>
-              <th className="font-semibold px-5 md:px-6 py-3">Amount</th>
-              <th className="font-semibold px-5 md:px-6 py-3">Status</th>
-              <th className="font-semibold px-5 md:px-6 py-3">Company</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Mã đơn</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Ngày thanh toán</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Phương thức</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Số tiền</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Trạng thái</th>
+              <th className="font-semibold px-5 md:px-6 py-3">Công ty</th>
               <th className="font-semibold px-5 md:px-6 py-3"></th>
             </tr>
           </thead>
@@ -161,14 +161,14 @@ export function PaymentTable({ rows, page, pageSize, onPrev, onNext, totalCount,
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
         <p className="text-sm text-slate-600">
-          Showing {start}–{end} / {totalCount}
+          Hiển thị {start}–{end} / {totalCount} giao dịch
         </p>
         <div className="flex items-center gap-2">
           <button onClick={onPrev} className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50">
-            Prev
+            Trước 
           </button>
           <button onClick={onNext} className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50">
-            Next
+            Sau
           </button>
         </div>
       </div>

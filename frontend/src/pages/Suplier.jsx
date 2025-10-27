@@ -1,40 +1,39 @@
 import React, { useEffect } from "react";
 import feather from "feather-icons";
 
-import Sidebar from "../components/chi tiet don hang/Sidebar.jsx";
-import Topbar from "../components/chi tiet don hang/Topbar.jsx";
-import RecentOrders from "../components/chi tiet don hang/RecentOrders.jsx";
-import FleetStatus from "../components/chi tiet don hang/FleetStatus.jsx";
-import ShippingTable from "../components/chi tiet don hang/ShippingTable.jsx";
-import OrderRequests from "../components/chi tiet don hang/OrderRequests.jsx";
-import OrderDetailSheet from "../components/chi tiet don hang/OrderDetailSheet.jsx";
+import Sidebar from "../components/sup/Sidebar";
+import Topbar from "../components/sup/Topbar";
+import RecentOrders from "../components/sup/RecentOrders";
+import FleetStatus from "../components/sup/FleetStatus";
+import ShippingTable from "../components/sup/ShippingTable";
+import OrderRequests from "../components/sup/OrderRequests";
 
 export default function Dashboard() {
-  // render feather icons vào <i data-feather="...">
+  // render feather icons sau khi mount
   useEffect(() => {
     feather.replace();
   }, []);
 
   return (
     <div className="min-h-screen text-slate-800 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_60%,#eef2f7_100%)]">
-      {/* Sidebar cố định */}
+      {/* Sidebar cố định bên trái */}
       <Sidebar />
 
-      {/* Header cố định */}
+      {/* Header cố định trên cùng (dịch qua phải 80px) */}
       <Topbar />
 
-      {/* Main content (đẩy qua phải 80px và xuống dưới topbar) */}
+      {/* MAIN: đẩy nội dung xuống dưới header và qua phải khỏi sidebar */}
       <main className="ml-20 pt-[72px]">
         <div className="max-w-[120rem] mx-auto p-4 md:p-6 pt-3">
-          {/* Page header */}
+          {/* Tiêu đề trang */}
           <header className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
                 Dashboard
               </h1>
               <p className="text-slate-500 mt-1">
-                Chào mừng trở lại! Dưới đây là tổng quan trang quản
-                lí của bạn. ☀️
+                Chào mừng trở lại! Dưới đây là tổng quan trang quản lí của
+                bạn. ☀️
               </p>
             </div>
 
@@ -48,7 +47,7 @@ export default function Dashboard() {
                   className="w-4 h-4 text-slate-500"
                 ></i>
                 <span className="font-medium text-sm">
-                  Last 30 days
+                  30 ngày gần đây
                 </span>
                 <i
                   data-feather="chevron-down"
@@ -68,17 +67,17 @@ export default function Dashboard() {
             </div>
           </header>
 
-          {/* Grid chính: trái 2/3, phải 1/3 */}
+          {/* Lưới nội dung chính */}
           <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
-            {/* Cột trái */}
+            {/* Cột trái (2/3) */}
             <div className="xl:col-span-2 space-y-6">
-              {/* 2 card nhỏ đầu dòng */}
+              {/* Hàng trên: 2 thẻ nhỏ */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <RecentOrders />
                 <FleetStatus />
               </div>
 
-              {/* Bảng shipping có chiều cao bằng cột phải */}
+              {/* Bảng Shipping (cao = cột phải) */}
               <ShippingTable />
             </div>
 
@@ -94,9 +93,6 @@ export default function Dashboard() {
           </footer>
         </div>
       </main>
-
-      {/* Overlay + Sheet chi tiết đơn (mở sẵn như HTML bạn đưa) */}
-      <OrderDetailSheet />
     </div>
   );
 }
