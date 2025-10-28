@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Đăng nhập — 6A Logistics</title>
+  <title>Đăng ký — 6A Logistics</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
-  <!-- Tailwind CDN + Config (đồng bộ homepage) -->
+  <!-- Tailwind CDN + Config (đồng bộ với login page) -->
   <script>
     window.tailwind = {
       config: {
@@ -55,7 +55,6 @@
   <script src="https://unpkg.com/feather-icons"></script>
 
   <style>
-    /* Giữ giao diện phẳng, bỏ nền hiệu ứng */
     body{
       background:#fff;
     }
@@ -70,7 +69,7 @@
       color:#334155;
     }
 
-    /* 🔵 Nút xanh dương (đăng nhập, về trang chủ) */
+    /* nút xanh dương */
     .btn-blue{
       background: linear-gradient(180deg,#3b82f6,#2563eb);
       color:#fff;
@@ -79,17 +78,6 @@
     .btn-blue:hover{
       filter: brightness(1.03);
       box-shadow: 0 8px 24px rgba(37,99,235,.45);
-    }
-
-    /* 🟢 Chỉ dành cho LinkedIn (để dành sau nếu cần) */
-    .btn-green{
-      background: linear-gradient(180deg,#34d399,#10b981);
-      color:#fff;
-      box-shadow: 0 6px 18px rgba(16,185,129,.35);
-    }
-    .btn-green:hover{
-      filter: brightness(1.03);
-      box-shadow: 0 8px 24px rgba(16,185,129,.45);
     }
 
     .btn-shine{
@@ -108,26 +96,12 @@
       pointer-events:none;
       mix-blend-mode:overlay;
     }
-
-    /* Link gạch chân chạy nhẹ */
-    .link-ux{
-      position:relative;
-      background-image:linear-gradient(90deg,transparent,#2563eb,transparent);
-      background-repeat:no-repeat;
-      background-size:0% 2px;
-      background-position:50% 100%;
-      transition:background-size .25s, transform .18s;
-    }
-    .link-ux:hover{
-      background-size:100% 2px;
-      transform:translateY(-1px);
-    }
   </style>
 </head>
 
 <body class="text-slate-800 font-sans">
 
-  <!-- NOTICE BAR (đồng bộ homepage) -->
+  <!-- NOTICE BAR -->
   <div class="bg-gradient-to-r from-cyan-400/20 via-indigo-400/20 to-fuchsia-400/20 border-b border-white/40 backdrop-blur">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between text-[13px]">
       <div class="flex items-center gap-3">
@@ -160,20 +134,20 @@
       </div>
 
       <nav class="hidden md:flex items-center gap-8 text-[15px] font-medium">
-        <!-- để trống nav cho sau -->
+        <!-- có thể thêm link giới thiệu / giá cước sau -->
       </nav>
 
       <div class="flex items-center gap-2">
-        <!-- Nút Đăng ký: nền trắng, chữ đen, viền xám -->
+        <!-- Nút Đăng nhập (trang hiện tại là đăng ký nên nút trắng là "Đăng nhập") -->
         <a
-          href="signup.html"
+          href="login.html"
           class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                  bg-white border border-slate-300 text-slate-800 shadow-soft hover:bg-slate-50">
-          <i data-feather="user-plus" class="w-4 h-4"></i>
-          Đăng ký
+          <i data-feather="log-in" class="w-4 h-4"></i>
+          Đăng nhập
         </a>
 
-        <!-- 🔵 Về trang chủ: màu xanh dương -->
+        <!-- Nút trang chủ -->
         <a
           href="homepage.html#booking"
           class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm shadow-soft btn-shine btn-blue">
@@ -188,27 +162,29 @@
   <!-- MAIN -->
   <main>
     <section class="py-10 lg:py-16">
-      <!-- wrapper full width -> flex -> center card -->
+      <!-- center card -->
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
-        <!-- LOGIN CARD -->
+        <!-- SIGNUP CARD -->
         <div class="w-full max-w-xl glass rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-soft">
           <div class="flex items-start justify-between">
             <div>
-              <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Đăng nhập</h1>
-              <p class="subtitle-soft mt-1">Nhập thông tin &amp; chọn đúng vai trò của bạn.</p>
+              <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Tạo tài khoản</h1>
+              <p class="subtitle-soft mt-1">
+                Đăng ký nhanh để bắt đầu đặt xe / quản lý chuyến.
+              </p>
             </div>
             <div class="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-white/70 border border-brand-100 text-blue-700 text-sm">
-              <i data-feather="lock" class="w-4 h-4"></i>
-              Bảo mật
+              <i data-feather="shield" class="w-4 h-4"></i>
+              An toàn
             </div>
           </div>
 
-          <form id="loginForm" class="mt-6 space-y-4" autocomplete="on">
+          <form id="signupForm" class="mt-6 space-y-4" autocomplete="on">
             <!-- Email -->
             <div>
-              <label class="text-sm font-medium text-slate-700">Email hoặc Tên đăng nhập</label>
+              <label class="text-sm font-medium text-slate-700">Email công việc / liên hệ</label>
               <input
-                id="email"
+                id="reg_email"
                 type="email"
                 placeholder="you@company.com"
                 class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
@@ -216,70 +192,80 @@
               >
             </div>
 
-            <!-- Password + toggle -->
+            <!-- Mật khẩu -->
             <div>
               <label class="text-sm font-medium text-slate-700">Mật khẩu</label>
-              <div class="mt-1 flex items-center gap-2">
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
-                  required
-                >
-                <button
-                  type="button"
-                  id="togglePwd"
-                  class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm"
-                >
-                  Hiện
-                </button>
-              </div>
+              <input
+                id="reg_password"
+                type="password"
+                placeholder="Tối thiểu 8 ký tự"
+                class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
+                minlength="8"
+                required
+              >
             </div>
 
-            <!-- Role + Remember -->
+            <!-- Xác nhận mật khẩu -->
+            <div>
+              <label class="text-sm font-medium text-slate-700">Nhập lại mật khẩu</label>
+              <input
+                id="reg_password_confirm"
+                type="password"
+                placeholder="Nhập lại giống phía trên"
+                class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
+                minlength="8"
+                required
+              >
+            </div>
+
+            <!-- Vai trò -->
             <div class="grid grid-cols-6 gap-3 items-center">
               <div class="col-span-6 sm:col-span-4">
-                <label class="text-sm font-medium text-slate-700">Vai trò đăng nhập</label>
+                <label class="text-sm font-medium text-slate-700">Đăng ký với vai trò</label>
                 <select
-                  id="role"
+                  id="reg_role"
                   class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
                   required
                 >
                   <option value="">-- Chọn vai trò --</option>
-                  <option value="guest">Khách</option>
+                  <option value="guest">Khách (cần book xe)</option>
                   <option value="driver">Tài xế</option>
-                  <option value="business">Doanh nghiệp</option>
-                  <option value="warehouse">Nhà kho</option>
+                  <option value="business">Doanh nghiệp / Chủ hàng</option>
+                  <option value="warehouse">Nhà kho / Điều phối kho</option>
                 </select>
               </div>
 
-              <label class="col-span-3 sm:col-span-2 mt-7 inline-flex items-center gap-2 text-sm text-slate-600">
+              <label class="col-span-6 sm:col-span-2 mt-4 inline-flex items-start gap-2 text-sm text-slate-600">
                 <input
-                  id="remember"
+                  id="reg_terms"
                   type="checkbox"
-                  class="rounded border-slate-300 text-blue-600 focus:ring-blue-200"
+                  class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-200"
+                  required
                 >
-                Nhớ tôi
+                <span>
+                  Tôi đồng ý Điều khoản dịch vụ
+                </span>
               </label>
             </div>
 
-            <!-- Actions -->
-            <div class="flex items-center justify-between">
-              <a href="#" class="text-sm text-blue-600 hover:underline">Quên mật khẩu?</a>
+            <!-- Submit + link đăng nhập -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <a href="login.html" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                <i data-feather="arrow-left" class="w-4 h-4"></i>
+                Đã có tài khoản? Đăng nhập
+              </a>
 
-              <!-- 🔵 Đăng nhập -->
               <button
                 type="submit"
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold btn-shine btn-blue"
               >
-                <i data-feather="log-in" class="w-4 h-4"></i>
-                Đăng nhập
+                <i data-feather="user-plus" class="w-4 h-4"></i>
+                Tạo tài khoản
               </button>
             </div>
           </form>
         </div>
-        <!-- /LOGIN CARD -->
+        <!-- /SIGNUP CARD -->
       </div>
     </section>
   </main>
@@ -293,7 +279,6 @@
         <div class="text-sm">© 2025 6A Logistics</div>
       </div>
 
-      <!-- feather icons sẽ ăn màu từ cha (text-blue-900) -->
       <div class="flex items-center gap-3">
         <i data-feather="facebook" class="w-5 h-5"></i>
         <i data-feather="instagram" class="w-5 h-5"></i>
@@ -301,41 +286,40 @@
       </div>
     </div>
 
-    <!-- ribbon chạy đồng bộ với header -->
     <div class="h-[3px] w-full bg-ribbon bg-[length:200%_100%] animate-shine"></div>
   </footer>
 
   <script>
     feather.replace();
 
-    // Hiện/ẩn mật khẩu
-    const pwd = document.getElementById('password');
-    const toggle = document.getElementById('togglePwd');
-    toggle.addEventListener('click', () => {
-      const isPwd = pwd.type === 'password';
-      pwd.type = isPwd ? 'text' : 'password';
-      toggle.textContent = isPwd ? 'Ẩn' : 'Hiện';
-    });
-
-    // Submit demo: lưu localStorage + điều hướng theo vai trò (không có admin)
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    // Xử lý submit demo: kiểm tra confirm password, lưu localStorage và điều hướng nhẹ
+    document.getElementById('signupForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const role = document.getElementById('role').value;
-      const payload = {
-        email: document.getElementById('email').value,
-        role,
-        remember: document.getElementById('remember').checked,
-        ts: Date.now()
-      };
-      localStorage.setItem('gd_user', JSON.stringify(payload));
 
-      const map = {
-        guest:'homepage.html',
-        driver:'driver.html',
-        business:'business.html',
-        warehouse:'warehouse.html'
+      const email = document.getElementById('reg_email').value;
+      const pass = document.getElementById('reg_password').value;
+      const pass2 = document.getElementById('reg_password_confirm').value;
+      const role = document.getElementById('reg_role').value;
+      const terms = document.getElementById('reg_terms').checked;
+
+      if (pass !== pass2) {
+        alert('Mật khẩu nhập lại không khớp.');
+        return;
+      }
+      if (!terms) {
+        alert('Bạn cần đồng ý Điều khoản dịch vụ.');
+        return;
+      }
+
+      const account = {
+        email,
+        role,
+        createdAt: Date.now()
       };
-      window.location.href = map[role] || 'homepage.html';
+      localStorage.setItem('gd_user_registered', JSON.stringify(account));
+
+      // Sau khi tạo tài khoản xong -> chuyển qua login.html để đăng nhập
+      window.location.href = 'login.html';
     });
   </script>
 </body>
