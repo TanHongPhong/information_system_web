@@ -35,7 +35,6 @@ const DASHBOARD_DATA = {
     ],
     driver: [
       { name: "Quản lý xe", path: "/driver", icon: "Truck" },
-      { name: "Theo dõi đơn", path: "/order-tracking", icon: "ClipboardList" },
     ],
     warehouse: [
       {

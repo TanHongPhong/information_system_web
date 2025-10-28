@@ -1,10 +1,49 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 
 const Topbar = React.forwardRef(function Topbar(_, ref) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [roleName, setRoleName] = useState("");
   const btnRef = useRef(null);
   const menuRef = useRef(null);
+
+  // Lấy thông tin user từ localStorage
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const userData = localStorage.getItem("gd_user");
+        const role = localStorage.getItem("role");
+        
+        if (userData) {
+          const userInfo = JSON.parse(userData);
+          setUser(userInfo);
+          
+          // Map role to Vietnamese name
+          const roleMap = {
+            user: "Khách hàng",
+            driver: "Tài xế",
+            transport_company: "Công ty vận tải",
+            warehouse: "Nhà kho"
+          };
+          
+          setRoleName(roleMap[role] || roleMap[role] || "Người dùng");
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    
+    loadUser();
+    
+    // Listen for storage changes to update user info
+    const handleStorageChange = () => loadUser();
+    window.addEventListener("storage", handleStorageChange);
+    
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // render feather lần đầu & mỗi khi open đổi (để icon trong menu hiện đúng)
   useEffect(() => {
@@ -34,8 +73,11 @@ const Topbar = React.forwardRef(function Topbar(_, ref) {
   }, [open]);
 
   const handleLogout = () => {
-    // TODO: thay bằng logic thật (xóa token, gọi API, điều hướng...)
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("remember");
     alert("Đã đăng xuất!");
+    navigate("/sign-in");
     setOpen(false);
   };
 
@@ -102,9 +144,9 @@ const Topbar = React.forwardRef(function Topbar(_, ref) {
                 className="w-8 h-8 rounded-full object-cover"
               />
               <div className="text-left leading-tight hidden sm:block">
-                <div className="text-[13px] font-semibold">Harsh Vani</div>
+                <div className="text-[13px] font-semibold">{user?.name || "Người dùng"}</div>
                 <div className="text-[11px] text-slate-500 -mt-0.5">
-                  Deportation Manager
+                  {roleName || "Vai trò"}
                 </div>
               </div>
               <i

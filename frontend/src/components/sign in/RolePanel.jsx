@@ -12,13 +12,7 @@ export default function RolePanel() {
           <b>Khách hàng:</b> xem trang chủ, tạo yêu cầu báo giá, theo dõi đơn bằng mã theo dõi, nhận thông báo trạng thái cơ bản
         </li>
         <li>
-          <b>Tài xế:</b> nhận/chấp nhận chuyến, điều hướng tới điểm giao/nhận, cập nhật trạng thái, chụp POD/biên nhận, liên hệ người gửi/nhận
-        </li>
-        <li>
           <b>Công ty vận tải:</b> tạo &amp; quản lý đơn, sổ địa chỉ, theo dõi realtime, xuất CSV/Excel, đối soát công nợ
-        </li>
-        <li>
-          <b>Nhà kho:</b> quét mã vận đơn, xác nhận nhập/xuất, đối soát tồn, phân tuyến nội bộ, in tem nhãn
         </li>
       </ul>
 

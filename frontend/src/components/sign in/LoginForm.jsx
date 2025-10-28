@@ -11,19 +11,50 @@ export default function LoginForm() {
   const [remember, setRemember] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const payload = { email, role, remember, ts: Date.now() };
-    localStorage.setItem("gd_user", JSON.stringify(payload));
-    localStorage.setItem("role", role);
-
-    const map = {
-      user: "/home-page",
-      driver: "/driver",
-      transport_company: "/suplier",
-      warehouse: "/warehouse",
-    };
-    navigate(map[role] || "/dashboard");
+    
+    // Debug: Kiểm tra role
+    console.log("Selected role:", role);
+    
+    try {
+      const response = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pwd, role })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Lưu thông tin user vào localStorage
+        localStorage.setItem("gd_user", JSON.stringify(data.user));
+        localStorage.setItem("role", role);
+        
+        if (remember) {
+          localStorage.setItem("remember", "true");
+        }
+        
+        alert("Đăng nhập thành công!");
+        
+        // Điều hướng theo vai trò
+        const map = {
+          user: "/transport-companies",
+          driver: "/driver",
+          transport_company: "/suplier",
+          warehouse: "/warehouse",
+        };
+        
+        const targetPath = map[role] || "/dashboard";
+        console.log("Navigating to:", targetPath);
+        navigate(targetPath);
+      } else {
+        alert(data.error || "Đăng nhập thất bại!");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Lỗi kết nối server!");
+    }
   };
 
   return (
@@ -123,7 +154,7 @@ export default function LoginForm() {
           Chưa có tài khoản?{" "}
           <button
             type="button"
-            onClick={() => navigate("/sign-in")}
+            onClick={() => navigate("/sign-up")}
             className="text-blue-600 font-medium hover:underline"
           >
             Đăng ký ngay

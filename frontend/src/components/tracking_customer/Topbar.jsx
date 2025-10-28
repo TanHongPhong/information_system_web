@@ -1,4 +1,36 @@
+import { useState, useEffect } from "react";
+
 export default function Topbar() {
+  const [user, setUser] = useState(null);
+  const [roleName, setRoleName] = useState("");
+
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const userData = localStorage.getItem("gd_user");
+        const role = localStorage.getItem("role");
+        
+        if (userData) {
+          const userInfo = JSON.parse(userData);
+          setUser(userInfo);
+          
+          const roleMap = {
+            user: "Khách hàng",
+            driver: "Tài xế",
+            transport_company: "Công ty vận tải",
+            warehouse: "Nhà kho"
+          };
+          
+          setRoleName(roleMap[role] || roleMap[role] || "Người dùng");
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    
+    loadUser();
+  }, []);
+
   return (
     <header
       id="topbar"
@@ -38,8 +70,8 @@ export default function Topbar() {
             >
               <img src="https://i.pravatar.cc/40?img=8" alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
               <div className="text-left leading-tight hidden sm:block">
-                <div className="text-[13px] font-semibold">Harsh Vani</div>
-                <div className="text-[11px] text-slate-500 -mt-0.5">Deportation Manager</div>
+                <div className="text-[13px] font-semibold">{user?.name || "Người dùng"}</div>
+                <div className="text-[11px] text-slate-500 -mt-0.5">{roleName || "Vai trò"}</div>
               </div>
               <i data-feather="chevron-down" className="text-slate-400" />
             </button>

@@ -38,16 +38,23 @@ export default function CompanyDirectory({ keyword }) {
         const transformedData = response.data.map((company) => ({
           id: company.company_id,
           name: company.name,
-          area: company.areas?.join(", ") || "Chưa cập nhật",
+          area: Array.isArray(company.areas) ? company.areas.join(", ") : "Chưa cập nhật",
           cost: company.rates?.[0]?.cost_per_km || 0,
-          rating: company.rating || 0,
+          rating: parseFloat(company.rating) || 0,
           reviews: 0, // TODO: Có thể thêm từ database sau
           stats: { orders12m: 0, ontimeRate: 0, csat: company.rating || 0 },
           sizes: company.rates?.map(r => r.vehicle_type) || [],
-          services: { cold: false, danger: false, loading: false, insurance: false }, // TODO: Thêm vào database
+          services: { 
+            cold: company.has_cold || false, 
+            danger: company.has_dangerous_goods || false, 
+            loading: company.has_loading_dock || false, 
+            insurance: company.has_insurance || false 
+          },
           address: company.address || "",
           phone: company.phone || "",
+          email: company.email || "",
           description: company.description || "",
+          status: company.status || "ACTIVE",
         }));
         
         setCompanies(transformedData);

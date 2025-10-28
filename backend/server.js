@@ -9,6 +9,7 @@ import {
   getCompanies,
   getCompanyById,
 } from "./src/controllers/testApiControllers.js";
+import authRouter from "./src/routes/authRoutes.js";
 
 dotenv.config();
 
@@ -26,6 +27,9 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // ====== ROUTES ======
+// Auth routes
+app.use("/api/auth", authRouter);
+
 // Test route
 app.use("/api/test", testRouter);
 

@@ -95,8 +95,7 @@ export default function CompanyModal({ company, onClose }) {
                 <div className="rounded-2xl border border-slate-200 p-4">
                   <h4 className="font-semibold mb-2">Giới thiệu</h4>
                   <p className="text-sm text-slate-700">
-                    Đơn vị vận tải chuyên tuyến, thế mạnh cold-chain, FMCG, last-mile nội thành. Hỗ trợ API đồng bộ đơn,
-                    tracking thời gian thực.
+                    {company.description || "Đơn vị vận tải chuyên tuyến, thế mạnh cold-chain, FMCG, last-mile nội thành. Hỗ trợ API đồng bộ đơn, tracking thời gian thực."}
                   </p>
                 </div>
 
@@ -160,9 +159,13 @@ export default function CompanyModal({ company, onClose }) {
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4" />
-                      <a className="underline decoration-dotted" href="mailto:sales@company.vn">
-                        sales@company.vn
-                      </a>
+                      {company.email ? (
+                        <a className="underline decoration-dotted" href={`mailto:${company.email}`}>
+                          {company.email}
+                        </a>
+                      ) : (
+                        <span>—</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4" />

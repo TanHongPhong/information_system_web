@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, UserPlus } from "./Icons";
+import { LogIn } from "./Icons";
+import { UserPlus } from "../sign in/Icons";
 
 export default function Header() {
   const progressRef = useRef(null);
@@ -58,7 +59,7 @@ export default function Header() {
             <LogIn className="w-4 h-4" /> Đăng nhập
           </button>
           <button
-            onClick={() => navigate("/sign-in")}
+            onClick={() => navigate("/sign-up")}
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/85 border border-slate-200 text-slate-700 hover:border-blue-200 hover:text-blue-700 shadow-[0_12px_40px_rgba(2,6,23,.08)] btn-shine"
           >
             <UserPlus className="w-4 h-4" /> Đăng ký

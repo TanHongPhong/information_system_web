@@ -56,8 +56,8 @@ export default function CustomerTrack() {
         #statusCard .step-meta{ font-size:12px; }
       `}</style>
 
-      <main className="ml-22 pt-[72px] bg-slate-50 text-slate-900 lg:overflow-hidden">
-        <div className="p-4 grid grid-cols-12 gap-4">
+      <main className="ml-20 pt-[72px] bg-slate-50 text-slate-900 lg:overflow-hidden">
+        <div className="p-4 pl-6 grid grid-cols-12 gap-4">
           <section className="col-span-12 lg:col-span-3">
             <OrderList />
           </section>

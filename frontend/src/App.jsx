@@ -14,6 +14,7 @@ import Suplier from "./pages/Suplier.jsx";
 import NhapIn4 from "./pages/NhapIn4.jsx";
 import ChiTietDonHang from "./pages/ChiTietDonHang.jsx";
 import SignIn from "./pages/SignIn.jsx";
+import SignUp from "./pages/SignUp.jsx";
 import HomePageAdmin from "./pages/HomePageAdmin.jsx";
 import QuanLiDoiXe from "./pages/QuanLiDoiXe.jsx";
 import OrderTracking from "./pages/OrderTracking.jsx";
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/nhap-in4" element={<NhapIn4 />} />
         <Route path="/quan-li-doi-xe" element={<QuanLiDoiXe />} />
         <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/sign-up" element={<SignUp />} />
         <Route path="/order-tracking" element={<OrderTracking />} />
 
         <Route path="/driver" element={<Driver />} />
