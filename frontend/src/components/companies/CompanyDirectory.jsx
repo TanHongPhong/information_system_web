@@ -2,58 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import Stars from "./Stars";
 import CompanyModal from "./CompanyModal";
-
-/** Dữ liệu công ty (giữ đúng nội dung bản HTML) */
-const companiesSeed = [
-  {
-    name: "Công ty Gemadept",
-    area: "Toàn quốc",
-    cost: 200000,
-    rating: 4.7,
-    reviews: 1248,
-    stats: { orders12m: 3482, ontimeRate: 97.2, csat: 4.8 },
-    sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
-    services: { cold: true, danger: false, loading: true, insurance: true },
-    address: "2 Hải Phòng, Q.1, TP.HCM",
-    phone: "028 1234 5678",
-  },
-  {
-    name: "Công ty CP Transimex",
-    area: "Nội thành HCM, Liên tỉnh",
-    cost: 170000,
-    rating: 4.4,
-    reviews: 689,
-    stats: { orders12m: 2214, ontimeRate: 95.5, csat: 4.5 },
-    sizes: ["≤ 2 tấn", "≤ 4 tấn", "Xe lạnh"],
-    services: { cold: true, danger: true, loading: false, insurance: true },
-    address: "36 Tân Thuận, Quận 7, TP.HCM",
-    phone: "028 3777 8888",
-  },
-  {
-    name: "Công ty CP vận tải dầu khí Bình Dương",
-    area: "Miền Nam, Bắc–Nam",
-    cost: 140000,
-    rating: 4.2,
-    reviews: 312,
-    stats: { orders12m: 1210, ontimeRate: 93.1, csat: 4.2 },
-    sizes: ["≤ 4 tấn", "Container 20ft", "Container 40ft"],
-    services: { cold: false, danger: false, loading: true, insurance: false },
-    address: "25 QL13, TP. Thủ Dầu Một, Bình Dương",
-    phone: "0274 222 3333",
-  },
-  {
-    name: "Công ty giao nhận toàn cầu DHL",
-    area: "Toàn quốc",
-    cost: 185000,
-    rating: 4.6,
-    reviews: 998,
-    stats: { orders12m: 2890, ontimeRate: 96.3, csat: 4.6 },
-    sizes: ["≤ 2 tấn", "≤ 4 tấn"],
-    services: { cold: false, danger: true, loading: false, insurance: true },
-    address: "86 Mai Chí Thọ, TP. Thủ Đức, TP.HCM",
-    phone: "1900 545 548",
-  },
-];
+import api from "../../lib/axios";
 
 const RECENT_KEY = "recent-routes-v1";
 
@@ -72,10 +21,48 @@ export default function CompanyDirectory({ keyword }) {
   const [pickupTime, setPickupTime] = useState("");
 
   const [recent, setRecent] = useState([]);
-  const [companies] = useState(companiesSeed);
+  const [companies, setCompanies] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // load recent from localStorage
+  // Load companies from API
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get("/transport-companies");
+        
+        // Transform API data to match UI format
+        const transformedData = response.data.map((company) => ({
+          id: company.company_id,
+          name: company.name,
+          area: company.areas?.join(", ") || "Chưa cập nhật",
+          cost: company.rates?.[0]?.cost_per_km || 0,
+          rating: company.rating || 0,
+          reviews: 0, // TODO: Có thể thêm từ database sau
+          stats: { orders12m: 0, ontimeRate: 0, csat: company.rating || 0 },
+          sizes: company.rates?.map(r => r.vehicle_type) || [],
+          services: { cold: false, danger: false, loading: false, insurance: false }, // TODO: Thêm vào database
+          address: company.address || "",
+          phone: company.phone || "",
+          description: company.description || "",
+        }));
+        
+        setCompanies(transformedData);
+      } catch (err) {
+        console.error("Error fetching companies:", err);
+        setError("Không thể tải danh sách công ty. Vui lòng kiểm tra backend server.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
+  // Load recent from localStorage
   useEffect(() => {
     try {
       const data = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
@@ -310,12 +297,27 @@ export default function CompanyDirectory({ keyword }) {
           </div>
 
           <div>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="px-5 py-10 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-slate-500">Đang tải danh sách công ty...</p>
+              </div>
+            ) : error ? (
+              <div className="px-5 py-10 text-center text-red-500">
+                <p className="mb-3">{error}</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="px-5 py-10 text-center text-slate-500">
                 Không có kết quả phù hợp. Hãy chỉnh bộ lọc hoặc thử tuyến khác.
               </div>
             ) : (
-              filtered.map((c) => <CompanyRow key={c.name} c={c} onView={() => setSelected(c)} />)
+              filtered.map((c) => <CompanyRow key={c.id || c.name} c={c} onView={() => setSelected(c)} />)
             )}
           </div>
         </div>

@@ -1,12 +1,10 @@
 import express from "express";
-import taskRoute from "./src/routes/taskRouters.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import testRouter from "./src/routes/testRouter.js";
-import taskRoute from "./src/routes/tasks.routes.js"; // đổi path đúng với project bạn
 
-// controller mới để truy suất dữ liệu công ty
+// Controllers để truy xuất dữ liệu từ Neon (PostgreSQL)
 import {
   getCompanies,
   getCompanyById,
@@ -19,21 +17,19 @@ const __dirname = path.resolve();
 
 const app = express();
 
-// middlewares
+// Middlewares
 app.use(express.json());
 
-// Bật CORS khi dev (đặt TRƯỚC khi khai báo route để preflight hoạt động ổn định)
+// Bật CORS cho development (cho phép frontend gọi API)
 if (process.env.NODE_ENV !== "production") {
   app.use(cors({ origin: "http://localhost:5173" }));
 }
 
 // ====== ROUTES ======
+// Test route
 app.use("/api/test", testRouter);
 
-// (dòng này trước có dấu '+' do copy từ diff, bỏ dấu '+' đi)
-app.use("/api/tasks", taskRoute);
-
-// NEW: endpoints truy suất Neon (LogisticsCompany + Coverage + CarrierRate)
+// Transport Companies API (từ Neon database)
 app.get("/api/transport-companies", getCompanies);
 app.get("/api/transport-companies/:id", getCompanyById);
 

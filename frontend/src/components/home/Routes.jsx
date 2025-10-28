@@ -1,10 +1,24 @@
+import { useNavigate } from "react-router-dom";
+
 export default function Routes() {
+  const navigate = useNavigate();
+
+  const checkAuthAndNavigate = (path) => {
+    const user = localStorage.getItem("gd_user");
+    if (user) {
+      navigate(path);
+    } else {
+      alert("Vui lòng đăng nhập để tiếp tục!");
+      navigate("/sign-in");
+    }
+  };
+
   return (
     <section id="routes" className="py-12 lg:py-16 bg-gradient-to-b from-white to-brand-50/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <h2 className="text-2xl md:text-3xl font-extrabold title-grad">Tuyến phổ biến</h2>
-          <a href="#" className="text-sm text-blue-600 underline">Xem tất cả</a>
+          <button onClick={() => checkAuthAndNavigate("/transport-companies")} className="text-sm text-blue-600 underline hover:text-blue-700">Xem tất cả</button>
         </div>
 
         <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -18,7 +32,12 @@ export default function Routes() {
               <p className="mt-1 text-sm subtitle-soft">{c.desc}</p>
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm subtitle-soft">Từ <span className="font-semibold text-slate-900">{c.price}</span></div>
-                <button className="px-3 py-1.5 rounded-lg text-white text-sm font-medium btn-shine bg-blue-600 hover:bg-blue-700">Đặt nhanh</button>
+                <button 
+                  onClick={() => checkAuthAndNavigate("/vehicle-list")}
+                  className="px-3 py-1.5 rounded-lg text-white text-sm font-medium btn-shine bg-blue-600 hover:bg-blue-700"
+                >
+                  Đặt nhanh
+                </button>
               </div>
             </div>
           ))}

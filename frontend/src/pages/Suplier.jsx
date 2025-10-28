@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import feather from "feather-icons";
 
 import Sidebar from "../components/sup/Sidebar";
@@ -7,8 +7,11 @@ import RecentOrders from "../components/sup/RecentOrders";
 import FleetStatus from "../components/sup/FleetStatus";
 import ShippingTable from "../components/sup/ShippingTable";
 import OrderRequests from "../components/sup/OrderRequests";
+import OrderDetailPanel from "../components/sup/OrderDetailPanel";
 
 export default function Dashboard() {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
   // render feather icons sau khi mount
   useEffect(() => {
     feather.replace();
@@ -83,9 +86,15 @@ export default function Dashboard() {
 
             {/* Cột phải */}
             <aside className="space-y-8 h-full">
-              <OrderRequests />
+              <OrderRequests onViewDetail={setSelectedOrder} />
             </aside>
           </div>
+          
+          {/* Order Detail Panel */}
+          <OrderDetailPanel 
+            order={selectedOrder} 
+            onClose={() => setSelectedOrder(null)} 
+          />
 
           {/* Footer trang */}
           <footer className="text-center text-xs text-slate-500 mt-8">

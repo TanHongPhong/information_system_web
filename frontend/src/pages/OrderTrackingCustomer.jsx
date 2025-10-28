@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import feather from "feather-icons";
-import Sidebar from "../components/tracking_customer/Sidebar";
-import Topbar from "../components/tracking_customer/Topbar";
+import Sidebar from "../components/user/Sidebar";
+import Topbar from "../components/user/Topbar";
 import OrderList from "../components/tracking_customer/OrderList";
 import MapPanel from "../components/tracking_customer/MapPanel";
 import StatusCard from "../components/tracking_customer/StatusCard";
@@ -22,11 +22,10 @@ export default function CustomerTrack() {
   }, []);
 
   return (
-    <div className="bg-slate-50 text-slate-900">
+    <>
+      <Sidebar />
+      <Topbar />
       <style>{`
-        :root{ --sidebar-w: 80px; }
-        @media (min-width:1024px){ html, body{ overflow: hidden; } }
-
         .nice-scroll{ scrollbar-width:thin; scrollbar-color:#cbd5e1 #f1f5f9 }
         .nice-scroll::-webkit-scrollbar{ width:10px }
         .nice-scroll::-webkit-scrollbar-track{ background:#f1f5f9; border-radius:9999px }
@@ -57,11 +56,7 @@ export default function CustomerTrack() {
         #statusCard .step-meta{ font-size:12px; }
       `}</style>
 
-      <Sidebar />
-
-      <Topbar />
-
-      <main className="pt-[64px] lg:overflow-hidden" style={{ marginLeft: "var(--sidebar-w)" }}>
+      <main className="ml-22 pt-[72px] bg-slate-50 text-slate-900 lg:overflow-hidden">
         <div className="p-4 grid grid-cols-12 gap-4">
           <section className="col-span-12 lg:col-span-3">
             <OrderList />
@@ -83,6 +78,6 @@ export default function CustomerTrack() {
           </section>
         </div>
       </main>
-    </div>
+    </>
   );
 }

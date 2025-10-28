@@ -1,4 +1,18 @@
+import { useNavigate } from "react-router-dom";
+
 export default function Pricing() {
+  const navigate = useNavigate();
+
+  const checkAuthAndNavigate = (path) => {
+    const user = localStorage.getItem("gd_user");
+    if (user) {
+      navigate(path);
+    } else {
+      alert("Vui lòng đăng nhập để tiếp tục!");
+      navigate("/sign-in");
+    }
+  };
+
   return (
     <section id="pricing" className="py-12 lg:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,7 +36,12 @@ export default function Pricing() {
               <ul className="mt-3 text-sm subtitle-soft space-y-1">
                 {c.points.map(p => <li key={p}>{p}</li>)}
               </ul>
-              <button className="mt-4 w-full py-2.5 rounded-xl text-white font-semibold btn-shine bg-green-600 hover:bg-green-700">Chọn</button>
+              <button 
+                onClick={() => checkAuthAndNavigate("/vehicle-list")}
+                className="mt-4 w-full py-2.5 rounded-xl text-white font-semibold btn-shine bg-green-600 hover:bg-green-700"
+              >
+                Chọn
+              </button>
             </div>
           ))}
         </div>

@@ -1,7 +1,20 @@
+import { useNavigate } from "react-router-dom";
 import { Zap } from "./Icons";
 import BookingCard from "./BookingCard";
 
 export default function Hero() {
+  const navigate = useNavigate();
+
+  const checkAuthAndNavigate = (path) => {
+    const user = localStorage.getItem("gd_user");
+    if (user) {
+      navigate(path);
+    } else {
+      alert("Vui lòng đăng nhập để tiếp tục!");
+      navigate("/sign-in");
+    }
+  };
+  
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -30,7 +43,12 @@ export default function Hero() {
             </div>
 
             <div className="mt-8 flex items-center gap-3">
-              <a href="#booking" className="px-5 py-3 rounded-xl bg-white text-brand-700 font-semibold border border-brand-200 hover:bg-brand-50 shadow-[0_12px_40px_rgba(2,6,23,.08)]">Đặt xe ngay</a>
+              <button 
+                onClick={() => checkAuthAndNavigate("/transport-companies")}
+                className="px-5 py-3 rounded-xl bg-white text-brand-700 font-semibold border border-brand-200 hover:bg-brand-50 shadow-[0_12px_40px_rgba(2,6,23,.08)]"
+              >
+                Đặt xe ngay
+              </button>
               <a href="#pricing" className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-[0_12px_40px_rgba(2,6,23,.08)] btn-shine">Xem bảng giá</a>
             </div>
           </div>

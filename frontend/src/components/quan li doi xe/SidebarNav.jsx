@@ -1,25 +1,37 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SidebarNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
+
   return (
     <nav
       className="w-[76px] bg-white border-r border-[#EAEBF0] flex flex-col items-center gap-[14px] py-4 flex-shrink-0 h-screen overflow-hidden"
       aria-label="Dashboard"
     >
-      {/* Logo VT */}
-      <div
-        className="w-11 h-11 rounded-[12px] bg-[#4A90E2] text-white grid place-items-center tracking-[.5px] shadow-[0_8px_20px_rgba(74,144,226,.25)]"
-        style={{ fontWeight: 800 }}
+      {/* Logo 6A logistics */}
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="w-11 h-11 rounded-[12px] bg-[#4A90E2] text-white grid place-items-center tracking-[.5px] shadow-[0_8px_20px_rgba(74,144,226,.25)] hover:shadow-[0_10px_26px_rgba(74,144,226,.35)] transition-shadow text-[8px] font-bold leading-tight"
+        title="Dashboard"
       >
-        VT
-      </div>
+        6A
+      </button>
 
       <ul className="flex flex-col gap-[18px] mt-1">
-        {/* Nút 1 */}
+        {/* Nút 0 - Dashboard Supplier */}
         <li>
           <button
-            className="relative group w-11 h-11 rounded-[12px] grid place-items-center border border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff] transition-colors"
-            title="Check thông tin đơn hàng"
+            onClick={() => navigate("/suplier")}
+            className={`relative group w-11 h-11 rounded-[12px] grid place-items-center border transition-colors ${
+              isActive("/suplier")
+                ? "text-white bg-[#4A90E2] shadow-[0_10px_22px_rgba(74,144,226,.28)]"
+                : "border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff]"
+            }`}
+            title="Dashboard Supplier"
           >
             <svg
               className="w-[24px] h-[24px]"
@@ -30,14 +42,12 @@ export default function SidebarNav() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" />
-              <path d="M14 2v5h5" />
-              <path d="M9 14l2 2 4-4" />
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
 
-            {/* tooltip */}
             <span className="pointer-events-none absolute left-[64px] top-1/2 -translate-y-1/2 bg-[#0B5BDA] text-white text-[13px] px-3 py-2 rounded-[10px] shadow-[0_10px_24px_rgba(2,6,23,.15),0_0_0_1px_rgba(59,130,246,.15)] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:translate-x-[2px] duration-200">
-              Check thông tin đơn hàng
+              Dashboard Supplier
               <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#0B5BDA] drop-shadow-[0_1px_1px_rgba(2,6,23,.12)]" />
             </span>
           </button>
@@ -46,8 +56,13 @@ export default function SidebarNav() {
         {/* Nút 2 (active) */}
         <li>
           <button
-            className="relative group w-11 h-11 rounded-[12px] grid place-items-center text-white bg-[#4A90E2] shadow-[0_10px_22px_rgba(74,144,226,.28)]"
-            title="Trạng thái đội xe"
+            onClick={() => navigate("/quan-li-doi-xe")}
+            className={`relative group w-11 h-11 rounded-[12px] grid place-items-center transition-colors ${
+              isActive("/quan-li-doi-xe")
+                ? "text-white bg-[#4A90E2] shadow-[0_10px_22px_rgba(74,144,226,.28)]"
+                : "border border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff]"
+            }`}
+            title="Theo dõi đội xe"
           >
             <svg
               className="w-[24px] h-[24px]"
@@ -64,7 +79,7 @@ export default function SidebarNav() {
             </svg>
 
             <span className="pointer-events-none absolute left-[64px] top-1/2 -translate-y-1/2 bg-[#0B5BDA] text-white text-[13px] px-3 py-2 rounded-[10px] shadow-[0_10px_24px_rgba(2,6,23,.15),0_0_0_1px_rgba(59,130,246,.15)] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:translate-x-[2px] duration-200">
-              Trạng thái đội xe
+              Theo dõi đội xe
               <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#0B5BDA] drop-shadow-[0_1px_1px_rgba(2,6,23,.12)]" />
             </span>
           </button>
@@ -73,7 +88,12 @@ export default function SidebarNav() {
         {/* Nút 3 */}
         <li>
           <button
-            className="relative group w-11 h-11 rounded-[12px] grid place-items-center border border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff] transition-colors"
+            onClick={() => navigate("/order-tracking")}
+            className={`relative group w-11 h-11 rounded-[12px] grid place-items-center transition-colors ${
+              isActive("/order-tracking")
+                ? "text-white bg-[#4A90E2] shadow-[0_10px_22px_rgba(74,144,226,.28)]"
+                : "border border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff]"
+            }`}
             title="Theo dõi đơn hàng"
           >
             <svg

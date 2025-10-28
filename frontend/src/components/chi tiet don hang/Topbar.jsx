@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
+import feather from "feather-icons";
 
 export default function Topbar() {
+  useEffect(() => {
+    feather.replace();
+  }, []);
+
   return (
     <header
       className="fixed top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/65 bg-gradient-to-l from-blue-900 via-sky-200 to-white shadow-sm"
@@ -20,7 +25,7 @@ export default function Topbar() {
               ></i>
               <input
                 className="w-full h-10 pl-9 pr-24 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-200 outline-none bg-white text-slate-800 placeholder-slate-400"
-                placeholder="Tìm ID hàng, tên khách hàng..."
+                placeholder="Tìm giao dịch, mã đơn, số tiền…"
               />
               <button
                 className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50"

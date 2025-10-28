@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-export default function OrderRequests() {
+export default function OrderRequests({ onViewDetail }) {
   return (
-    <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all h-[calc(100vh-180px)] flex flex-col min-h-0">
+    <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all h-230 flex flex-col min-h-0">
       {/* Header panel */}
       <div className="p-4 md:p-5 flex items-center justify-between gap-3 border-b border-slate-100">
         <h3 className="font-semibold text-lg text-slate-800 flex-shrink-0">
@@ -44,6 +44,7 @@ export default function OrderRequests() {
           lngA={106.6667}
           latB={21.0285}
           lngB={105.8542}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 2 ---- */}
@@ -60,6 +61,7 @@ export default function OrderRequests() {
           lngA={106.6800}
           latB={10.8009}
           lngB={106.6809}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 3 ---- */}
@@ -76,6 +78,7 @@ export default function OrderRequests() {
           lngA={106.8553}
           latB={10.8876}
           lngB={106.7431}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 4 ---- */}
@@ -92,6 +95,7 @@ export default function OrderRequests() {
           lngA={106.7019}
           latB={10.7860}
           lngB={106.6903}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 5 ---- */}
@@ -108,6 +112,7 @@ export default function OrderRequests() {
           lngA={106.6750}
           latB={10.7690}
           lngB={106.6940}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 6 ---- */}
@@ -124,6 +129,7 @@ export default function OrderRequests() {
           lngA={106.6600}
           latB={10.7765}
           lngB={106.7005}
+          onViewDetail={onViewDetail}
         />
 
         {/* ---- CARD 7 ---- */}
@@ -140,6 +146,7 @@ export default function OrderRequests() {
           lngA={106.6860}
           latB={10.7840}
           lngB={106.6760}
+          onViewDetail={onViewDetail}
         />
       </div>
 
@@ -185,13 +192,32 @@ function OrderCard({
   lngA,
   latB,
   lngB,
+  onViewDetail,
 }) {
+  const handleViewDetail = () => {
+    onViewDetail?.({
+      highlight,
+      id,
+      time,
+      from,
+      to,
+      avatarBg,
+      avatarText,
+      init,
+      name,
+      latA,
+      lngA,
+      latB,
+      lngB,
+    });
+  };
+
   return (
     <article
       className={
         highlight
-          ? "relative rounded-xl p-4 border-2 border-amber-300 bg-amber-50 transition-all"
-          : "rounded-xl p-4 border border-slate-200 bg-white hover:border-blue-300 transition-all"
+          ? "relative z-0 rounded-xl p-4 border-2 border-amber-300 bg-amber-50 transition-all"
+          : "relative z-0 rounded-xl p-4 border border-slate-200 bg-white hover:border-blue-300 transition-all"
       }
     >
       {/* Hàng trên: ORDERID + giờ + (NEW nếu highlight) */}
@@ -248,7 +274,10 @@ function OrderCard({
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all">
+          <button 
+            onClick={handleViewDetail}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+          >
             Chi tiết
           </button>
         </div>
@@ -347,7 +376,7 @@ function MapView({ latA, lngA, latB, lngB }) {
   return (
     <div
       ref={containerRef}
-      className="w-full h-[90px] rounded-lg border border-slate-200 overflow-hidden pointer-events-none bg-slate-100"
+      className="w-full h-[90px] rounded-lg border border-slate-200 overflow-hidden pointer-events-none bg-slate-100 relative z-0"
     />
   );
 }

@@ -1,6 +1,22 @@
 // backend/src/controllers/testApiControllers.js
 import pool from "../config/db.js";
 
+/** GET /api/test - Test API connection */
+export const getData = async (req, res) => {
+  try {
+    // Test database connection
+    const { rows } = await pool.query("SELECT NOW() as current_time");
+    res.json({ 
+      message: "API is working! ✅", 
+      database: "Connected to Neon PostgreSQL",
+      timestamp: rows[0].current_time 
+    });
+  } catch (err) {
+    console.error("Database connection error:", err);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+};
+
 /** GET /api/transport-companies */
 export const getCompanies = async (req, res) => {
   try {

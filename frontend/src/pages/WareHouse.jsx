@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from "react";
+import Sidebar from "../components/warehouse/Sidebar";
+import Topbar from "../components/warehouse/Topbar";
 import { DATA } from "../components/warehouse/MockWarehouse";
 
 import TitleControls from "../components/warehouse/TitleControls";
@@ -80,7 +82,10 @@ export default function WarehouseInOutPage() {
   const onPause = async () => setRunning(false);
 
   return (
-    <section className="p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-slate-50">
+      <Sidebar />
+      <Topbar />
+      <section className="ml-20 pt-24 px-6 md:px-8 pb-6 md:pb-8 space-y-6">
       <TitleControls
         tab={tab} dock={dock} temp={temp}
         onChangeTab={setTab} onChangeDock={setDock}
@@ -114,6 +119,7 @@ export default function WarehouseInOutPage() {
           <StaffShiftCard />
         </aside>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }

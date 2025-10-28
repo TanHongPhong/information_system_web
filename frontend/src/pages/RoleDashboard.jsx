@@ -20,15 +20,23 @@ const DASHBOARD_DATA = {
   title: "Dashboard",
   pagesByRole: {
     transport_company: [
-      { name: "Dashboard", path: "/supplier", icon: "Truck" },
-      { name: "Theo dõi đội xe", path: "/...chua_co...", icon: "Truck" },
+      { name: "Dashboard Supplier", path: "/suplier", icon: "Truck" },
+      { name: "Theo dõi đội xe", path: "/quan-li-doi-xe", icon: "Truck" },
       {
         name: "Theo dõi đơn hàng",
         path: "/order-tracking",
         icon: "ClipboardList",
       },
+      {
+        name: "Chi tiết đơn hàng",
+        path: "/chi-tiet-don-hang",
+        icon: "Package",
+      },
     ],
-    driver: [{ name: "quản lý xe", path: "/...chuaco...", icon: "Truck" }],
+    driver: [
+      { name: "Quản lý xe", path: "/driver", icon: "Truck" },
+      { name: "Theo dõi đơn", path: "/order-tracking", icon: "ClipboardList" },
+    ],
     warehouse: [
       {
         name: "Quản lý kho hàng",
@@ -39,9 +47,9 @@ const DASHBOARD_DATA = {
     user: [
       { name: "Trang Chủ", path: "/home-page", icon: "Home" },
       { name: "Đăng nhập/ đăng kí", path: "/sign-in", icon: "User" },
-      { name: "Danh sách công ty", path: "/transport-companies", icon: "Home" },
+      { name: "Danh sách công ty", path: "/transport-companies", icon: "Building2" },
       { name: "Chọn xe", path: "/vehicle-list", icon: "Truck" },
-      { name: "Nhập thông tin", path: "/nhap-in4", icon: "Building2" },
+      { name: "Nhập thông tin", path: "/nhap-in4", icon: "ClipboardList" },
       { name: "Quét mã QR", path: "/payment-qr", icon: "Package" },
       { name: "Lịch sử thanh toán", path: "/payment-history", icon: "Package" },
       {

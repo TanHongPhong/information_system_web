@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Sidebar from "../components/companies/Sidebar";
-import HeaderBar from "../components/companies/HeaderBar";
+import Sidebar from "../components/user/Sidebar";
+import Topbar from "../components/user/Topbar";
 import CompanyDirectory from "../components/companies/CompanyDirectory";
 
 export default function App() {
@@ -8,8 +8,8 @@ export default function App() {
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen">
       <Sidebar />
-      <main className="ml-20">
-        <HeaderBar keyword={keyword} onKeywordChange={setKeyword} />
+      <Topbar />
+      <main className="ml-20 pt-[72px]">
         <CompanyDirectory keyword={keyword} />
       </main>
     </div>

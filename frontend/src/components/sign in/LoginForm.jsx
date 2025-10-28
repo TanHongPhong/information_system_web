@@ -1,8 +1,10 @@
 // src/components/login/LoginForm.jsx
 import { useState } from "react";
-import { Lock, LogIn, Linkedin } from "./Icons";
+import { useNavigate } from "react-router-dom";
+import { Lock, LogIn } from "./Icons";
 
 export default function LoginForm() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [role, setRole] = useState("");
@@ -13,14 +15,15 @@ export default function LoginForm() {
     e.preventDefault();
     const payload = { email, role, remember, ts: Date.now() };
     localStorage.setItem("gd_user", JSON.stringify(payload));
+    localStorage.setItem("role", role);
 
     const map = {
-      guest: "homepage.html",
-      driver: "driver.html",
-      business: "business.html",
-      warehouse: "warehouse.html",
+      user: "/home-page",
+      driver: "/driver",
+      transport_company: "/suplier",
+      warehouse: "/warehouse",
     };
-    window.location.href = map[role] || "homepage.html";
+    navigate(map[role] || "/dashboard");
   };
 
   return (
@@ -90,9 +93,9 @@ export default function LoginForm() {
               onChange={(e) => setRole(e.target.value)}
             >
               <option value="">-- Chọn vai trò --</option>
-              <option value="guest">Khách</option>
+              <option value="user">Khách hàng</option>
               <option value="driver">Tài xế</option>
-              <option value="business">Doanh nghiệp</option>
+              <option value="transport_company">Công ty vận tải</option>
               <option value="warehouse">Nhà kho</option>
             </select>
           </div>
@@ -116,29 +119,16 @@ export default function LoginForm() {
           </button>
         </div>
 
-        <div className="relative my-4">
-          <div className="h-px bg-slate-200" />
-          <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 text-xs text-slate-500">
-            Hoặc tiếp tục với
-          </span>
+        <div className="mt-4 text-center text-sm text-slate-600">
+          Chưa có tài khoản?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/sign-in")}
+            className="text-blue-600 font-medium hover:underline"
+          >
+            Đăng ký ngay
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-2.5 hover:bg-slate-50"
-        >
-          <img
-            alt=""
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            className="w-5 h-5"
-          />
-          <span className="text-sm font-medium text-slate-700">Đăng nhập với Google</span>
-        </button>
-
-        <button type="button" className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 btn-shine btn-green">
-          <Linkedin className="w-5 h-5" />
-          <span className="text-sm font-semibold">Đăng nhập với LinkedIn</span>
-        </button>
       </form>
     </div>
   );

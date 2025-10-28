@@ -1,9 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { LogIn, UserPlus } from "./Icons";
 
 export default function Header() {
   const progressRef = useRef(null);
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+
+  const checkAuthAndNavigate = (path) => {
+    const user = localStorage.getItem("gd_user");
+    if (user) {
+      navigate(path);
+    } else {
+      alert("Vui lòng đăng nhập để tiếp tục!");
+      navigate("/sign-in");
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -39,15 +51,18 @@ export default function Header() {
           <a className="px-2.5 py-1.5 rounded-md text-slate-700 hover:text-blue-600 link-ux" href="#faq">FAQ</a>
         </nav>
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-white text-sm shadow-[0_12px_40px_rgba(2,6,23,.08)] btn-shine btn-blue">
+          <button 
+            onClick={() => navigate("/sign-in")}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-white text-sm shadow-[0_12px_40px_rgba(2,6,23,.08)] btn-shine btn-blue"
+          >
             <LogIn className="w-4 h-4" /> Đăng nhập
           </button>
-          <a
-            href="#booking"
+          <button
+            onClick={() => navigate("/sign-in")}
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/85 border border-slate-200 text-slate-700 hover:border-blue-200 hover:text-blue-700 shadow-[0_12px_40px_rgba(2,6,23,.08)] btn-shine"
           >
             <UserPlus className="w-4 h-4" /> Đăng ký
-          </a>
+          </button>
         </div>
       </div>
       <div className="h-[2px] w-full bg-[linear-gradient(90deg,#22d3ee,#60a5fa,#a78bfa,#f472b6,#f59e0b)] bg-[length:200%_100%] animate-[shine_2.2s_linear_infinite]" />

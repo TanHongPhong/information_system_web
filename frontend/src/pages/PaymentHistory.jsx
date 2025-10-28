@@ -1,7 +1,7 @@
 // src/pages/PaymentHistory.jsx
 import { useMemo, useState } from "react";
-import {SidebarMini} from "../components/history/SidebarMini.jsx";
-import {HeaderGradient} from "../components/history/HeaderGradient.jsx";
+import Sidebar from "../components/user/Sidebar";
+import Topbar from "../components/user/Topbar";
 import { KpiCards } from "../components/history/KpiCards.jsx";
 import { FilterBar } from "../components/history/FilterBar.jsx";
 import { PaymentTable } from "../components/history/PaymentTable.jsx";
@@ -89,10 +89,9 @@ export default function PaymentHistory() {
 
   return (
     <>
-      <SidebarMini active="file" />
-      <main className="ml-20 min-h-screen flex flex-col">
-        <HeaderGradient placeholder="Tìm giao dịch, mã đơn, số tiền..." />
-
+      <Sidebar />
+      <Topbar />
+      <main className="ml-20 pt-[72px] min-h-screen flex flex-col">
         <div className="px-4 md:px-6 py-6 space-y-6">
           <section className="bg-white border border-slate-200 rounded-2xl shadow-soft p-5 md:p-7">
             <h2 className="text-[34px] md:text-[40px] leading-none font-extrabold text-blue-800 mb-5">

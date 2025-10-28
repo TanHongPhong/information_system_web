@@ -1,13 +1,18 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import feather from "feather-icons";
 
-import SidebarNav from "../components/quan li doi xe/SidebarNav";
-import HeaderBar from "../components/quan li doi xe/HeaderBar";
+import Sidebar from "../components/sup/Sidebar";
+import Topbar from "../components/sup/Topbar";
 import VehiclesPanel from "../components/quan li doi xe/VehiclesPanel";
 import TruckPanel from "../components/quan li doi xe/TruckPanel";
 import LoadManagement from "../components/quan li doi xe/LoadManagement";
 import OrdersGrid from "../components/quan li doi xe/OrdersGrid";
 
 export default function DashboardLogistics() {
+  // render feather icons sau khi mount
+  useEffect(() => {
+    feather.replace();
+  }, []);
   // ====== DỮ LIỆU XE (copy từ HTML ban đầu) ======
   const VEHICLES = [
     {
@@ -232,33 +237,35 @@ export default function DashboardLogistics() {
   );
 
   return (
-    <div className="h-screen overflow-hidden bg-[#F8F9FD] text-[#1C2A44] font-['Roboto',sans-serif] flex">
-      {/* Sidebar trái */}
-      <SidebarNav />
+    <div className="min-h-screen bg-[#F8F9FD] text-[#1C2A44] font-['Roboto',sans-serif]">
+      {/* Sidebar cố định bên trái */}
+      <Sidebar />
 
-      {/* Phần nội dung chính */}
-      <main className="flex-1 flex flex-col overflow-hidden p-6">
-        {/* header trên cùng với search, avatar,... */}
-        <HeaderBar />
+      {/* Topbar cố định trên cùng */}
+      <Topbar />
 
-        {/* lưới 2 cột: trái = danh sách xe, phải = truck panel + load + orders */}
-        <div className="grid grid-cols-[390px_1fr] gap-6 flex-1 min-h-0 mt-4">
-          {/* LEFT: danh sách xe có scroll riêng */}
-          <VehiclesPanel
-            vehicles={VEHICLES}
-            selectedId={selectedId}
-            onSelectVehicle={setSelectedId}
-          />
-
-          {/* RIGHT */}
-          <div className="flex flex-col min-h-0 overflow-auto">
-            <TruckPanel
-              vehicle={selectedVehicle}
-              loadPercent={LOAD_PERCENT}
-              maxTon={MAX_TON}
+      {/* Phần nội dung chính - dịch qua phải 80px (sidebar) và xuống dưới 72px (topbar) */}
+      <main className="ml-20 pt-[72px] min-h-screen">
+        <div className="p-6 h-[calc(100vh-72px)] overflow-hidden">
+          {/* lưới 2 cột: trái = danh sách xe, phải = truck panel + load + orders */}
+          <div className="grid grid-cols-[390px_1fr] gap-6 h-full">
+            {/* LEFT: danh sách xe có scroll riêng */}
+            <VehiclesPanel
+              vehicles={VEHICLES}
+              selectedId={selectedId}
+              onSelectVehicle={setSelectedId}
             />
-            <LoadManagement loadPercent={LOAD_PERCENT} maxTon={MAX_TON} />
-            <OrdersGrid orders={ORDERS} />
+
+            {/* RIGHT */}
+            <div className="flex flex-col min-h-0 overflow-auto">
+              <TruckPanel
+                vehicle={selectedVehicle}
+                loadPercent={LOAD_PERCENT}
+                maxTon={MAX_TON}
+              />
+              <LoadManagement loadPercent={LOAD_PERCENT} maxTon={MAX_TON} />
+              <OrdersGrid orders={ORDERS} />
+            </div>
           </div>
         </div>
       </main>

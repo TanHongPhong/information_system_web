@@ -28,44 +28,21 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav icons - Supplier Group */}
+      {/* Nav icons - Warehouse Group */}
       <div className="flex flex-col items-center gap-4">
         <button
-          onClick={() => navigate("/suplier")}
+          onClick={() => navigate("/warehouse")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/suplier")
+            isActive("/warehouse")
               ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
           }`}
-          title="Dashboard Supplier"
+          title="Quản lý kho hàng"
         >
-          <i data-feather="home" className="w-6 h-6"></i>
-        </button>
-
-        <button
-          onClick={() => navigate("/quan-li-doi-xe")}
-          className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/quan-li-doi-xe")
-              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          }`}
-          title="Theo dõi đội xe"
-        >
-          <i data-feather="truck" className="w-6 h-6"></i>
-        </button>
-
-        <button
-          onClick={() => navigate("/order-tracking")}
-          className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/order-tracking")
-              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          }`}
-          title="Theo dõi đơn hàng"
-        >
-          <i data-feather="map" className="w-6 h-6"></i>
+          <i data-feather="package" className="w-6 h-6"></i>
         </button>
       </div>
     </aside>
   );
 }
+
