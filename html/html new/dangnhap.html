@@ -99,7 +99,7 @@
   </div>
 
   <!-- HEADER (đồng bộ tone với homepage) -->
-  <header class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+  <header class="sticky top-0 z-40 border-b border-slate-200/60 bg-grey/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
     <div class="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center text-white font-extrabold shadow-blueglow">6A</div>
@@ -184,52 +184,6 @@
                 <i data-feather="log-in" class="w-4 h-4"></i> Đăng nhập
               </button>
             </div>
-
-            <div class="relative my-4">
-              <div class="h-px bg-slate-200"></div>
-              <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 text-xs text-slate-500">Hoặc tiếp tục với</span>
-            </div>
-
-            <button type="button"
-                    class="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-2.5 hover:bg-slate-50">
-              <img alt="" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"/>
-              <span class="text-sm font-medium text-slate-700">Đăng nhập với Google</span>
-            </button>
-
-            <!-- 🟢 LinkedIn giữ màu xanh lá -->
-            <button type="button" class="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 btn-shine btn-green">
-              <i data-feather="linkedin" class="w-5 h-5"></i>
-              <span class="text-sm font-semibold">Đăng nhập với LinkedIn</span>
-            </button>
-          </form>
-        </div>
-
-        <!-- ROLE PANEL (không có Admin) -->
-        <aside class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 shadow-blueglow">
-          <h3 class="text-xl font-extrabold text-[#14532d]">Quyền truy cập theo vai trò</h3>
-          <ul class="mt-3 list-disc pl-5 space-y-3 text-[15px]">
-            <li>
-              <b>Khách:</b> xem trang chủ, tạo yêu cầu báo giá, theo dõi đơn bằng mã theo dõi, nhận thông báo trạng thái cơ bản
-            </li>
-            <li>
-              <b>Tài xế:</b> nhận/chấp nhận chuyến, điều hướng tới điểm giao/nhận, cập nhật trạng thái, chụp POD/biên nhận, liên hệ người gửi/nhận
-            </li>
-            <li>
-              <b>Doanh nghiệp:</b> tạo &amp; quản lý đơn, sổ địa chỉ, theo dõi realtime, xuất CSV/Excel, đối soát công nợ 
-            </li>
-            <li>
-              <b>Nhà kho:</b> quét mã vận đơn, xác nhận nhập/xuất, đối soát tồn, phân tuyến nội bộ, in tem nhãn 
-            </li>
-          </ul>
-
-          <div class="mt-6 grid sm:grid-cols-2 gap-3">
-            <a href="homepage.html" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm">← Quay lại</a>
-            <!-- 🔵 Xem FAQ: xanh dương -->
-            <a href="homepage.html#faq" class="px-4 py-2.5 rounded-xl text-white text-sm btn-shine btn-blue">Xem FAQ</a>
-          </div>
-        </aside>
-      </div>
-    </section>
   </main>
 
   <footer class="border-t border-white/40 bg-gradient-to-r from-cyan-400/20 via-indigo-400/20 to-fuchsia-400/20 backdrop-blur">
