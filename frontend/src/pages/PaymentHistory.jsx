@@ -1,10 +1,11 @@
 // src/pages/PaymentHistory.jsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/user/Sidebar";
 import Topbar from "../components/user/Topbar";
 import { KpiCards } from "../components/history/KpiCards.jsx";
 import { FilterBar } from "../components/history/FilterBar.jsx";
 import { PaymentTable } from "../components/history/PaymentTable.jsx";
+import api from "../lib/axios";
 
 // ==== Helpers (inline, không cần helpers.js) ====
 const fmtVND = (v) =>
@@ -15,29 +16,61 @@ const toDate = (dmy) => {
   return new Date(y, m - 1, d);
 };
 
-// ==== Demo data ====
-const PAYMENTS = [
-  { id: "#322138483848", date: "15/10/2025", amount: 10000000, company: "Gemadept", method: "Chuyển khoản", status: "Paid" },
-  { id: "#2458745233343", date: "15/10/2025", amount: 2500000,  company: "Thái Bình Dương Logistics", method: "Thẻ VISA",  status: "Pending" },
-  { id: "#998877665544",  date: "14/10/2025", amount: 4800000,  company: "DHL",      method: "Ví điện tử", status: "Paid" },
-  { id: "#445566778899",  date: "10/10/2025", amount: 10000000, company: "Gemadept", method: "Chuyển khoản", status: "Refunded" },
-  { id: "#112233445566",  date: "08/10/2025", amount: 7200000,  company: "Transimex", method: "Thẻ VISA",    status: "Paid" },
-  { id: "#556677889900",  date: "03/10/2025", amount: 3500000,  company: "DHL",      method: "Ví điện tử",   status: "Paid" },
-  { id: "#123450987654",  date: "29/09/2025", amount: 15000000, company: "Gemadept", method: "Chuyển khoản", status: "Paid" },
-  { id: "#777888999000",  date: "18/09/2025", amount: 2000000,  company: "Thái Bình Dương Logistics", method: "Thẻ VISA", status: "Refunded" },
-  { id: "#333222111000",  date: "02/09/2025", amount: 5600000,  company: "Transimex", method: "Chuyển khoản", status: "Pending" },
-  { id: "#111222333444",  date: "25/08/2025", amount: 9900000,  company: "DHL",      method: "Ví điện tử",   status: "Paid" },
-  { id: "#222333444555",  date: "10/08/2025", amount: 8700000,  company: "Gemadept", method: "Thẻ VISA",     status: "Paid" },
-  { id: "#666555444333",  date: "05/08/2025", amount: 4200000,  company: "DHL",      method: "Chuyển khoản", status: "Paid" },
-];
+// Map backend -> table row
+function mapTxnToRow(t) {
+  const statusMap = {
+    SUCCESS: "Paid",
+    PENDING: "Pending",
+    FAILED: "Pending",
+    CANCELLED: "Refunded",
+    REFUNDED: "Refunded",
+  };
+  const dt = t.paid_at || t.created_at;
+  const d = dt ? new Date(dt) : new Date();
+  const dateStr = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  const methodStr = t.payment_method || "Chuyển khoản";
+  return {
+    id: `#${t.order_id ?? t.transaction_id}`,
+    date: dateStr,
+    amount: Number(t.amount) || 0,
+    company: t.company_name || "—",
+    method: methodStr,
+    status: statusMap[t.payment_status] || "Paid",
+  };
+}
 
 export default function PaymentHistory() {
   const [filters, setFilters] = useState({ q:"", from:"", to:"", company:"", status:"", sortBy:"date_desc" });
   const [page, setPage] = useState(1);
   const pageSize = 8;
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let aborted = false;
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        // chỉ lấy giao dịch thành công
+        const res = await api.get(`/transactions?payment_status=SUCCESS`);
+        const data = Array.isArray(res.data) ? res.data : [];
+        const mapped = data.map(mapTxnToRow);
+        if (!aborted) setRows(mapped);
+      } catch (err) {
+        console.error(err);
+        if (!aborted) setError("Không thể tải lịch sử thanh toán");
+      } finally {
+        if (!aborted) setLoading(false);
+      }
+    }
+    load();
+    return () => { aborted = true; };
+  }, []);
 
   const filtered = useMemo(() => {
-    let arr = [...PAYMENTS];
+    let arr = [...rows];
 
     if (filters.q) {
       const q = filters.q.toLowerCase();
@@ -64,7 +97,7 @@ export default function PaymentHistory() {
       }
     });
     return arr;
-  }, [filters]);
+  }, [filters, rows]);
 
   // KPIs
   const kpi = useMemo(() => {
@@ -109,15 +142,25 @@ export default function PaymentHistory() {
 
           <FilterBar onChange={(f) => { setFilters(f); setPage(1); }} />
 
-          <PaymentTable
-            rows={pageRows}
-            page={page}
-            pageSize={pageSize}
-            totalCount={filtered.length}
-            onPrev={() => setPage((p) => Math.max(1, p - 1))}
-            onNext={() => setPage((p) => (end < filtered.length ? p + 1 : p))}
-            fmt={fmtVND}
-          />
+          {loading ? (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-soft p-8 text-center text-slate-500">
+              Đang tải lịch sử thanh toán...
+            </div>
+          ) : error ? (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-soft p-8 text-center text-red-500">
+              {error}
+            </div>
+          ) : (
+            <PaymentTable
+              rows={pageRows}
+              page={page}
+              pageSize={pageSize}
+              totalCount={filtered.length}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => (end < filtered.length ? p + 1 : p))}
+              fmt={fmtVND}
+            />
+          )}
         </div>
       </main>
     </>

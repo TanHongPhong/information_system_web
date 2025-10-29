@@ -4,7 +4,7 @@ import { Copy } from "lucide-react";
 
 const currency = (n) => n.toLocaleString("vi-VN");
 
-export default function OrderDetails({ provider, orderCode, amount, note, onCopy }) {
+export default function OrderDetails({ provider, orderCode, amount, note, orderDescription, vehicleType, pickupAddress, dropoffAddress, onCopy }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-soft p-5 md:p-7">
       <h2 className="text-xl font-bold">Thông tin đơn hàng</h2>
@@ -25,10 +25,29 @@ export default function OrderDetails({ provider, orderCode, amount, note, onCopy
 
         <div>
           <div className="text-slate-500">Mô tả</div>
-          <p className="mt-1 font-medium">
-            Xe container 4000kg, lộ trình TP.HCM → Hà Nội, ngày lấy hàng: 17/10/2025
-          </p>
+          <p className="mt-1 font-medium">{orderDescription || "—"}</p>
         </div>
+
+        {vehicleType && (
+          <div>
+            <div className="text-slate-500">Loại xe</div>
+            <div className="mt-1 font-medium">{vehicleType}</div>
+          </div>
+        )}
+
+        {pickupAddress && (
+          <div>
+            <div className="text-slate-500">Điểm lấy hàng</div>
+            <div className="mt-1 font-medium">{pickupAddress}</div>
+          </div>
+        )}
+
+        {dropoffAddress && (
+          <div>
+            <div className="text-slate-500">Điểm giao hàng</div>
+            <div className="mt-1 font-medium">{dropoffAddress}</div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -53,11 +72,6 @@ export default function OrderDetails({ provider, orderCode, amount, note, onCopy
               <Copy className="w-3.5 h-3.5" />Copy
             </button>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <button className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">Huỷ thanh toán</button>
-          <button className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Liên hệ hỗ trợ</button>
         </div>
 
         <p className="text-[12px] text-slate-500">

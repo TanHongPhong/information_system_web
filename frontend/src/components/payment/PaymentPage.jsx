@@ -1,53 +1,212 @@
 // components/PaymentPage.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Smartphone, Shield, Clock, Download, Copy, RefreshCw, Loader, Check, XCircle } from "lucide-react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Smartphone, Shield, Clock, Download, Copy, RefreshCw, Loader, Check, XCircle, Home, History, X } from "lucide-react";
 import OrderDetails from "./OrderDetails";
-import MethodsPicker from "./MethodsPicker";
+import { buildSepayQrUrl } from "../../lib/sepay";
+import api from "../../lib/axios";
 
-const VND = (n) => n.toLocaleString("vi-VN");
+const VND = (n) => {
+  try {
+    const num = Number(n);
+    if (isNaN(num) || num <= 0) return "0";
+    return num.toLocaleString("vi-VN");
+  } catch {
+    return "0";
+  }
+};
 
-export default function PaymentPage() {
-  // demo data
-  const provider = "Công ty Gemadept";
-  const amount = 10_000_000;
-  const orderCode = "322138483848";
-  const note = `GMD-${orderCode}`;
+export default function PaymentPage({ orderId }) {
+  const navigate = useNavigate();
+  const [orderData, setOrderData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Payment state
   const [status, setStatus] = useState("pending"); // 'pending' | 'success' | 'expired'
   const [orderTime, setOrderTime] = useState("—");
   const [method, setMethod] = useState("momo");
   const [remain, setRemain] = useState(15 * 60); // seconds
-  const seedRef = useRef(0);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const transactionSavedRef = useRef(false); // Flag để tránh duplicate calls
 
-  // countdown
+  // Fetch order data
   useEffect(() => {
+    let aborted = false;
+    
+    async function fetchOrder() {
+      if (!orderId) {
+        if (!aborted) {
+          setError("Không tìm thấy mã đơn hàng");
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch order by ID
+        const response = await api.get(`/cargo-orders?order_id=${orderId}`);
+        const orders = response.data || [];
+        const order = Array.isArray(orders) ? orders.find(o => o.order_id === Number(orderId)) : null;
+        
+        if (!order) {
+          throw new Error("Đơn hàng không tồn tại");
+        }
+        
+        if (!aborted) {
+          setOrderData(order);
+        }
+      } catch (err) {
+        console.error("Error fetching order:", err);
+        if (!aborted) {
+          setError(err.response?.data?.message || err.message || "Không thể tải thông tin đơn hàng");
+        }
+      } finally {
+        if (!aborted) setLoading(false);
+      }
+    }
+
+    fetchOrder();
+    return () => { aborted = true; };
+  }, [orderId]);
+
+  // Calculate amount from order - giá trị thực để hiển thị
+  const amount = useMemo(() => {
+    if (!orderData) return 0;
+    try {
+      // Ưu tiên dùng value_vnd từ database (đã được tính trong CargoForm)
+      if (orderData.value_vnd) {
+        const val = Number(orderData.value_vnd);
+        if (!isNaN(val) && val > 0) {
+          return val;
+        }
+      }
+      // Fallback: Tính lại nếu không có value_vnd
+      // Tính theo công thức: base + weight * rate (chỉ tính theo cân nặng)
+      const base = 20000;
+      const weight = Number(orderData.weight_kg) || 0;
+      const rate = 8000;
+      
+      // Chỉ tính theo cân nặng thực, không tính theo thể tích
+      return base + (weight * rate);
+    } catch {
+      return 0;
+    }
+  }, [orderData]);
+
+  // Số tiền thực tế cho QR code/webhook: 2000 + (amount / 1000) để test
+  const payAmount = useMemo(() => {
+    const v = Number(amount) || 0;
+    // Công thức: 2000 + (số tiền giao dịch / 1000)
+    const testAmount = 2000 + Math.round(v / 1000);
+    return Math.max(2000, testAmount); // Tối thiểu 2000
+  }, [amount]);
+
+  const provider = orderData?.company_name || "—";
+  const orderCode = orderId ? String(orderId).padStart(12, "0") : "000000000000";
+  const note = orderId ? `GMD-${orderCode}` : "—";
+
+  const handleSaveTransaction = useCallback(async () => {
+    if (!orderId || !orderData || !payAmount || payAmount <= 0) {
+      console.warn("Cannot save transaction: missing data", { orderId, orderData: !!orderData, payAmount });
+      return;
+    }
+    
+    // Prevent duplicate calls
+    if (transactionSavedRef.current) {
+      console.warn("Transaction already being saved, skipping");
+      return;
+    }
+    
+    transactionSavedRef.current = true;
+    
+    try {
+      const response = await api.post("/transactions", {
+        order_id: Number(orderId),
+        company_id: Number(orderData.company_id),
+        amount: Number(payAmount),
+        payment_method: method,
+        payment_status: "SUCCESS",
+        transaction_code: `TXN-${Date.now()}`,
+        note: `Payment for order #${orderId}`,
+      });
+      console.log("Transaction saved successfully:", response.data);
+    } catch (err) {
+      console.error("Error saving transaction:", err);
+      transactionSavedRef.current = false; // Reset để retry nếu cần
+      // Không throw error để không crash app, chỉ log
+    }
+  }, [orderId, orderData, payAmount, method]);
+
+  // Reset countdown và status khi orderData load xong (chỉ 1 lần)
+  useEffect(() => {
+    if (!orderData || loading) return;
+    
+    // Reset transaction flag khi order mới
+    transactionSavedRef.current = false;
+    
+    // Reset countdown và status
+    setRemain(15 * 60);
+    setStatus("pending");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderData?.order_id]); // Chỉ reset khi order_id thay đổi (đơn hàng mới)
+
+  // countdown timer - chạy độc lập
+  useEffect(() => {
+    if (status !== "pending" || loading) return;
+    
     const iv = setInterval(() => {
-      setRemain((s) => {
-        if (s <= 1) {
-          clearInterval(iv);
+      setRemain((prev) => {
+        if (prev <= 1) {
           setStatus("expired");
           return 0;
         }
-        return s - 1;
+        return prev - 1;
       });
     }, 1000);
+    
     return () => clearInterval(iv);
-  }, [seedRef.current]); // restart khi seedRef thay đổi
+  }, [status, loading]); // Chỉ chạy khi status là pending
 
-  // fake success sau 9s (demo)
-  useEffect(() => {
-    if (status !== "pending") return;
-    const t = setTimeout(() => {
-      setStatus("success");
-      setOrderTime(new Date().toLocaleString("vi-VN"));
-    }, 9000);
-    return () => clearTimeout(t);
-  }, [status]);
+  // Bỏ auto-success; chỉ xác nhận khi người dùng bấm "Tôi đã thanh toán" hoặc khi webhook xác nhận
 
   const mmss = useMemo(() => {
     const m = String(Math.floor(remain / 60)).padStart(2, "0");
     const s = String(remain % 60).padStart(2, "0");
     return `${m}:${s}`;
   }, [remain]);
+
+  // Polling backend to detect SUCCESS confirmed by webhook
+  useEffect(() => {
+    if (!orderId || !orderData) return;
+    if (status === "success" || status === "expired") return;
+    let aborted = false;
+    let pollCount = 0;
+    const iv = setInterval(async () => {
+      try {
+        pollCount++;
+        console.log(`[PaymentPage] Polling transaction status (attempt ${pollCount}) for order_id=${orderId}`);
+        const res = await api.get(`/transactions?order_id=${orderId}&payment_status=SUCCESS`);
+        const arr = Array.isArray(res.data) ? res.data : [];
+        console.log(`[PaymentPage] Poll response:`, arr.length, "transactions found");
+        
+        if (!aborted && arr.length > 0) {
+          console.log(`[PaymentPage] Payment confirmed! Transaction:`, arr[0]);
+          setStatus("success");
+          setOrderTime(new Date().toLocaleString("vi-VN"));
+          setShowSuccessModal(true);
+          toast("✅ Thanh toán thành công!");
+          clearInterval(iv);
+        }
+      } catch (err) {
+        console.error("[PaymentPage] Polling error:", err);
+      }
+    }, 3000);
+    return () => { aborted = true; clearInterval(iv); };
+  }, [orderId, orderData, status]);
 
   const toast = (msg) => {
     const el = document.createElement("div");
@@ -67,18 +226,130 @@ export default function PaymentPage() {
     }
   };
 
+  // Format order description - PHẢI đặt trước early return để tuân thủ Rules of Hooks
+  const orderDescription = useMemo(() => {
+    if (!orderData) return "—";
+    try {
+      const parts = [];
+      if (orderData.vehicle_type) parts.push(orderData.vehicle_type);
+      if (orderData.weight_kg) parts.push(`${orderData.weight_kg}kg`);
+      if (orderData.pickup_address && orderData.dropoff_address) {
+        parts.push(`${orderData.pickup_address} → ${orderData.dropoff_address}`);
+      }
+      return parts.join(", ") || "—";
+    } catch {
+      return "—";
+    }
+  }, [orderData]);
+
   const refresh = () => {
     setStatus("pending");
     setRemain(15 * 60);
-    seedRef.current += 1; // để effect countdown chạy lại
   };
+
+  // Sepay config state
+  const [sepayConfig, setSepayConfig] = useState(null);
+  const [sepayLoading, setSepayLoading] = useState(true);
+
+  // Fetch Sepay config from backend
+  useEffect(() => {
+    let aborted = false;
+    
+    async function fetchSepayConfig() {
+      try {
+        setSepayLoading(true);
+        const response = await api.get("/sepay/config");
+        if (!aborted && response.data?.success) {
+          setSepayConfig(response.data.config);
+        }
+      } catch (err) {
+        console.error("Error fetching Sepay config:", err);
+        // Fallback to demo config if API fails
+        if (!aborted) {
+          setSepayConfig({
+            account: "5801774227",
+            bank: "BIDV",
+            qrTemplate: "compact",
+          });
+        }
+      } finally {
+        if (!aborted) setSepayLoading(false);
+      }
+    }
+
+    fetchSepayConfig();
+    return () => { aborted = true; };
+  }, []);
+
+  // Build Sepay QR URL
+  const qrNote = note; // GMD-<orderCode>
+  const qrUrl = useMemo(() => {
+    if (!sepayConfig || sepayLoading) return "";
+    
+    return buildSepayQrUrl({
+      acc: sepayConfig.account,
+      bank: sepayConfig.bank,
+      amount: payAmount && payAmount > 0 ? payAmount : undefined,
+      des: qrNote,
+      template: sepayConfig.qrTemplate,
+    });
+  }, [sepayConfig, sepayLoading, payAmount, qrNote]);
+
+  // Early returns sau khi đã gọi tất cả hooks
+  if (loading) {
+    return (
+      <section className="p-6 md:p-8">
+        <div className="flex items-center justify-center py-20">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !orderData) {
+    return (
+      <section className="p-6 md:p-8">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">{error || "Không tìm thấy đơn hàng"}</p>
+            <button 
+              onClick={() => navigate("/nhap-in4" + (orderId ? `?orderId=${orderId}` : ""))}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+            >
+              Trở lại trang điền thông tin
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="p-6 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Thanh toán QR</h1>
           <p className="text-slate-600">Quét mã để hoàn tất giao dịch an toàn, nhanh chóng.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="h-10 px-4 rounded-xl border border-slate-200 hover:bg-slate-50"
+            onClick={() => navigate("/nhap-in4" + (orderId ? `?orderId=${orderId}` : ""))}
+          >
+            Hủy thanh toán
+          </button>
+          <button
+            className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => navigate("/transport-companies")}
+          >
+            Trở về trang chủ
+          </button>
+          <button
+            className="h-10 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50"
+            onClick={() => navigate("/payment-history")}
+          >
+            Lịch sử giao dịch
+          </button>
         </div>
       </div>
 
@@ -100,7 +371,9 @@ export default function PaymentPage() {
               </div>
               <div className="text-right">
                 <div className="text-sm text-slate-600">Số tiền</div>
-                <div className="text-2xl font-extrabold">{VND(amount)} VNĐ</div>
+                <div className="text-2xl font-extrabold">
+                  {amount && amount > 0 ? `${VND(amount)} VNĐ` : "Đang tính..."}
+                </div>
               </div>
             </div>
           </div>
@@ -119,10 +392,9 @@ export default function PaymentPage() {
               </div>
 
               <div className="rounded-xl overflow-hidden ring-1 ring-slate-200 p-3 bg-white">
-                {/* thay đường dẫn QR của bạn tại đây */}
                 <img
-                  src="https://tse4.mm.bing.net/th/id/OIP.rkE9lfhXa6ijYsu_ObWtdwHaNB?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"
-                  alt="QR Code"
+                  src={qrUrl}
+                  alt="QR Thanh toán Sepay"
                   className="block w-full h-auto mx-auto"
                 />
               </div>
@@ -142,7 +414,7 @@ export default function PaymentPage() {
 
                 <button
                   className="h-9 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2"
-                  onClick={() => handleCopy(`VIETQR|GEMADEPT|${amount}|GMD-${orderCode}`)}
+                  onClick={() => handleCopy(`VIETQR|GEMADEPT|${payAmount}|GMD-${orderCode}`)}
                 >
                   <Copy className="w-4 h-4" />Copy nội dung
                 </button>
@@ -218,9 +490,6 @@ export default function PaymentPage() {
                   <li>Xác nhận và hoàn tất. Hệ thống sẽ tự động cập nhật trạng thái.</li>
                 </ol>
               </div>
-
-              {/* Methods */}
-              <MethodsPicker value={method} onChange={setMethod} />
             </div>
           </div>
         </div>
@@ -228,20 +497,101 @@ export default function PaymentPage() {
         {/* Right */}
         <OrderDetails
           provider={provider}
-          amount={amount}
+          amount={amount || 0}
           orderCode={orderCode}
-          note={`GMD-${orderCode}`}
-          onCopy={(t) => navigator.clipboard.writeText(t)}
+          note={note}
+          orderDescription={orderDescription}
+          vehicleType={orderData?.vehicle_type}
+          pickupAddress={orderData?.pickup_address}
+          dropoffAddress={orderData?.dropoff_address}
+          onCopy={(t) => {
+            try {
+              navigator.clipboard.writeText(t);
+              toast("Đã copy vào clipboard");
+            } catch {
+              alert("Không copy được.");
+            }
+          }}
         />
       </div>
 
-      {/* Success banner */}
-      {status === "success" && (
-        <div className="animate-in">
-          <div className="max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-3 bg-emerald-500 text-white px-5 py-3 rounded-2xl shadow-sm">
-              <Check className="w-6 h-6" />
-              <span className="font-semibold">Giao dịch thành công</span>
+      {/* Success Modal */}
+      {showSuccessModal && status === "success" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Check className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Thanh toán thành công!</h3>
+                  <p className="text-sm text-slate-600">Giao dịch của bạn đã được xác nhận</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-4">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-slate-500 mb-1">Mã đơn hàng</div>
+                    <div className="font-mono font-semibold">{orderCode}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500 mb-1">Số tiền</div>
+                    <div className="font-semibold text-emerald-600">{VND(amount)} VNĐ</div>
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-slate-500 mb-1">Thời gian</div>
+                    <div className="font-semibold">{orderTime}</div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600 text-center">
+                Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate("/transport-companies");
+                }}
+                className="w-full h-12 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Home className="w-5 h-5" />
+                Về trang chủ
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate("/payment-history");
+                }}
+                className="w-full h-12 rounded-xl bg-white border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <History className="w-5 h-5" />
+                Xem lịch sử giao dịch
+              </button>
+
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full h-10 rounded-xl text-slate-600 hover:text-slate-800 font-medium hover:bg-slate-50 transition-colors"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

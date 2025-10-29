@@ -2,7 +2,7 @@
 import React from "react";
 import { Calendar, Hash, User as UserIcon } from "lucide-react";
 
-export default function VehicleCard({ company, route, item }) {
+export default function VehicleCard({ company, route, item, onSelect }) {
   const { percent, depart, plate, driver, status } = item;
 
   const colors = percent < 40
@@ -85,7 +85,7 @@ export default function VehicleCard({ company, route, item }) {
         </li>
       </ul>
 
-      <button className="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2">
+      <button onClick={onSelect} className="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2">
         Chọn xe
       </button>
     </article>

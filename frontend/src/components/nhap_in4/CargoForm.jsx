@@ -1,11 +1,17 @@
 // components/CargoForm.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Crosshair, User, Phone, Layers, Scale, Move, Edit3, ArrowRight, CreditCard } from "lucide-react";
 import { Input, Select, TextArea, Lbl } from "./Fields";
+import api from "../../lib/axios";
 
 const cur = (v) => (v || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-export default function CargoForm({ onCalc }) {
+export default function CargoForm({ onCalc, companyId, vehicleId }) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   const [form, setForm] = useState({
     origin: "", destination: "", recipient_name: "", recipient_phone: "",
     category: "", weight: "", len: "", wid: "", hei: "", note: "",
@@ -24,17 +30,80 @@ export default function CargoForm({ onCalc }) {
     const w = numbers.weight;
     const { len, wid, hei } = numbers;
     const vol = len && wid && hei ? (len * wid * hei) / 6000 : 0;
-    const charge = Math.max(w, vol);
+    // Chỉ tính theo cân nặng thực, không tính theo thể tích
+    const charge = w; // Chỉ dùng weight, bỏ qua volume
     const base = 20000;
     const perKg = 8000 * charge;
     const srv = 0;
-    onCalc?.({ wReal: w, wVol: vol, wCharge: charge, base, perKg, srv });
     return { wReal: w, wVol: vol, wCharge: charge, base, perKg, srv };
-  }, [numbers.weight, numbers.len, numbers.wid, numbers.hei, onCalc]);
+  }, [numbers.weight, numbers.len, numbers.wid, numbers.hei]);
 
-  const submit = (e) => {
+  // Update parent state via useEffect (không được gọi trong render)
+  useEffect(() => {
+    onCalc?.({ wReal, wVol, wCharge, base, perKg, srv });
+  }, [wReal, wVol, wCharge, base, perKg, srv, onCalc]);
+
+  const submit = async (e) => {
     e.preventDefault();
-    alert("Đã lưu thông tin hàng hóa. Bước tiếp theo: Xác nhận & thanh toán.");
+    
+    if (!companyId) {
+      alert("Vui lòng chọn công ty vận chuyển trước!");
+      navigate("/transport-companies");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Calculate volume in m³ (convert from cm³)
+      const volumeM3 = numbers.len && numbers.wid && numbers.hei
+        ? (numbers.len * numbers.wid * numbers.hei) / 1000000 // cm³ to m³
+        : null;
+
+      // Map category to cargo_type mapping
+      const categoryMap = {
+        "general": "Hàng tổng hợp",
+        "fragile": "Dễ vỡ",
+        "food": "Thực phẩm",
+        "electronics": "Điện tử",
+        "oversize": "Cồng kềnh",
+      };
+
+      // Calculate total amount: base + perKg + srv
+      const totalAmount = Math.round(base + perKg + srv);
+
+      const payload = {
+        company_id: Number(companyId),
+        vehicle_id: vehicleId ? Number(vehicleId) : null,
+        cargo_name: form.category ? categoryMap[form.category] || form.category : "Hàng tổng hợp",
+        cargo_type: form.category || null,
+        weight_kg: numbers.weight || null,
+        volume_m3: volumeM3,
+        value_vnd: totalAmount, // Lưu tổng tiền đã tính từ form
+        require_cold: form.category === "food",
+        require_danger: false,
+        require_loading: form.category === "oversize",
+        require_insurance: false,
+        pickup_address: form.origin,
+        dropoff_address: form.destination,
+        pickup_time: null, // Có thể thêm datetime picker sau
+        note: form.note || null,
+      };
+
+      const response = await api.post("/cargo-orders", payload);
+      
+      if (response.data.success) {
+        // Navigate to payment page with order ID
+        navigate(`/payment-qr?orderId=${response.data.data.order_id}`);
+      }
+    } catch (err) {
+      console.error("Error creating cargo order:", err);
+      setError(err.response?.data?.message || err.message || "Có lỗi xảy ra khi tạo đơn hàng");
+      alert("Lỗi: " + (err.response?.data?.message || err.message || "Không thể tạo đơn hàng"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,15 +168,45 @@ export default function CargoForm({ onCalc }) {
         <TextArea icon={<Edit3 className="w-4 h-4" />} placeholder="Yêu cầu đóng gói, khung giờ giao, địa chỉ chi tiết..." value={form.note} onChange={set("note")} />
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <a href="./chon-xe.html" className="text-blue-700 underline underline-offset-2">Trở lại</a>
+        <button
+          type="button"
+          onClick={() => navigate("/vehicle-list" + (companyId ? `?companyId=${companyId}` : ""))}
+          className="text-blue-700 underline underline-offset-2 hover:text-blue-800"
+        >
+          Trở lại
+        </button>
         <div className="flex items-center gap-2">
-          <button type="button" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-[0_12px_40px_rgba(2,6,23,.08)]">
+          <button
+            type="button"
+            onClick={() => navigate("/vehicle-list" + (companyId ? `?companyId=${companyId}` : ""))}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-[0_12px_40px_rgba(2,6,23,.08)]"
+          >
             Tiếp tục <ArrowRight className="w-4 h-4" />
           </button>
-          <button type="submit" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-[0_12px_40px_rgba(2,6,23,.08)] focus:outline-none focus:ring-2 focus:ring-blue-200 bg-blue-700 text-white">
-            <CreditCard className="w-4 h-4" /> Thanh toán
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-[0_12px_40px_rgba(2,6,23,.08)] focus:outline-none focus:ring-2 focus:ring-blue-200 bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-4 h-4" /> Thanh toán
+              </>
+            )}
           </button>
         </div>
       </div>
