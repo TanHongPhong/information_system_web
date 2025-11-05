@@ -10,16 +10,12 @@ export default function SignUpForm() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
-  const [role, setRole] = useState("");
   const [terms, setTerms] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
-
-    // Debug: Kiểm tra role
-    console.log("Selected role:", role);
 
     // Kiểm tra mật khẩu khớp (chỉ để đảm bảo nhập đúng form)
     if (pwd !== confirmPwd) {
@@ -37,7 +33,7 @@ export default function SignUpForm() {
       const response = await fetch("http://localhost:5001/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email, password: pwd, role })
+        body: JSON.stringify({ name, phone, email, password: pwd })
       });
       
       const data = await response.json();
@@ -45,17 +41,17 @@ export default function SignUpForm() {
       if (response.ok) {
         // Lưu thông tin user vào localStorage
         localStorage.setItem("gd_user", JSON.stringify(data.user));
-        localStorage.setItem("role", role);
+        localStorage.setItem("role", data.user.role);
         
         alert("Đăng ký thành công!");
         
-        // Điều hướng theo vai trò
+        // Điều hướng theo vai trò từ database (mặc định là user)
         const map = {
           user: "/transport-companies",
           transport_company: "/suplier"
         };
         
-        const targetPath = map[role];
+        const targetPath = map[data.user.role] || "/transport-companies";
         console.log("Navigating to:", targetPath);
         navigate(targetPath);
       } else {
@@ -183,24 +179,6 @@ export default function SignUpForm() {
               {showConfirmPwd ? "Ẩn" : "Hiện"}
             </button>
           </div>
-        </div>
-
-        {/* Vai trò */}
-        <div>
-          <label htmlFor="role" className="text-sm font-medium text-slate-700">
-            Vai trò bạn muốn đăng ký
-          </label>
-          <select
-            id="role"
-            className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
-            required
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option value="">-- Chọn vai trò --</option>
-            <option value="user">Khách hàng</option>
-            <option value="transport_company">Công ty vận tải</option>
-          </select>
         </div>
 
         {/* Điều khoản */}

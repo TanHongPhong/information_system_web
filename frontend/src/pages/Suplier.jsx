@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 
-import Sidebar from "../components/sup/Sidebar";
-import Topbar from "../components/sup/Topbar";
+import AppLayout from "../components/layout/AppLayout.jsx";
 import RecentOrders from "../components/sup/RecentOrders";
 import FleetStatus from "../components/sup/FleetStatus";
 import ShippingTable from "../components/sup/ShippingTable";
@@ -11,22 +11,47 @@ import OrderDetailPanel from "../components/sup/OrderDetailPanel";
 
 export default function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const navigate = useNavigate();
+  const shippingTableRef = useRef(null);
+  const orderRequestsRef = useRef(null);
+
+  // Kiểm tra role và logout nếu không đúng
+  useEffect(() => {
+    const userData = localStorage.getItem("gd_user");
+    const role = localStorage.getItem("role");
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+
+    // Kiểm tra nếu không có user
+    if (!userData) {
+      logout();
+      return;
+    }
+
+    // Kiểm tra: chỉ admin transport_company mới được vào trang này
+    if (role !== "transport_company" || !isAdmin) {
+      console.warn(`Access denied: Only admin transport_company can access this page. Role: '${role}', isAdmin: ${isAdmin}`);
+      alert("Bạn không có quyền truy cập trang này. Chỉ admin công ty vận tải mới có quyền.");
+      logout();
+      return;
+    }
+  }, []);
 
   // render feather icons sau khi mount
   useEffect(() => {
     feather.replace();
   }, []);
 
+  // Hàm logout
+  const logout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+  };
+
   return (
-    <div className="min-h-screen text-slate-800 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_60%,#eef2f7_100%)]">
-      {/* Sidebar cố định bên trái */}
-      <Sidebar />
-
-      {/* Header cố định trên cùng (dịch qua phải 80px) */}
-      <Topbar />
-
-      {/* MAIN: đẩy nội dung xuống dưới header và qua phải khỏi sidebar */}
-      <main className="ml-20 pt-[72px]">
+    <AppLayout className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_60%,#eef2f7_100%)]">
         <div className="max-w-[120rem] mx-auto p-4 md:p-6 pt-3">
           {/* Tiêu đề trang */}
           <header className="flex items-center justify-between gap-4">
@@ -38,35 +63,6 @@ export default function Dashboard() {
                 Chào mừng trở lại! Dưới đây là tổng quan trang quản lí của
                 bạn. ☀️
               </p>
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-3">
-              <button
-                className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 transition-all"
-                aria-label="Date range"
-              >
-                <i
-                  data-feather="calendar"
-                  className="w-4 h-4 text-slate-500"
-                ></i>
-                <span className="font-medium text-sm">
-                  30 ngày gần đây
-                </span>
-                <i
-                  data-feather="chevron-down"
-                  className="w-4 h-4 text-slate-400"
-                ></i>
-              </button>
-
-              <button
-                className="p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 transition-all"
-                aria-label="Export"
-              >
-                <i
-                  data-feather="download"
-                  className="w-5 h-5 text-slate-600"
-                ></i>
-              </button>
             </div>
           </header>
 
@@ -81,19 +77,37 @@ export default function Dashboard() {
               </div>
 
               {/* Bảng Shipping (cao = cột phải) */}
-              <ShippingTable />
+              <ShippingTable ref={shippingTableRef} />
             </div>
 
             {/* Cột phải */}
-            <aside className="space-y-8 h-full">
-              <OrderRequests onViewDetail={setSelectedOrder} />
+            <aside className="h-full">
+              <OrderRequests 
+                ref={orderRequestsRef}
+                onViewDetail={setSelectedOrder}
+                onRefreshShipping={() => {
+                  if (shippingTableRef.current) {
+                    shippingTableRef.current.refresh();
+                  }
+                }}
+              />
             </aside>
           </div>
           
           {/* Order Detail Panel */}
           <OrderDetailPanel 
             order={selectedOrder} 
-            onClose={() => setSelectedOrder(null)} 
+            onClose={() => setSelectedOrder(null)}
+            onAccept={(orderId) => {
+              if (orderRequestsRef.current?.handleAcceptOrder) {
+                orderRequestsRef.current.handleAcceptOrder(orderId, () => setSelectedOrder(null));
+              }
+            }}
+            onReject={(orderId) => {
+              if (orderRequestsRef.current?.handleRejectOrder) {
+                orderRequestsRef.current.handleRejectOrder(orderId, () => setSelectedOrder(null));
+              }
+            }}
           />
 
           {/* Footer trang */}
@@ -101,7 +115,6 @@ export default function Dashboard() {
             © 2025 VT Logistics — Demo UI Tailwind &amp; Chart.js
           </footer>
         </div>
-      </main>
-    </div>
+    </AppLayout>
   );
 }

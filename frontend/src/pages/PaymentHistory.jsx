@@ -1,7 +1,6 @@
 // src/pages/PaymentHistory.jsx
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../components/user/Sidebar";
-import Topbar from "../components/user/Topbar";
+import AppLayout from "../components/layout/AppLayout.jsx";
 import { KpiCards } from "../components/history/KpiCards.jsx";
 import { FilterBar } from "../components/history/FilterBar.jsx";
 import { PaymentTable } from "../components/history/PaymentTable.jsx";
@@ -40,12 +39,30 @@ function mapTxnToRow(t) {
 }
 
 export default function PaymentHistory() {
-  const [filters, setFilters] = useState({ q:"", from:"", to:"", company:"", status:"", sortBy:"date_desc" });
-  const [page, setPage] = useState(1);
-  const pageSize = 8;
+  const [filters, setFilters] = useState({ q:"", company:"", status:"", sortBy:"date_desc" });
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Hàm logout
+  const logout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    window.location.href = "/sign-in";
+  };
+
+  // Kiểm tra role và logout nếu không đúng
+  useEffect(() => {
+    const userData = localStorage.getItem("gd_user");
+    const role = localStorage.getItem("role");
+
+    if (!userData || role !== "user") {
+      console.warn(`Access denied: Role '${role}' is not allowed for user pages`);
+      logout();
+    }
+  }, []);
 
   useEffect(() => {
     let aborted = false;
@@ -53,13 +70,38 @@ export default function PaymentHistory() {
       try {
         setLoading(true);
         setError(null);
-        // chỉ lấy giao dịch thành công
-        const res = await api.get(`/transactions?payment_status=SUCCESS`);
+        
+        // Lấy customer_id từ localStorage
+        let customerId = null;
+        try {
+          const userData = localStorage.getItem("gd_user");
+          if (userData) {
+            const user = JSON.parse(userData);
+            const role = localStorage.getItem("role");
+            if (role === "user" && user.id) {
+              customerId = user.id;
+            }
+          }
+        } catch (err) {
+          console.error("Error getting customer_id:", err);
+        }
+
+        // Lấy giao dịch thành công của customer này
+        let url = `/transactions?payment_status=SUCCESS`;
+        if (customerId) {
+          url += `&customer_id=${customerId}`;
+        }
+        
+        const res = await api.get(url);
         const data = Array.isArray(res.data) ? res.data : [];
         const mapped = data.map(mapTxnToRow);
         if (!aborted) setRows(mapped);
+        
+        // Debug log
+        console.log("PaymentHistory - customerId:", customerId);
+        console.log("PaymentHistory - transactions found:", data.length);
       } catch (err) {
-        console.error(err);
+        console.error("PaymentHistory error:", err);
         if (!aborted) setError("Không thể tải lịch sử thanh toán");
       } finally {
         if (!aborted) setLoading(false);
@@ -72,21 +114,29 @@ export default function PaymentHistory() {
   const filtered = useMemo(() => {
     let arr = [...rows];
 
+    // Tìm kiếm
     if (filters.q) {
-      const q = filters.q.toLowerCase();
+      const q = filters.q.toLowerCase().trim();
       const qNum = q.replace(/[^\d]/g, "");
       arr = arr.filter(
         (x) =>
           x.id.toLowerCase().includes(q) ||
           x.company.toLowerCase().includes(q) ||
-          String(x.amount).includes(qNum)
+          (qNum && String(x.amount).includes(qNum))
       );
     }
-    if (filters.from) arr = arr.filter((x) => toDate(x.date) >= new Date(filters.from));
-    if (filters.to)   arr = arr.filter((x) => toDate(x.date) <= new Date(filters.to));
-    if (filters.company) arr = arr.filter((x) => x.company === filters.company);
-    if (filters.status)  arr = arr.filter((x) => x.status === filters.status);
 
+    // Lọc theo công ty
+    if (filters.company) {
+      arr = arr.filter((x) => x.company === filters.company);
+    }
+
+    // Lọc theo trạng thái
+    if (filters.status) {
+      arr = arr.filter((x) => x.status === filters.status);
+    }
+
+    // Sắp xếp
     arr.sort((a, b) => {
       switch (filters.sortBy) {
         case "date_asc": return toDate(a.date) - toDate(b.date);
@@ -96,6 +146,7 @@ export default function PaymentHistory() {
         default: return 0;
       }
     });
+    
     return arr;
   }, [filters, rows]);
 
@@ -115,17 +166,10 @@ export default function PaymentHistory() {
     return { total, count, avg, refunded, thisMonth };
   }, [filtered]);
 
-  // paging
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const pageRows = filtered.slice(start, end);
 
   return (
-    <>
-      <Sidebar />
-      <Topbar />
-      <main className="ml-20 pt-[72px] min-h-screen flex flex-col">
-        <div className="px-4 md:px-6 py-6 space-y-6">
+    <AppLayout>
+      <div className="px-4 md:px-6 py-6 space-y-6">
           <section className="bg-white border border-slate-200 rounded-2xl shadow-soft p-5 md:p-7">
             <h2 className="text-[34px] md:text-[40px] leading-none font-extrabold text-blue-800 mb-5">
               Payment History
@@ -140,7 +184,7 @@ export default function PaymentHistory() {
             />
           </section>
 
-          <FilterBar onChange={(f) => { setFilters(f); setPage(1); }} />
+          <FilterBar onChange={(f) => { setFilters(f); }} rows={rows} />
 
           {loading ? (
             <div className="bg-white border border-slate-200 rounded-2xl shadow-soft p-8 text-center text-slate-500">
@@ -152,17 +196,12 @@ export default function PaymentHistory() {
             </div>
           ) : (
             <PaymentTable
-              rows={pageRows}
-              page={page}
-              pageSize={pageSize}
+              rows={filtered}
               totalCount={filtered.length}
-              onPrev={() => setPage((p) => Math.max(1, p - 1))}
-              onNext={() => setPage((p) => (end < filtered.length ? p + 1 : p))}
               fmt={fmtVND}
             />
           )}
         </div>
-      </main>
-    </>
+    </AppLayout>
   );
 }

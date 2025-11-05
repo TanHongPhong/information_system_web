@@ -1,12 +1,232 @@
-import React, { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import React, { useEffect, useState, useImperativeHandle, forwardRef, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import feather from "feather-icons";
+import { invalidateOrdersCache } from "../../hooks/useOrdersData";
 
-export default function OrderRequests({ onViewDetail }) {
+// Toast notification utility
+const showToast = (message, type = "success") => {
+  const toast = document.createElement("div");
+  const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
+  toast.className = `fixed bottom-6 right-6 ${bgColor} text-white text-sm px-4 py-3 rounded-lg shadow-lg z-[60] flex items-center gap-2 animate-slide-up`;
+  toast.innerHTML = `
+    <span>${type === "success" ? "✓" : "✗"}</span>
+    <span>${message}</span>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
+};
+
+const OrderRequests = forwardRef(({ onViewDetail, onRefreshShipping }, ref) => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Lấy company_id từ localStorage
+  const getCompanyId = () => {
+    try {
+      const userData = localStorage.getItem("gd_user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.company_id) return user.company_id;
+      }
+    } catch (error) {
+      console.error("Error getting company_id:", error);
+    }
+    return 1; // Default company_id
+  };
+
+  // Fetch orders với status PAID (đã thanh toán, chờ supplier chấp nhận)
+  const fetchOrders = async (silent = false) => {
+    try {
+      if (!silent) {
+        setLoading(true);
+      }
+      
+      const companyId = getCompanyId();
+      const response = await fetch(
+        `http://localhost:5001/api/cargo-orders?company_id=${companyId}&status=PAID`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data || []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch orders:", response.status, errorData);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    
+    // Refresh mỗi 5 giây để cập nhật dữ liệu mới (ngầm)
+    const interval = setInterval(() => fetchOrders(true), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Expose refresh function and handlers to parent
+  useImperativeHandle(ref, () => ({
+    refresh: () => fetchOrders(true),
+    handleAcceptOrder,
+    handleRejectOrder
+  }));
+
+  // Filter orders based on search - sử dụng useMemo để cache
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const query = searchQuery.toLowerCase();
+    return orders.filter((order) => {
+      return (
+        (order.order_id && order.order_id.toString().includes(query)) ||
+        (order.customer_name && order.customer_name.toLowerCase().includes(query)) ||
+        (order.cargo_name && order.cargo_name.toLowerCase().includes(query))
+      );
+    });
+  }, [orders, searchQuery]);
+
+  // Handle accept order - sử dụng useCallback để tránh re-render
+  const handleAcceptOrder = useCallback(async (orderId, closePanel) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/cargo-orders/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "ACCEPTED",  // Đã tiếp nhận
+        }),
+      });
+
+      if (response.ok) {
+        // Hiển thị toast notification
+        showToast("Đã chấp nhận đơn hàng! Đơn hàng đã được chuyển vào Shipping.", "success");
+        
+        // Invalidate cache để các trang khác tự động refresh
+        invalidateOrdersCache();
+        
+        // Đóng panel nếu có callback
+        if (closePanel) {
+          closePanel();
+        }
+        
+        // Refresh ngầm cả 2 components
+        fetchOrders(true);  // Refresh OrderRequests
+        if (onRefreshShipping) {
+          onRefreshShipping();  // Trigger refresh ShippingTable
+        }
+      } else {
+        const error = await response.json();
+        showToast(error.message || "Không thể chấp nhận đơn hàng", "error");
+      }
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      showToast("Lỗi khi chấp nhận đơn hàng", "error");
+    }
+  }, [onRefreshShipping]);
+
+  // Handle reject order - sử dụng useCallback
+  const handleRejectOrder = useCallback(async (orderId, closePanel) => {
+    if (!confirm("Bạn có chắc chắn muốn từ chối đơn hàng này?")) {
+      return;
+    }
+
+    try {
+      // Có thể xóa order hoặc đổi status, tùy vào business logic
+      // Ở đây tôi sẽ xóa order khỏi danh sách (không có API reject, nên chỉ xóa khỏi UI)
+      showToast("Đã từ chối đơn hàng", "success");
+      
+      // Đóng panel nếu có callback
+      if (closePanel) {
+        closePanel();
+      }
+      
+      // Refresh danh sách
+      fetchOrders(true);
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      showToast("Lỗi khi từ chối đơn hàng", "error");
+    }
+  }, []);
+
+  // Handle accept all orders - sử dụng useCallback
+  const handleAcceptAll = useCallback(async () => {
+    if (filteredOrders.length === 0) {
+      showToast("Không có đơn hàng nào để chấp nhận", "error");
+      return;
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn chấp nhận tất cả ${filteredOrders.length} đơn hàng?`)) {
+      return;
+    }
+
+    try {
+      const promises = filteredOrders.map((order) =>
+        fetch(`http://localhost:5001/api/cargo-orders/${order.order_id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "ACCEPTED",  // Đã tiếp nhận
+          }),
+        })
+      );
+
+      await Promise.all(promises);
+      showToast(`Đã chấp nhận tất cả ${filteredOrders.length} đơn hàng!`, "success");
+      
+      // Refresh ngầm cả 2 components
+      fetchOrders(true);  // Refresh OrderRequests
+      if (onRefreshShipping) {
+        onRefreshShipping();  // Trigger refresh ShippingTable
+      }
+    } catch (error) {
+      console.error("Error accepting all orders:", error);
+      showToast("Lỗi khi chấp nhận đơn hàng", "error");
+    }
+  }, [filteredOrders, onRefreshShipping]);
+
+  useEffect(() => {
+    feather.replace();
+  }, [orders, searchQuery]);
+
+  // Format date - sử dụng useCallback để cache
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, []);
+
+  // Get initials from name - sử dụng useCallback để cache
+  const getInitials = useCallback((name) => {
+    if (!name) return "??";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  }, []);
+
   return (
-    <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all h-230 flex flex-col min-h-0">
+    <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all flex flex-col h-[calc(917px)] overflow-hidden">
       {/* Header panel */}
-      <div className="p-4 md:p-5 flex items-center justify-between gap-3 border-b border-slate-100">
+      <div className="p-4 md:p-5 flex items-center justify-between gap-3 border-b border-slate-100 flex-shrink-0">
         <h3 className="font-semibold text-lg text-slate-800 flex-shrink-0">
           Order Requests
         </h3>
@@ -17,216 +237,141 @@ export default function OrderRequests({ onViewDetail }) {
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
           ></i>
           <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
             placeholder="Tìm kiếm đơn hàng"
           />
         </div>
       </div>
 
-      <div className="px-4 md:px-5 pt-3 text-sm text-slate-600 font-medium">
-        Yêu cầu đặt hàng gần đây
+      <div className="px-4 md:px-5 pt-3 text-sm text-slate-600 font-medium flex-shrink-0">
+        Yêu cầu đặt hàng gần đây ({filteredOrders.length})
       </div>
 
-      {/* Danh sách yêu cầu cuộn dọc, KHÔNG cuộn ngang */}
+      {/* Danh sách yêu cầu cuộn dọc */}
       <div className="p-4 md:p-5 pt-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-4">
-        {/* ---- CARD 1 (có trạng thái NEW) ---- */}
-        <OrderCard
-          highlight
-          id="ORDERID 0112"
-          time="20/10/2025 9:00"
-          from="279 Nguyễn Tri Phương P8 Q10 TPHCM"
-          to="777 Lê Lai P3 Q1 TP.Hà Nội"
-          avatarBg="bg-indigo-100"
-          avatarText="text-indigo-700"
-          init="QT"
-          name="Quang Trè"
-          latA={10.7676}
-          lngA={106.6667}
-          latB={21.0285}
-          lngB={105.8542}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 2 ---- */}
-        <OrderCard
-          id="ORDERID 0255"
-          time="22/10/2025 14:00"
-          from="436 Trường Sa P3 Q7 TPHCM"
-          to="555 Phan Đăng Lưu P7 Q.Phú Nhuận"
-          avatarBg="bg-green-100"
-          avatarText="text-green-700"
-          init="VA"
-          name="Văn An"
-          latA={10.7880}
-          lngA={106.6800}
-          latB={10.8009}
-          lngB={106.6809}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 3 ---- */}
-        <OrderCard
-          id="ORDERID 8813"
-          time="28/10/2025 11:30"
-          from="KCN Amata, Biên Hòa, Đồng Nai"
-          to="KCN Sóng Thần, Dĩ An, Bình Dương"
-          avatarBg="bg-red-100"
-          avatarText="text-red-700"
-          init="TB"
-          name="Trần Bích"
-          latA={10.9452}
-          lngA={106.8553}
-          latB={10.8876}
-          lngB={106.7431}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 4 ---- */}
-        <OrderCard
-          id="ORDERID 9021"
-          time="01/11/2025 08:00"
-          from="123 Lê Lợi, P. Bến Thành, Q.1, TPHCM"
-          to="456 Hai Bà Trưng, P. Tân Định, Q.1"
-          avatarBg="bg-purple-100"
-          avatarText="text-purple-700"
-          init="HP"
-          name="Hữu Phước"
-          latA={10.7755}
-          lngA={106.7019}
-          latB={10.7860}
-          lngB={106.6903}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 5 ---- */}
-        <OrderCard
-          id="ORDERID 9134"
-          time="05/11/2025 10:00"
-          from="789 Nguyễn Văn Cừ, P.4, Q.5, TPHCM"
-          to="321 Trần Hưng Đạo, P. Cầu Ông Lãnh, Q.1"
-          avatarBg="bg-blue-100"
-          avatarText="text-blue-700"
-          init="GH"
-          name="Gia Hân"
-          latA={10.7598}
-          lngA={106.6750}
-          latB={10.7690}
-          lngB={106.6940}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 6 ---- */}
-        <OrderCard
-          id="ORDERID 9278"
-          time="10/11/2025 15:30"
-          from="456 Lý Thường Kiệt, P.7, Q. Tân Bình, TPHCM"
-          to="123 Nguyễn Huệ, P. Bến Nghé, Q.1"
-          avatarBg="bg-orange-100"
-          avatarText="text-orange-700"
-          init="AT"
-          name="Anh Tuấn"
-          latA={10.7970}
-          lngA={106.6600}
-          latB={10.7765}
-          lngB={106.7005}
-          onViewDetail={onViewDetail}
-        />
-
-        {/* ---- CARD 7 ---- */}
-        <OrderCard
-          id="ORDERID 9356"
-          time="15/11/2025 09:45"
-          from="321 Phạm Văn Đồng, P.3, Q. Gò Vấp, TPHCM"
-          to="654 Lê Văn Sỹ, P.11, Q.3"
-          avatarBg="bg-teal-100"
-          avatarText="text-teal-700"
-          init="BC"
-          name="Bảo Châu"
-          latA={10.8210}
-          lngA={106.6860}
-          latB={10.7840}
-          lngB={106.6760}
-          onViewDetail={onViewDetail}
-        />
+        {loading && orders.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">Đang tải...</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            {searchQuery ? "Không tìm thấy đơn hàng" : "Chưa có yêu cầu đơn hàng nào"}
+          </div>
+        ) : (
+          filteredOrders.map((order) => {
+            if (!order || !order.order_id) {
+              return null;
+            }
+            return (
+                <OrderCard
+                key={order.order_id}
+                order={order}
+                onViewDetail={onViewDetail}
+                onAccept={handleAcceptOrder}
+                formatDate={formatDate}
+                getInitials={getInitials}
+              />
+            );
+          })
+        )}
       </div>
 
       {/* Footer panel */}
-      <div className="px-4 md:px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <div>
-          Map tiles ©{" "}
-          <a
-            className="underline"
-            href="https://www.openstreetmap.org/copyright"
-            target="_blank"
-            rel="noreferrer"
-          >
-            OpenStreetMap
-          </a>{" "}
-          contributors.
+      <div className="px-4 md:px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 flex-shrink-0">
+        <div className="text-xs text-slate-500">
+          {filteredOrders.length} đơn hàng chờ xác nhận
         </div>
         <div className="flex items-center gap-2">
-          <button className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all">
+          <button
+            onClick={handleAcceptAll}
+            disabled={filteredOrders.length === 0 || loading}
+            className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Chấp nhận tất cả
           </button>
         </div>
       </div>
     </section>
   );
-}
+});
+
+OrderRequests.displayName = "OrderRequests";
+
+export default OrderRequests;
 
 /* ======================
    SUBCOMPONENTS
    ====================== */
 
-function OrderCard({
-  highlight = false,
-  id,
-  time,
-  from,
-  to,
-  avatarBg,
-  avatarText,
-  init,
-  name,
-  latA,
-  lngA,
-  latB,
-  lngB,
-  onViewDetail,
-}) {
-  const handleViewDetail = () => {
+const OrderCard = React.memo(function OrderCard({ order, onViewDetail, onAccept, formatDate, getInitials }) {
+  const navigate = useNavigate();
+  const isNew = order.status === "PAID";  // Đã thanh toán, chờ tiếp nhận
+
+  const handleViewDetail = useCallback(() => {
     onViewDetail?.({
-      highlight,
-      id,
-      time,
-      from,
-      to,
-      avatarBg,
-      avatarText,
-      init,
-      name,
-      latA,
-      lngA,
-      latB,
-      lngB,
+      id: `#${order.order_id}`,
+      order_id: order.order_id,
+      time: formatDate(order.created_at),
+      from: order.pickup_address,
+      to: order.dropoff_address,
+      name: order.customer_name || order.contact_name || "Khách hàng",
+      customer_email: order.customer_email,
+      customer_phone: order.customer_phone || order.contact_phone,
+      cargo_name: order.cargo_name,
+      weight_kg: order.weight_kg,
+      volume_m3: order.volume_m3,
+      status: order.status,
     });
-  };
+  }, [order, formatDate, onViewDetail]);
+
+  const handleAccept = useCallback(() => {
+    onAccept(order.order_id);
+  }, [order.order_id, onAccept]);
+
+  // Navigate sang trang order-tracking khi click vào mã đơn hàng
+  const handleOrderIdClick = useCallback((e) => {
+    e.stopPropagation(); // Ngăn event bubble
+    navigate(`/order-tracking?order_id=${order.order_id}`);
+  }, [order.order_id, navigate]);
+
+  // Generate avatar colors
+  const avatarColors = [
+    { bg: "bg-indigo-100", text: "text-indigo-700" },
+    { bg: "bg-green-100", text: "text-green-700" },
+    { bg: "bg-red-100", text: "text-red-700" },
+    { bg: "bg-purple-100", text: "text-purple-700" },
+    { bg: "bg-blue-100", text: "text-blue-700" },
+    { bg: "bg-orange-100", text: "text-orange-700" },
+    { bg: "bg-teal-100", text: "text-teal-700" },
+  ];
+  const colorIndex = (order.order_id || 0) % avatarColors.length;
+  const avatarColor = avatarColors[colorIndex];
+  
+  // Lấy tên khách hàng từ customer_name hoặc contact_name
+  const customerName = order.customer_name || order.contact_name || "Khách hàng";
 
   return (
     <article
       className={
-        highlight
+        isNew
           ? "relative z-0 rounded-xl p-4 border-2 border-amber-300 bg-amber-50 transition-all"
           : "relative z-0 rounded-xl p-4 border border-slate-200 bg-white hover:border-blue-300 transition-all"
       }
     >
       {/* Hàng trên: ORDERID + giờ + (NEW nếu highlight) */}
       <div className="flex items-start justify-between text-xs text-slate-500 leading-relaxed">
-        <div className="font-semibold text-slate-700">{id}</div>
+        <div 
+          onClick={handleOrderIdClick}
+          className="font-semibold text-slate-700 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+          title="Click để xem chi tiết đơn hàng"
+        >
+          #{order.order_id}
+        </div>
 
         <div className="flex items-start gap-2 flex-shrink-0">
-          <div className="text-slate-500">{time}</div>
-          {highlight && (
+          <div className="text-slate-500">{formatDate(order.created_at)}</div>
+          {isNew && (
             <span className="text-[10px] font-bold text-amber-800 bg-amber-300 px-1.5 py-[2px] rounded leading-none h-fit">
               NEW
             </span>
@@ -234,149 +379,76 @@ function OrderCard({
         </div>
       </div>
 
-      {/* block địa chỉ + map */}
-      <div className="mt-2 grid grid-cols-12 gap-3">
-        <div className="col-span-8 space-y-2 text-sm leading-relaxed text-slate-700">
+      {/* Thông tin hàng hóa */}
+      <div className="mt-2 space-y-2 text-sm leading-relaxed text-slate-700">
+        <div>
+          <div className="text-xs text-slate-500">Hàng hóa</div>
+          <div className="font-medium text-slate-800">{order.cargo_name || "Không có tên"}</div>
+        </div>
+
+        {/* Địa chỉ */}
+        <div className="grid grid-cols-1 gap-2">
           <div>
             <div className="text-xs text-slate-500">Từ</div>
-            <div className="font-medium text-slate-700 whitespace-pre-line">
-              {from}
+            <div className="font-medium text-slate-700 text-xs line-clamp-2">
+              {order.pickup_address || "Chưa có địa chỉ"}
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500">Đến</div>
-            <div className="font-medium text-slate-700 whitespace-pre-line">
-              {to}
+            <div className="font-medium text-slate-700 text-xs line-clamp-2">
+              {order.dropoff_address || "Chưa có địa chỉ"}
             </div>
           </div>
         </div>
 
-        <div className="col-span-4">
-          <MapView latA={latA} lngA={lngA} latB={latB} lngB={lngB} />
-        </div>
+        {/* Thông tin bổ sung */}
+        {(order.weight_kg || order.volume_m3) && (
+          <div className="flex items-center gap-3 text-xs text-slate-500 pt-1 border-t border-slate-100">
+            {order.weight_kg && (
+              <span>Trọng lượng: {order.weight_kg} kg</span>
+            )}
+            {order.volume_m3 && (
+              <span>Thể tích: {order.volume_m3} m³</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* footer: avatar + tên + nút Chi tiết */}
+      {/* footer: avatar + tên + nút Chấp nhận */}
       <div
         className={
-          highlight
+          isNew
             ? "mt-3 pt-3 border-t border-amber-200 flex items-center justify-between"
             : "mt-3 pt-3 border-t border-slate-100 flex items-center justify-between"
         }
       >
         <div className="flex items-center gap-2">
           <div
-            className={`w-7 h-7 rounded-full grid place-items-center font-semibold text-xs ${avatarBg} ${avatarText}`}
+            className={`w-7 h-7 rounded-full grid place-items-center font-semibold text-xs ${avatarColor.bg} ${avatarColor.text}`}
           >
-            {init}
+            {getInitials(customerName)}
           </div>
-          <div className="font-medium text-sm text-slate-800">{name}</div>
+          <div className="font-medium text-sm text-slate-800">
+            {customerName}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={handleViewDetail}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
           >
             Chi tiết
+          </button>
+          <button
+            onClick={handleAccept}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+          >
+            Chấp nhận
           </button>
         </div>
       </div>
     </article>
   );
-}
-
-/**
- * MapView
- * - Tạo 1 mini map Leaflet riêng biệt cho từng đơn.
- * - Không tương tác (pointer-events: none), bo góc, có border giống card gốc.
- * - Chiều cao cố định ~90px để giống screenshot ban đầu.
- */
-function MapView({ latA, lngA, latB, lngB }) {
-  const containerRef = useRef(null);
-  const mapRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Nếu StrictMode render 2 lần, huỷ map cũ trước khi tạo map mới
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    // tạo map
-    const map = L.map(containerRef.current, {
-      attributionControl: false,
-      zoomControl: false,
-      scrollWheelZoom: false,
-      dragging: false,
-      doubleClickZoom: false,
-      boxZoom: false,
-      keyboard: false,
-    });
-
-    mapRef.current = map;
-
-    // tile nền
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19 }
-    ).addTo(map);
-
-    const points = [];
-
-    // điểm A (màu xanh dương)
-    if (!isNaN(latA) && !isNaN(lngA)) {
-      points.push([latA, lngA]);
-      L.circleMarker([latA, lngA], {
-        radius: 6,
-        weight: 2,
-        color: "#2563eb",
-        fillColor: "#60a5fa",
-        fillOpacity: 0.9,
-      }).addTo(map);
-    }
-
-    // điểm B (màu xanh lá)
-    if (!isNaN(latB) && !isNaN(lngB)) {
-      points.push([latB, lngB]);
-      L.circleMarker([latB, lngB], {
-        radius: 6,
-        weight: 2,
-        color: "#059669",
-        fillColor: "#34d399",
-        fillOpacity: 0.9,
-      }).addTo(map);
-    }
-
-    if (points.length === 2) {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [12, 12], maxZoom: 16 });
-    } else if (points.length === 1) {
-      map.setView(points[0], 15);
-    } else {
-      map.setView([10.776, 106.7], 12); // fallback HCM
-    }
-
-    // fix bug map trắng lần render đầu (Leaflet cần biết kích thước)
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 0);
-
-    // cleanup khi component unmount / rerender
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [latA, lngA, latB, lngB]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="w-full h-[90px] rounded-lg border border-slate-200 overflow-hidden pointer-events-none bg-slate-100 relative z-0"
-    />
-  );
-}
+});

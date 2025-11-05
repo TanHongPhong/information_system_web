@@ -1,91 +1,154 @@
-import React from "react";
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import feather from "feather-icons";
 
-export default function ShippingTable() {
-  const rows = [
-    {
-      id: "#ID12345678",
-      customer: "Lương Quang Trè",
-      route: "Vũng Tàu → Đà Nẵng",
-      eta: "20/10/2025",
-      status: { label: "Active", tone: "emerald" },
-    },
-    {
-      id: "#ID12345679",
-      customer: "Công Ty ABC",
-      route: "TP.HCM → Hà Nội",
-      eta: "15/10/2025",
-      status: { label: "Delivered", tone: "blue" },
-    },
-    {
-      id: "#ID12345680",
-      customer: "Nguyễn Văn An",
-      route: "Hải Phòng → Cần Thơ",
-      eta: "22/10/2025",
-      status: { label: "Pending", tone: "amber" },
-    },
-    {
-      id: "#ID12345681",
-      customer: "Trần Thị Bích",
-      route: "Bình Dương → Đồng Nai",
-      eta: "18/10/2025",
-      status: { label: "Cancelled", tone: "red" },
-    },
-    {
-      id: "#ID12345682",
-      customer: "Lê Hữu Phước",
-      route: "Đà Lạt → Nha Trang",
-      eta: "25/10/2025",
-      status: { label: "Delivered", tone: "blue" },
-    },
-    {
-      id: "#ID12345683",
-      customer: "Phạm Gia Hân",
-      route: "Biên Hòa → TP.HCM",
-      eta: "08/11/2025",
-      status: { label: "Active", tone: "emerald" },
-    },
-    {
-      id: "#ID12345684",
-      customer: "Công Ty Rồng Việt",
-      route: "Hà Nội → Đà Nẵng",
-      eta: "12/11/2025",
-      status: { label: "Active", tone: "emerald" },
-    },
-    {
-      id: "#ID12345685",
-      customer: "Hoàng Anh Tuấn",
-      route: "Cà Mau → Bạc Liêu",
-      eta: "30/10/2025",
-      status: { label: "Pending", tone: "amber" },
-    },
-    {
-      id: "#ID12345686",
-      customer: "Ngô Bảo Châu",
-      route: "TP.HCM → Vũng Tàu",
-      eta: "02/12/2025",
-      status: { label: "Delivered", tone: "blue" },
-    },
-    {
-      id: "#ID12345687",
-      customer: "Tập đoàn FPT",
-      route: "Hà Nội → TP.HCM",
-      eta: "15/12/2025",
-      status: { label: "Active", tone: "emerald" },
-    },
-  ];
+const ShippingTable = forwardRef((props, ref) => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Lấy company_id từ localStorage
+  const getCompanyId = () => {
+    try {
+      const userData = localStorage.getItem("gd_user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.company_id) return user.company_id;
+      }
+    } catch (error) {
+      console.error("Error getting company_id:", error);
+    }
+    return 1; // Default company_id
+  };
+
+  // Fetch orders với status CONFIRMED, IN_TRANSIT, COMPLETED (đã được chấp nhận)
+  const fetchOrders = async (silent = false) => {
+    try {
+      if (!silent) {
+        setLoading(true);
+      }
+      
+      const companyId = getCompanyId();
+      // Fetch orders với các status đã được chấp nhận
+      const response = await fetch(
+        `http://localhost:5001/api/cargo-orders?company_id=${companyId}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filter chỉ lấy orders đã được chấp nhận (ACCEPTED, LOADING, IN_TRANSIT, WAREHOUSE_RECEIVED, COMPLETED)
+        const acceptedOrders = data.filter(
+          (order) =>
+            order.status === "ACCEPTED" ||
+            order.status === "LOADING" ||
+            order.status === "IN_TRANSIT" ||
+            order.status === "WAREHOUSE_RECEIVED" ||
+            order.status === "COMPLETED"
+        );
+        setOrders(acceptedOrders);
+      } else {
+        console.error("Failed to fetch orders");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Refresh mỗi 5 giây để cập nhật dữ liệu mới (ngầm)
+    const interval = setInterval(() => fetchOrders(true), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Expose refresh function to parent
+  React.useImperativeHandle(ref, () => ({
+    refresh: () => fetchOrders(true)
+  }));
+
+  // Format date helper - sử dụng useCallback để cache
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return "Chưa có";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }, []);
+
+  // Map status helper - cache để tránh tính toán lại
+  const getStatusInfo = useCallback((status) => {
+    const statusMap = {
+      ACCEPTED: { label: "Đã tiếp nhận", tone: "blue" },
+      LOADING: { label: "Bốc hàng", tone: "purple" },
+      IN_TRANSIT: { label: "Đang vận chuyển", tone: "emerald" },
+      WAREHOUSE_RECEIVED: { label: "Nhập kho", tone: "cyan" },
+      COMPLETED: { label: "Hoàn thành", tone: "green" },
+    };
+    return statusMap[status] || { label: "Đang xử lý", tone: "amber" };
+  }, []);
+
+  // Map order data to table format - sử dụng useMemo để cache
+  const rows = useMemo(() => {
+    return orders.map((order) => {
+      const statusInfo = getStatusInfo(order.status);
+      
+      // Format route
+      const route = order.pickup_address && order.dropoff_address
+        ? `${order.pickup_address.split(",")[0]} → ${order.dropoff_address.split(",")[0]}`
+        : "Chưa có thông tin";
+
+      return {
+        id: `#${order.order_id}`,
+        order_id: order.order_id,
+        customer: order.customer_name || "Khách hàng",
+        route: route,
+        eta: formatDate(order.pickup_time) || "Chưa có",
+        status: { label: statusInfo.label, tone: statusInfo.tone },
+      };
+    });
+  }, [orders, formatDate, getStatusInfo]);
+
+  // Filter rows based on search query - sử dụng useMemo để cache
+  const filteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows;
+    const query = searchQuery.toLowerCase();
+    return rows.filter((row) => {
+      return (
+        row.id.toLowerCase().includes(query) ||
+        row.customer.toLowerCase().includes(query)
+      );
+    });
+  }, [rows, searchQuery]);
+
+  useEffect(() => {
+    feather.replace();
+  }, [searchQuery]);
 
   return (
     <section className="bg-white border border-slate-200 rounded-[1rem] shadow-[0_10px_28px_rgba(2,6,23,.08)] hover:shadow-[0_16px_40px_rgba(2,6,23,.12)] hover:-translate-y-px transition-all h-[calc(100vh-180px)] flex flex-col overflow-hidden">
-      <div className="px-6 py-4 flex items-center justify-between">
+      <div className="px-6 py-4 flex items-center justify-between gap-4">
         <h3 className="font-semibold text-lg text-slate-800">
           Shipping
         </h3>
-        <a
-          href="#"
-          className="text-sm font-medium text-blue-600 hover:underline"
-        >
-          Xem tất cả
-        </a>
+        <div className="relative flex-1 max-w-xs">
+          <i
+            data-feather="search"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          ></i>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all"
+            placeholder="Tìm kiếm theo mã đơn hàng hoặc tên khách hàng..."
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto flex-1 min-h-0">
@@ -102,18 +165,40 @@ export default function ShippingTable() {
             </thead>
 
             <tbody className="text-slate-700">
-              {rows.map((row, i) => (
-                <tr
-                  key={row.id}
+              {loading && orders.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
+                    Đang tải...
+                  </td>
+                </tr>
+              ) : filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
+                    {searchQuery ? "Không tìm thấy đơn hàng nào" : "Chưa có đơn hàng nào"}
+                  </td>
+                </tr>
+              ) : (
+                filteredRows.map((row, i) => (
+                  <tr
+                    key={row.order_id || row.id}
                   className={`${
                     i % 2 === 1 ? "bg-slate-50/50" : "bg-white"
-                  } hover:bg-slate-100/60 border-b border-slate-100 last:border-0`}
+                    } hover:bg-slate-100/60 border-b border-slate-100 last:border-0 transition-colors cursor-pointer`}
                 >
                   <Td className="font-medium text-slate-800">
+                      <a
+                        href={`/order-tracking?order_id=${row.order_id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/order-tracking?order_id=${row.order_id}`);
+                        }}
+                        className="text-sm font-medium text-blue-600 hover:underline cursor-pointer"
+                      >
                     {row.id}
+                      </a>
                   </Td>
                   <Td>{row.customer}</Td>
-                  <Td>{row.route}</Td>
+                    <Td className="max-w-xs truncate">{row.route}</Td>
                   <Td>{row.eta}</Td>
                   <Td>
                     <Chip tone={row.status.tone}>
@@ -121,28 +206,30 @@ export default function ShippingTable() {
                     </Chip>
                   </Td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </section>
   );
-}
+});
 
-function Th({ children }) {
+// Memoize các component con để tránh re-render không cần thiết
+const Th = React.memo(function Th({ children }) {
   return (
     <th className="px-6 py-3 text-left uppercase tracking-wider text-xs font-semibold">
       {children}
     </th>
   );
-}
+});
 
-function Td({ children, className = "" }) {
+const Td = React.memo(function Td({ children, className = "" }) {
   return <td className={`px-6 py-4 ${className}`}>{children}</td>;
-}
+});
 
-function Chip({ tone = "blue", children }) {
+const Chip = React.memo(function Chip({ tone = "blue", children }) {
   const cls = getToneClasses(tone);
   return (
     <span
@@ -152,7 +239,7 @@ function Chip({ tone = "blue", children }) {
       {children}
     </span>
   );
-}
+});
 
 function getToneClasses(tone) {
   switch (tone) {
@@ -183,3 +270,7 @@ function getToneClasses(tone) {
       };
   }
 }
+
+ShippingTable.displayName = "ShippingTable";
+
+export default ShippingTable;

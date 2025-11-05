@@ -56,9 +56,9 @@ export default function SidebarNav() {
         {/* Nút 2 (active) */}
         <li>
           <button
-            onClick={() => navigate("/quan-li-doi-xe")}
+            onClick={() => navigate("/transports-management")}
             className={`relative group w-11 h-11 rounded-[12px] grid place-items-center transition-colors ${
-              isActive("/quan-li-doi-xe")
+              isActive("/transports-management")
                 ? "text-white bg-[#4A90E2] shadow-[0_10px_22px_rgba(74,144,226,.28)]"
                 : "border border-transparent text-[#99A3B0] hover:text-[#4A90E2] hover:bg-[#E9F2FF] hover:border-[#d7e7ff]"
             }`}

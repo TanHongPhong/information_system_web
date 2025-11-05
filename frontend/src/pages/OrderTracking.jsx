@@ -1,49 +1,83 @@
 // src/pages/OrderTrackingPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-import SidebarTrack from "../components/tracking/SidebarTrack";
-import TopbarTrack from "../components/tracking/TopbarTrack";
+import UnifiedSidebar from "../components/layout/UnifiedSidebar.jsx";
+import UnifiedTopbar from "../components/layout/UnifiedTopbar.jsx";
 import OrderSearchPanel from "../components/tracking/OrderSearchPanel";
-import MapPanel from "../components/tracking/MapPanel";
+import OrderInfoPanel from "../components/tracking/OrderInfoPanel";
 import StatusPanel from "../components/tracking/StatusPanel";
 import VehicleDetailsPanel from "../components/tracking/VehicleDetailsPanel";
 
 export default function OrderTrackingPage() {
-  // giữ chiều cao map để StatusPanel match
-  const [mapHeight, setMapHeight] = useState(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Quản lý đơn hàng được chọn
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  // giữ chiều cao panel để StatusPanel match
+  const [panelHeight, setPanelHeight] = useState(null);
+  
+  // Lấy order_id từ URL params
+  const orderIdFromUrl = searchParams.get("order_id");
+
+  // Kiểm tra role và logout nếu không đúng
+  useEffect(() => {
+    const userData = localStorage.getItem("gd_user");
+    const role = localStorage.getItem("role");
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+
+    if (!userData) {
+      logout();
+      return;
+    }
+
+    // Kiểm tra: chỉ admin transport_company mới được vào trang này
+    if (role !== "transport_company" || !isAdmin) {
+      console.warn(`Access denied: Only admin transport_company can access this page. Role: '${role}', isAdmin: ${isAdmin}`);
+      alert("Bạn không có quyền truy cập trang này. Chỉ admin công ty vận tải mới có quyền.");
+      logout();
+      return;
+    }
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+  };
 
   return (
     <div className="h-screen bg-slate-50 text-slate-900 font-['Inter',ui-sans-serif,system-ui] flex overflow-hidden">
-      {/* Sidebar bên trái */}
-      <SidebarTrack />
-
-      {/* Phần nội dung phải (header + 3 cột) */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* topbar */}
-        <TopbarTrack />
-
-        {/* main grid */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+      <UnifiedSidebar />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden ml-20">
+        <UnifiedTopbar />
+        <div className="flex-1 min-h-0 overflow-hidden pt-[72px]">
           <div className="p-4 grid grid-cols-12 gap-4 h-full min-h-0 lg:overflow-hidden">
             {/* LEFT: Order Search */}
             <div className="col-span-12 lg:col-span-3 min-h-0 flex flex-col">
               <div className="flex-1 min-h-0">
-                <OrderSearchPanel />
+                <OrderSearchPanel 
+                  onSelectOrder={setSelectedOrder} 
+                  selectedOrderId={selectedOrder?.order_id || orderIdFromUrl}
+                  initialOrderId={orderIdFromUrl}
+                />
               </div>
             </div>
 
-            {/* CENTER: Map */}
+            {/* CENTER: Order Info */}
             <div className="col-span-12 lg:col-span-6 min-h-0 flex flex-col">
               <div className="flex-1 min-h-0 overflow-auto">
-                <MapPanel onMapHeight={setMapHeight} />
+                <OrderInfoPanel order={selectedOrder} onHeightChange={setPanelHeight} />
               </div>
             </div>
 
             {/* RIGHT: Status + Vehicle */}
             <div className="col-span-12 lg:col-span-3 min-h-0 flex flex-col">
               <div className="flex-1 min-h-0 overflow-auto pr-1 space-y-4">
-                <StatusPanel progress={0.6} mapHeight={mapHeight} />
-                <VehicleDetailsPanel />
+                <StatusPanel order={selectedOrder} mapHeight={panelHeight} />
+                <VehicleDetailsPanel order={selectedOrder} />
               </div>
             </div>
           </div>

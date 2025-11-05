@@ -1,13 +1,50 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 
 export default function Topbar() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [roleName, setRoleName] = useState("");
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     feather.replace();
-  }, []);
+  }, [open]);
+
+  // Click ngoài + Esc để đóng dropdown
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!open) return;
+      if (
+        btnRef.current &&
+        !btnRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const onEsc = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+    setOpen(false);
+  };
 
   useEffect(() => {
     const loadUser = () => {
@@ -92,26 +129,64 @@ export default function Topbar() {
               <i data-feather="archive" className="w-4 h-4"></i>
             </button>
 
-            <button
-              type="button"
-              className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50 transition-all"
-            >
-              <img
-                src="https://i.pravatar.cc/40?img=8"
-                alt="Avatar"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className="text-left leading-tight hidden sm:block">
-                <div className="text-[13px] font-semibold">{user?.name || "Người dùng"}</div>
-                <div className="text-[11px] text-slate-500 -mt-0.5">
-                  {roleName || "Vai trò"}
+            {/* User button + Dropdown */}
+            <div className="relative">
+              <button
+                ref={btnRef}
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={() => setOpen((v) => !v)}
+                className="relative z-20 group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50 transition"
+              >
+                <img
+                  src="https://i.pravatar.cc/40?img=8"
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="text-left leading-tight hidden sm:block">
+                  <div className="text-[13px] font-semibold">{user?.name || "Người dùng"}</div>
+                  <div className="text-[11px] text-slate-500 -mt-0.5">
+                    {roleName || "Vai trò"}
+                  </div>
                 </div>
+                <i
+                  data-feather="chevron-down"
+                  className={`text-slate-400 w-4 h-4 transition-transform duration-200 ${
+                    open ? "rotate-180" : "rotate-0"
+                  }`}
+                ></i>
+              </button>
+
+              {/* Dropdown menu */}
+              <div
+                ref={menuRef}
+                role="menu"
+                aria-label="User menu"
+                className={`
+                  absolute right-0 top-full -mt-5 pt-5 z-0 w-[182px] 
+                  overflow-hidden bg-white border border-slate-200 border-t-0 rounded-b-xl
+                  shadow-md ring-1 ring-black/5
+                  origin-top transition-all duration-200 ease-out
+                  ${
+                    open
+                      ? "opacity-100 scale-y-100"
+                      : "opacity-0 scale-y-95 pointer-events-none"
+                  }
+                `}
+                style={{ transformOrigin: "top" }}
+                onKeyDown={(e) => e.key === "Tab" && setOpen(false)}
+              >
+                <button
+                  role="menuitem"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
+                  <i data-feather="log-out" className="w-4 h-4" />
+                  Đăng xuất
+                </button>
               </div>
-              <i
-                data-feather="chevron-down"
-                className="text-slate-400 w-4 h-4"
-              ></i>
-            </button>
+            </div>
           </div>
         </div>
       </div>

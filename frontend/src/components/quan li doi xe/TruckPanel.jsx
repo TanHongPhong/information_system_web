@@ -142,20 +142,20 @@ const IconPhone = (props) => (
 // ====== BLOCK CON CHO THỐNG KÊ HÀNG DỌC ======
 function StatRow({ Icon, label, value }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0 border border-[#d8e6ff] text-[#1e4ed8] shadow-[0_8px_20px_rgba(37,99,235,.12),_inset_0_1px_0_rgba(255,255,255,.75)] bg-[linear-gradient(180deg,#eef4ff,#e6f0ff)]">
-        <Icon className="w-[22px] h-[22px]" />
+    <div className="flex items-start gap-2.5">
+      <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 border border-[#d8e6ff] text-[#1e4ed8] shadow-[0_8px_20px_rgba(37,99,235,.12),_inset_0_1px_0_rgba(255,255,255,.75)] bg-[linear-gradient(180deg,#eef4ff,#e6f0ff)]">
+        <Icon className="w-[20px] h-[20px]" />
       </div>
 
-      <div className="text-left">
+      <div className="text-left min-w-0 flex-1">
         <div
-          className="text-[13px] text-[#697386] mb-[2px]"
+          className="text-[12px] text-[#697386] mb-[2px]"
           style={{ fontWeight: 400 }}
         >
           {label}
         </div>
         <div
-          className="text-[18px] leading-[1.3] text-[#1C2A44]"
+          className="text-[16px] leading-[1.3] text-[#1C2A44] break-words"
           style={{ fontWeight: 400 }}
         >
           {value}
@@ -168,20 +168,21 @@ function StatRow({ Icon, label, value }) {
 // ====== CARD THÔNG TIN NHỎ (Biển số / Tài xế / ...) ======
 function InfoCard({ Icon, k, v }) {
   return (
-    <div className="flex items-start gap-2 p-3 rounded-[10px] border border-[#E5EAF2] bg-[#F8FBFF]">
-      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 border border-[#d8e6ff] text-[#1e4ed8] shadow-[0_6px_14px_rgba(37,99,235,.10),_inset_0_1px_0_rgba(255,255,255,.75)] bg-[linear-gradient(180deg,#eef4ff,#e6f0ff)]">
-        <Icon className="w-[16px] h-[16px]" />
+    <div className="flex items-center gap-2 p-2.5 rounded-[10px] border border-[#E5EAF2] bg-[#F8FBFF]">
+      <div className="w-6 h-6 rounded-[8px] flex items-center justify-center shrink-0 border border-[#d8e6ff] text-[#1e4ed8] shadow-[0_6px_14px_rgba(37,99,235,.10),_inset_0_1px_0_rgba(255,255,255,.75)] bg-[linear-gradient(180deg,#eef4ff,#e6f0ff)]">
+        <Icon className="w-[14px] h-[14px]" />
       </div>
-      <div className="leading-[1.25]">
+      <div className="leading-[1.25] min-w-0 flex-1">
         <div
-          className="text-[12px] text-[#64748B]"
+          className="text-[11px] text-[#64748B]"
           style={{ fontWeight: 400 }}
         >
           {k}
         </div>
         <div
-          className="text-[14px] text-[#0F172A] whitespace-nowrap"
+          className="text-[13px] text-[#0F172A] whitespace-nowrap overflow-hidden text-ellipsis"
           style={{ fontWeight: 400 }}
+          title={v}
         >
           {v}
         </div>
@@ -211,8 +212,8 @@ export default function TruckPanel({ vehicle, loadPercent, maxTon }) {
       }}
     >
       {/* BÊN TRÁI: số liệu + cụm thông tin xe */}
-      <div className="flex flex-col gap-6 text-[#1C2A44] w-full max-w-[260px] shrink-0">
-        <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 text-[#1C2A44] w-full max-w-[320px] shrink-0 min-w-0">
+        <div className="flex flex-col gap-4">
           <StatRow
             Icon={IconPackage}
             label="Khối lượng tải"
@@ -235,7 +236,7 @@ export default function TruckPanel({ vehicle, loadPercent, maxTon }) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[14px] leading-[1.3]">
+        <div className="grid grid-cols-2 gap-2.5 text-[13px] leading-[1.3]">
           <InfoCard Icon={IconHash} k="Biển số" v={plate} />
           <InfoCard Icon={IconUser} k="Tài xế" v={driver} />
           <InfoCard Icon={IconMapPin} k="Tuyến" v={route} />
@@ -252,9 +253,9 @@ export default function TruckPanel({ vehicle, loadPercent, maxTon }) {
       {/* BÊN PHẢI: chiếc xe tải + overlay phần trăm cam */}
       <div className="relative flex-1 flex items-center justify-center min-h-[220px]">
         <div
-          className="relative w-full max-w-[620px] origin-right"
+          className="relative w-full max-w-[580px] origin-center"
           style={{
-            transform: "translateX(6%) scale(1)",
+            transform: "scale(0.9)",
             filter: "drop-shadow(0 2px 6px rgba(0,0,0,.08))",
           }}
         >

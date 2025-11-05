@@ -1,4 +1,5 @@
 import { sepayConfig, buildSepayQrUrl, validateSepayConfig } from "../config/sepay.js";
+import pool from "../config/db.js";
 
 /**
  * GET /api/sepay/config
@@ -73,8 +74,18 @@ export const createSepayQr = async (req, res) => {
       });
     }
 
-    // Tạo description nếu chưa có
-    const qrDescription = description || `ORDER-${order_id || Date.now()}`;
+    // Tạo description với order_id (4 chữ số)
+    let qrDescription = description;
+    if (!qrDescription && order_id) {
+      // order_id giờ là VARCHAR(4), format thành "GMD1234"
+      if (/^\d{4}$/.test(order_id)) {
+        qrDescription = `GMD${order_id}`;
+      } else {
+        qrDescription = `ORDER-${order_id}`;
+      }
+    } else if (!qrDescription) {
+      qrDescription = `ORDER-${Date.now()}`;
+    }
 
     // Build QR URL
     let qrUrl;

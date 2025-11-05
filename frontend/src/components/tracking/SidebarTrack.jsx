@@ -30,7 +30,7 @@ export default function SidebarTrack() {
       </div>
 
       {/* Nav buttons - Supplier Group */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 flex-1">
         {/* Dashboard Supplier */}
         <button
           onClick={() => navigate("/suplier")}
@@ -46,9 +46,9 @@ export default function SidebarTrack() {
 
         {/* Theo dõi đội xe */}
         <button
-          onClick={() => navigate("/quan-li-doi-xe")}
+          onClick={() => navigate("/transports-management")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/quan-li-doi-xe")
+            isActive("/transports-management")
               ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
           }`}
@@ -68,6 +68,23 @@ export default function SidebarTrack() {
           title="Theo dõi đơn hàng"
         >
           <i data-feather="map" className="w-6 h-6"></i>
+        </button>
+      </div>
+
+      {/* Logout button at bottom */}
+      <div className="mt-auto">
+        <button
+          onClick={() => {
+            localStorage.removeItem("gd_user");
+            localStorage.removeItem("role");
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("remember");
+            navigate("/sign-in", { replace: true });
+          }}
+          className="w-10 h-10 rounded-xl grid place-items-center text-red-600 hover:bg-red-50 ring-1 ring-red-200 hover:ring-red-300 transition-colors"
+          title="Đăng xuất"
+        >
+          <i data-feather="log-out" className="w-6 h-6"></i>
         </button>
       </div>
     </aside>

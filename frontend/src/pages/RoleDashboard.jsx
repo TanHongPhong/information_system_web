@@ -21,7 +21,7 @@ const DASHBOARD_DATA = {
   pagesByRole: {
     transport_company: [
       { name: "Dashboard Supplier", path: "/suplier", icon: "Truck" },
-      { name: "Theo dõi đội xe", path: "/quan-li-doi-xe", icon: "Truck" },
+      { name: "Theo dõi đội xe", path: "/transports-management", icon: "Truck" },
       {
         name: "Theo dõi đơn hàng",
         path: "/order-tracking",

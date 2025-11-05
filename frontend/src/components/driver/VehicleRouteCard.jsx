@@ -11,6 +11,9 @@ export default function VehicleRouteCard({
   statusText = "Đang hoạt động",
   fromLabel = "TP. Hồ Chí Minh",
   toLabel = "Hà Nội",
+  onDeparture,
+  onWarehouseArrival,
+  vehicleId,
 }) {
   return (
     <section className="bg-white rounded-[1rem] shadow-[0_12px_40px_rgba(2,6,23,.08)] p-4">
@@ -65,12 +68,20 @@ export default function VehicleRouteCard({
 
           {/* Hai nút */}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button className="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-blue-600 active:scale-[.98]">
+            <button
+              onClick={onDeparture}
+              disabled={!onDeparture}
+              className="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-blue-600 active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <PlayIcon className="w-4 h-4" />
               <span>Xuất phát</span>
             </button>
 
-            <button className="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200 active:scale-[.98]">
+            <button
+              onClick={onWarehouseArrival}
+              disabled={!onWarehouseArrival}
+              className="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200 active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <HomeIcon className="w-4 h-4" />
               <span>Đã tới kho</span>
             </button>

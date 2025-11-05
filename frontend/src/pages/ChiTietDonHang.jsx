@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
 
-import Sidebar from "../components/chi tiet don hang/Sidebar.jsx";
-import Topbar from "../components/chi tiet don hang/Topbar.jsx";
+import AppLayout from "../components/layout/AppLayout.jsx";
 import RecentOrders from "../components/chi tiet don hang/RecentOrders.jsx";
 import FleetStatus from "../components/chi tiet don hang/FleetStatus.jsx";
 import ShippingTable from "../components/chi tiet don hang/ShippingTable.jsx";
@@ -10,21 +10,43 @@ import OrderRequests from "../components/chi tiet don hang/OrderRequests.jsx";
 import OrderDetailSheet from "../components/chi tiet don hang/OrderDetailSheet.jsx";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
+  // Kiểm tra role và logout nếu không đúng
+  useEffect(() => {
+    const userData = localStorage.getItem("gd_user");
+    const role = localStorage.getItem("role");
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+
+    if (!userData) {
+      logout();
+      return;
+    }
+
+    // Kiểm tra: chỉ admin transport_company mới được vào trang này
+    if (role !== "transport_company" || !isAdmin) {
+      console.warn(`Access denied: Only admin transport_company can access this page. Role: '${role}', isAdmin: ${isAdmin}`);
+      alert("Bạn không có quyền truy cập trang này. Chỉ admin công ty vận tải mới có quyền.");
+      logout();
+      return;
+    }
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+  };
+
   // render feather icons vào <i data-feather="...">
   useEffect(() => {
     feather.replace();
   }, []);
 
   return (
-    <div className="min-h-screen text-slate-800 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_60%,#eef2f7_100%)]">
-      {/* Sidebar cố định */}
-      <Sidebar />
-
-      {/* Header cố định */}
-      <Topbar />
-
-      {/* Main content (đẩy qua phải 80px và xuống dưới topbar) */}
-      <main className="ml-20 pt-[72px]">
+    <AppLayout className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_60%,#eef2f7_100%)]">
         <div className="max-w-[120rem] mx-auto p-4 md:p-6 pt-3">
           {/* Page header */}
           <header className="flex items-center justify-between gap-4">
@@ -93,10 +115,9 @@ export default function Dashboard() {
             © 2025 VT Logistics — Demo UI Tailwind &amp; Chart.js
           </footer>
         </div>
-      </main>
 
       {/* Overlay + Sheet chi tiết đơn (mở sẵn như HTML bạn đưa) */}
       <OrderDetailSheet />
-    </div>
+    </AppLayout>
   );
 }

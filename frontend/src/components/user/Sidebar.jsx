@@ -29,7 +29,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav icons - User Group */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 flex-1">
         <button
           onClick={() => navigate("/home-page")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
@@ -55,42 +55,6 @@ export default function Sidebar() {
         </button>
 
         <button
-          onClick={() => navigate("/vehicle-list")}
-          className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/vehicle-list")
-              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          }`}
-          title="Chọn xe"
-        >
-          <i data-feather="truck" className="w-6 h-6"></i>
-        </button>
-
-        <button
-          onClick={() => navigate("/nhap-in4")}
-          className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/nhap-in4")
-              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          }`}
-          title="Nhập thông tin"
-        >
-          <i data-feather="clipboard" className="w-6 h-6"></i>
-        </button>
-
-        <button
-          onClick={() => navigate("/payment-qr")}
-          className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/payment-qr")
-              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-          }`}
-          title="Quét mã QR"
-        >
-          <i data-feather="credit-card" className="w-6 h-6"></i>
-        </button>
-
-        <button
           onClick={() => navigate("/payment-history")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
             isActive("/payment-history")
@@ -112,6 +76,23 @@ export default function Sidebar() {
           title="Theo dõi đơn hàng"
         >
           <i data-feather="map" className="w-6 h-6"></i>
+        </button>
+      </div>
+
+      {/* Logout button at bottom */}
+      <div className="mt-auto">
+        <button
+          onClick={() => {
+            localStorage.removeItem("gd_user");
+            localStorage.removeItem("role");
+            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("remember");
+            navigate("/sign-in", { replace: true });
+          }}
+          className="w-10 h-10 rounded-xl grid place-items-center text-red-600 hover:bg-red-50 ring-1 ring-red-200 hover:ring-red-300 transition-colors"
+          title="Đăng xuất"
+        >
+          <i data-feather="log-out" className="w-6 h-6"></i>
         </button>
       </div>
     </aside>

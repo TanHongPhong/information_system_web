@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import feather from "feather-icons";
 
-export default function OrderDetailPanel({ order, onClose }) {
+export default function OrderDetailPanel({ order, onClose, onAccept, onReject }) {
   useEffect(() => {
     if (order) {
       feather.replace();
@@ -78,14 +78,18 @@ export default function OrderDetailPanel({ order, onClose }) {
                 </div>
               </div>
               <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <i data-feather="phone" className="w-4 h-4 text-slate-400"></i>
-                  <span className="text-slate-600">0912 345 678</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <i data-feather="mail" className="w-4 h-4 text-slate-400"></i>
-                  <span className="text-slate-600">{order.name.toLowerCase().replace(' ', '.')}@email.com</span>
-                </div>
+                {order.customer_phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <i data-feather="phone" className="w-4 h-4 text-slate-400"></i>
+                    <span className="text-slate-600">{order.customer_phone}</span>
+                  </div>
+                )}
+                {order.customer_email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <i data-feather="mail" className="w-4 h-4 text-slate-400"></i>
+                    <span className="text-slate-600">{order.customer_email}</span>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -131,22 +135,24 @@ export default function OrderDetailPanel({ order, onClose }) {
               Thông tin hàng hóa
             </h3>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Loại hàng</span>
-                <span className="text-sm font-medium text-slate-900">Hàng thông thường</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Khối lượng</span>
-                <span className="text-sm font-medium text-slate-900">~500 kg</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Kích thước</span>
-                <span className="text-sm font-medium text-slate-900">2m × 1.5m × 1m</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Giá trị hàng</span>
-                <span className="text-sm font-medium text-slate-900">~50.000.000 VNĐ</span>
-              </div>
+              {order.cargo_name && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Loại hàng</span>
+                  <span className="text-sm font-medium text-slate-900">{order.cargo_name}</span>
+                </div>
+              )}
+              {order.weight_kg && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Khối lượng</span>
+                  <span className="text-sm font-medium text-slate-900">{order.weight_kg} kg</span>
+                </div>
+              )}
+              {order.volume_m3 && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Thể tích</span>
+                  <span className="text-sm font-medium text-slate-900">{order.volume_m3} m³</span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -201,14 +207,28 @@ export default function OrderDetailPanel({ order, onClose }) {
           </button>
           
           <div className="flex items-center gap-3">
-            <button className="px-5 py-2.5 rounded-lg border border-red-300 bg-red-50 text-red-700 font-medium hover:bg-red-100 transition-colors">
+            <button 
+              onClick={() => {
+                if (onReject && order?.order_id) {
+                  onReject(order.order_id);
+                }
+              }}
+              className="px-5 py-2.5 rounded-lg border border-red-300 bg-red-50 text-red-700 font-medium hover:bg-red-100 transition-colors"
+            >
               <span className="flex items-center gap-2">
                 <i data-feather="x-circle" className="w-4 h-4"></i>
                 Từ chối
               </span>
             </button>
             
-            <button className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
+            <button 
+              onClick={() => {
+                if (onAccept && order?.order_id) {
+                  onAccept(order.order_id);
+                }
+              }}
+              className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+            >
               <span className="flex items-center gap-2">
                 <i data-feather="check-circle" className="w-4 h-4"></i>
                 Chấp nhận đơn

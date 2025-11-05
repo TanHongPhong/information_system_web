@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 
-export const createUser = async (name, phone, email, password, role) => {
+export const createUser = async (name, phone, email, password, role = 'user') => {
   const hashedPassword = await bcrypt.hash(password, 10);
   
   const query = `

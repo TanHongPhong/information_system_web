@@ -7,47 +7,61 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
-  const [role, setRole] = useState("");
-  const [remember, setRemember] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
     
-    // Debug: Kiểm tra role
-    console.log("Selected role:", role);
-    
     try {
       const response = await fetch("http://localhost:5001/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: pwd, role })
+        body: JSON.stringify({ email, password: pwd })
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        // Lưu thông tin user vào localStorage
+        // Lưu token và thông tin user vào localStorage
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token);
+        }
         localStorage.setItem("gd_user", JSON.stringify(data.user));
-        localStorage.setItem("role", role);
-        
-        if (remember) {
-          localStorage.setItem("remember", "true");
+        localStorage.setItem("role", data.user.role);
+        if (data.isAdmin) {
+          localStorage.setItem("isAdmin", "true");
         }
         
         alert("Đăng nhập thành công!");
         
-        // Điều hướng theo vai trò
-        const map = {
-          user: "/transport-companies",
-          driver: "/driver",
-          transport_company: "/suplier",
-          warehouse: "/warehouse",
-        };
-        
-        const targetPath = map[role] || "/dashboard";
-        console.log("Navigating to:", targetPath);
-        navigate(targetPath);
+        // Điều hướng theo vai trò từ database
+        // Chỉ admin transport_company mới vào được trang supplier
+        if (data.user.role === "transport_company" && data.isAdmin) {
+          navigate("/suplier");
+        } else {
+          const map = {
+            user: "/transport-companies",
+            driver: "/driver",
+            warehouse: "/warehouse",
+            transport_company: "/transport-companies",
+          };
+          
+          // Nếu là user thường có role transport_company nhưng không phải admin, không cho vào supplier
+          if (data.user.role === "transport_company" && !data.isAdmin) {
+            alert("Bạn không có quyền truy cập trang này. Chỉ admin mới có quyền quản lý công ty.");
+            navigate("/transport-companies");
+          } else {
+            const targetPath = map[data.user.role] || "/transport-companies";
+            console.log("Navigating to:", targetPath, "for role:", data.user.role);
+            
+            // Đặc biệt cho warehouse: hiển thị thông báo chào mừng
+            if (data.user.role === "warehouse") {
+              console.log("✅ Warehouse user logged in:", data.user.email);
+            }
+            
+            navigate(targetPath);
+          }
+        }
       } else {
         alert(data.error || "Đăng nhập thất bại!");
       }
@@ -62,7 +76,7 @@ export default function LoginForm() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Đăng nhập</h1>
-          <p className="subtitle-soft mt-1">Nhập thông tin & chọn đúng vai trò của bạn.</p>
+          <p className="subtitle-soft mt-1">Nhập thông tin đăng nhập của bạn.</p>
         </div>
         <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-white/70 border border-blue-100 text-blue-700 text-sm">
           <Lock className="w-4 h-4" /> Bảo mật
@@ -111,40 +125,7 @@ export default function LoginForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-6 gap-3 items-center">
-          <div className="col-span-6 sm:col-span-4">
-            <label htmlFor="role" className="text-sm font-medium text-slate-700">
-              Vai trò đăng nhập
-            </label>
-            <select
-              id="role"
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
-              required
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="">-- Chọn vai trò --</option>
-              <option value="user">Khách hàng</option>
-              <option value="driver">Tài xế</option>
-              <option value="transport_company">Công ty vận tải</option>
-              <option value="warehouse">Nhà kho</option>
-            </select>
-          </div>
-          <label className="col-span-3 sm:col-span-2 mt-7 inline-flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              className="rounded border-slate-300 text-blue-600 focus:ring-blue-200"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-            />
-            Nhớ tôi
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <a href="#" className="text-sm text-blue-600 hover:underline">
-            Quên mật khẩu?
-          </a>
+        <div className="flex items-center justify-end">
           <button type="submit" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold btn-shine btn-blue">
             <LogIn className="w-4 h-4" /> Đăng nhập
           </button>

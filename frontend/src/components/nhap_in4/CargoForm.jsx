@@ -1,7 +1,7 @@
 // components/CargoForm.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Crosshair, User, Phone, Layers, Scale, Move, Edit3, ArrowRight, CreditCard } from "lucide-react";
+import { MapPin, Crosshair, User, Phone, Layers, Scale, Move, Edit3, CreditCard } from "lucide-react";
 import { Input, Select, TextArea, Lbl } from "./Fields";
 import api from "../../lib/axios";
 
@@ -73,9 +73,36 @@ export default function CargoForm({ onCalc, companyId, vehicleId }) {
       // Calculate total amount: base + perKg + srv
       const totalAmount = Math.round(base + perKg + srv);
 
+      // Lấy customer_id từ localStorage nếu user đang đăng nhập
+      // Sử dụng key 'gd_user' (giống như các component khác trong app)
+      let customerId = null;
+      try {
+        const userDataStr = localStorage.getItem('gd_user'); // Sửa từ 'user' thành 'gd_user'
+        const role = localStorage.getItem('role');
+        if (userDataStr && role === 'user') {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id) {
+            customerId = userData.id;
+            console.log("📦 CargoForm - Found customer_id from localStorage:", customerId);
+            console.log("📦 CargoForm - User data:", { id: userData.id, email: userData.email, role: userData.role });
+          } else {
+            console.warn("📦 CargoForm - User data exists but no id found:", userData);
+          }
+        } else {
+          console.warn("📦 CargoForm - No user data or wrong role:", { hasUserData: !!userDataStr, role });
+        }
+      } catch (e) {
+        console.error("📦 CargoForm - Error getting customer_id from localStorage:", e);
+      }
+      
+      if (!customerId) {
+        console.warn("📦 CargoForm - ⚠️ customer_id is NULL! Order will be created without customer_id.");
+      }
+
       const payload = {
         company_id: Number(companyId),
         vehicle_id: vehicleId ? Number(vehicleId) : null,
+        customer_id: customerId, // Truyền customer_id để đảm bảo được lưu đúng
         cargo_name: form.category ? categoryMap[form.category] || form.category : "Hàng tổng hợp",
         cargo_type: form.category || null,
         weight_kg: numbers.weight || null,
@@ -91,6 +118,7 @@ export default function CargoForm({ onCalc, companyId, vehicleId }) {
         note: form.note || null,
       };
 
+      console.log("📦 CargoForm - Creating order with payload:", JSON.stringify(payload, null, 2));
       const response = await api.post("/cargo-orders", payload);
       
       if (response.data.success) {
@@ -185,13 +213,6 @@ export default function CargoForm({ onCalc, companyId, vehicleId }) {
           Trở lại
         </button>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate("/vehicle-list" + (companyId ? `?companyId=${companyId}` : ""))}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-[0_12px_40px_rgba(2,6,23,.08)]"
-          >
-            Tiếp tục <ArrowRight className="w-4 h-4" />
-          </button>
           <button
             type="submit"
             disabled={loading}

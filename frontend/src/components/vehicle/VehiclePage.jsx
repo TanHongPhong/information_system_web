@@ -43,21 +43,71 @@ export default function VehiclePage({ keyword, companyId }) {
         const vehiclesRes = await api.get(`/transport-companies/${companyId}/vehicles`);
         const vehicles = vehiclesRes.data || [];
         
-        // Transform API data to match UI format
-        const transformed = vehicles.map(v => ({
-          id: v.vehicle_id,
-          plate: v.license_plate,
-          driver: v.driver_name || "Chưa phân công",
-          vehicleType: v.vehicle_type,
-          capacity: v.capacity_ton,
-          location: v.current_location,
-          status: v.status === 'AVAILABLE' ? 'Sẵn sàng' : 
-                 v.status === 'IN_USE' ? 'Đang sử dụng' :
-                 v.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động',
-          percent: v.status === 'AVAILABLE' ? Math.floor(Math.random() * 40) + 10 : 100,
-          depart: new Date().toISOString().split('T')[0],
-          phone: v.driver_phone,
-        }));
+        // Fetch orders cho tất cả vehicles để tính load percent
+        const ordersRes = await api.get(`/cargo-orders?company_id=${companyId}`);
+        const allOrders = ordersRes.data || [];
+        
+        // Filter chỉ các status hợp lệ (từ ACCEPTED trở đi) để tính load
+        const VALID_STATUSES = ['ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
+        const activeOrders = allOrders.filter(order => VALID_STATUSES.includes(order.status));
+        
+        // Transform API data to match UI format với load percent thực tế
+        // Filter bỏ các xe đã di chuyển và đi bốc hàng (có orders với status LOADING hoặc IN_TRANSIT)
+        const transformed = (await Promise.all(vehicles.map(async (v) => {
+          // Tìm tất cả orders thuộc về xe này
+          const vehicleOrders = activeOrders.filter(order => 
+            order.vehicle_id === v.vehicle_id || order.vehicle_id === Number(v.vehicle_id)
+          );
+          
+          // Kiểm tra xem xe có đang bốc hàng hoặc đang vận chuyển không
+          // (có orders với status LOADING hoặc IN_TRANSIT)
+          const hasLoadingOrInTransitOrders = vehicleOrders.some(order => 
+            order.status === 'LOADING' || order.status === 'IN_TRANSIT'
+          );
+          
+          // Nếu xe đã di chuyển và đi bốc hàng, không hiển thị (return null)
+          if (hasLoadingOrInTransitOrders) {
+            return null;
+          }
+          
+          // Tính tổng weight (kg) của các orders
+          const totalWeightKg = vehicleOrders.reduce((sum, order) => 
+            sum + (Number(order.weight_kg) || 0), 0
+          );
+          
+          // Chuyển từ kg sang tấn và tính percent
+          const capacityTon = v.capacity_ton || 15;
+          const totalWeightTon = totalWeightKg / 1000;
+          let percent = 0;
+          
+          if (capacityTon > 0 && totalWeightTon > 0) {
+            percent = Math.min((totalWeightTon / capacityTon) * 100, 100);
+          }
+          
+          // Nếu xe không có orders nhưng status là IN_USE hoặc có orders, dùng percent thực tế
+          // Nếu xe AVAILABLE và không có orders, có thể để percent thấp hoặc 0
+          if (v.status === 'IN_USE' && vehicleOrders.length === 0) {
+            // Có thể đang sử dụng nhưng chưa có orders được gán
+            percent = 0;
+          } else if (v.status === 'MAINTENANCE' || v.status === 'INACTIVE') {
+            percent = 100; // Đang bảo trì hoặc không hoạt động
+          }
+          
+          return {
+            id: v.vehicle_id,
+            plate: v.license_plate,
+            driver: v.driver_name || "Chưa phân công",
+            vehicleType: v.vehicle_type,
+            capacity: capacityTon,
+            location: v.current_location,
+            status: v.status === 'AVAILABLE' ? 'Sẵn sàng' : 
+                   v.status === 'IN_USE' ? 'Đang sử dụng' :
+                   v.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động',
+            percent: Math.round(percent),
+            depart: new Date().toISOString().split('T')[0],
+            phone: v.driver_phone,
+          };
+        }))).filter(v => v !== null); // Filter bỏ các xe null (đã di chuyển/đi bốc hàng)
         
         if (!aborted) {
           setData(transformed);

@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import feather from "feather-icons";
 
-export default function Sidebar() {
+function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,8 +13,7 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3 z-40">
-      {/* Logo */}
+    <aside className="fixed inset-y-0 left-0 w-20 bg-white border-r border-slate-200 flex flex-col items-center gap-3 p-3 z-50">
       <div className="mt-1 mb-1 text-center select-none">
         <button
           onClick={() => navigate("/dashboard")}
@@ -27,8 +26,6 @@ export default function Sidebar() {
           6A logistics
         </div>
       </div>
-
-      {/* Nav icons - Warehouse Group */}
       <div className="flex flex-col items-center gap-4">
         <button
           onClick={() => navigate("/warehouse")}
@@ -37,12 +34,24 @@ export default function Sidebar() {
               ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
           }`}
-          title="Quản lý kho hàng"
+          title="Đơn hàng tại kho"
         >
           <i data-feather="package" className="w-6 h-6"></i>
+        </button>
+        <button
+          onClick={() => navigate("/warehouse-in-out")}
+          className={`w-10 h-10 rounded-xl grid place-items-center ${
+            isActive("/warehouse-in-out")
+              ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
+              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+          }`}
+          title="Nhập kho & Xuất kho"
+        >
+          <i data-feather="move" className="w-6 h-6"></i>
         </button>
       </div>
     </aside>
   );
 }
+export default Sidebar;
 

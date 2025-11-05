@@ -1,274 +1,239 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import feather from "feather-icons";
+import api from "../lib/axios";
+import { useOrdersData } from "../hooks/useOrdersData";
 
-import Sidebar from "../components/sup/Sidebar";
-import Topbar from "../components/sup/Topbar";
+import AppLayout from "../components/layout/AppLayout.jsx";
 import VehiclesPanel from "../components/quan li doi xe/VehiclesPanel";
 import TruckPanel from "../components/quan li doi xe/TruckPanel";
 import LoadManagement from "../components/quan li doi xe/LoadManagement";
 import OrdersGrid from "../components/quan li doi xe/OrdersGrid";
 
 export default function DashboardLogistics() {
+  const navigate = useNavigate();
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const isFirstLoadRef = React.useRef(true);
+
+  // Kiểm tra role và logout nếu không đúng
+  useEffect(() => {
+    const userData = localStorage.getItem("gd_user");
+    const role = localStorage.getItem("role");
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+
+    if (!userData) {
+      logout();
+      return;
+    }
+
+    // Kiểm tra: chỉ admin transport_company mới được vào trang này
+    if (role !== "transport_company" || !isAdmin) {
+      console.warn(`Access denied: Only admin transport_company can access this page. Role: '${role}', isAdmin: ${isAdmin}`);
+      alert("Bạn không có quyền truy cập trang này. Chỉ admin công ty vận tải mới có quyền.");
+      logout();
+      return;
+    }
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+  };
+
+  // Lấy company_id từ localStorage
+  const getCompanyId = () => {
+    try {
+      const userData = localStorage.getItem("gd_user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.company_id) return user.company_id;
+      }
+    } catch (error) {
+      console.error("Error getting company_id:", error);
+    }
+    return null;
+  };
+
+  // Fetch vehicles từ API
+  useEffect(() => {
+    const fetchVehicles = async (silent = false) => {
+      try {
+        // Chỉ hiển thị loading ở lần fetch đầu tiên
+        if (isFirstLoadRef.current && !silent) {
+          setLoading(true);
+        }
+        
+        const companyId = getCompanyId();
+        
+        if (!companyId) {
+          console.warn("No company_id found");
+          setVehicles([]);
+          if (isFirstLoadRef.current) setLoading(false);
+          return;
+        }
+
+        const response = await api.get(`/transport-companies/${companyId}/vehicles`);
+        const data = response.data || [];
+        setVehicles(data);
+        
+        // Auto-select first vehicle if none selected (chỉ lần đầu)
+        if (isFirstLoadRef.current && data.length > 0 && !selectedId) {
+          setSelectedId(data[0].vehicle_id);
+        }
+        
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+        setVehicles([]);
+      } finally {
+        // Chỉ set loading false ở lần đầu (trước khi set isFirstLoadRef = false)
+        if (isFirstLoadRef.current && !silent) {
+          setLoading(false);
+        }
+        // Set isFirstLoadRef = false sau khi đã xử lý loading
+        isFirstLoadRef.current = false;
+      }
+    };
+
+    // Lần đầu: hiển thị loading
+    fetchVehicles(false);
+    
+    // Refresh mỗi 30 giây: fetch ngầm (silent)
+    const interval = setInterval(() => fetchVehicles(true), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   // render feather icons sau khi mount
   useEffect(() => {
     feather.replace();
   }, []);
-  // ====== DỮ LIỆU XE (copy từ HTML ban đầu) ======
-  const VEHICLES = [
-    {
-      id: "SHIPID 02",
-      plate: "DL04MP7045",
-      driver: "Trần Minh",
-      status: "arriving",
-      route: "Bình Định–Đà Nẵng",
-      start: [13.7765, 109.2237],
-      end: [16.0544, 108.2022],
-      times: [
-        "9/9/2025, 6:00",
-        "9/9/2025, 10:00",
-        "11/9/2025, 20:00",
-        "11/9/2025, 22:00",
-      ],
-      active: 1,
-    },
-    {
-      id: "SHIPID 03",
-      plate: "51D-678.90",
-      driver: "N. Hòa",
-      status: "loading",
-      route: "Vũng Tàu–TPHCM",
-      start: [10.3459, 107.0843],
-      end: [10.8231, 106.6297],
-      times: [
-        "20/7/2025, 7:00",
-        "20/7/2025, 10:00",
-        "21/7/2025, 20:00",
-        "21/7/2025, 5:00",
-      ],
-      active: 1,
-    },
-    {
-      id: "SHIPID 04",
-      plate: "29C-112.34",
-      driver: "P. Hải",
-      status: "preparing",
-      route: "Hà Nội–Ninh Bình",
-      start: [21.0278, 105.8342],
-      end: [20.2534, 105.975],
-      times: [
-        "12/8/2025, 8:00",
-        "12/8/2025, 12:00",
-        "13/8/2025, 18:00",
-        "13/8/2025, 21:00",
-      ],
-      active: 0,
-    },
-    {
-      id: "SHIPID 05",
-      plate: "51A-889.77",
-      driver: "V. Nam",
-      status: "unloading",
-      route: "TPHCM–Cần Thơ",
-      start: [10.8231, 106.6297],
-      end: [10.0452, 105.7469],
-      times: [
-        "10/8/2025, 6:00",
-        "10/8/2025, 9:30",
-        "10/8/2025, 18:00",
-        "10/8/2025, 21:30",
-      ],
-      active: 2,
-    },
-    {
-      id: "SHIPID 06",
-      plate: "43C-909.10",
-      driver: "T. Lợi",
-      status: "arriving",
-      route: "Đà Nẵng–Huế",
-      start: [16.0544, 108.2022],
-      end: [16.4637, 107.5909],
-      times: [
-        "5/8/2025, 6:00",
-        "5/8/2025, 10:00",
-        "5/8/2025, 18:00",
-        "5/8/2025, 20:00",
-      ],
-      active: 3,
-    },
-    {
-      id: "SHIPID 07",
-      plate: "88C-335.55",
-      driver: "Đ. Trung",
-      status: "loading",
-      route: "Vĩnh Phúc–Hà Nội",
-      start: [21.3083, 105.6049],
-      end: [21.0278, 105.8342],
-      times: [
-        "2/9/2025, 7:00",
-        "2/9/2025, 9:30",
-        "2/9/2025, 14:00",
-        "2/9/2025, 16:00",
-      ],
-      active: 1,
-    },
-    {
-      id: "SHIPID 08",
-      plate: "72C-456.78",
-      driver: "Q. Huy",
-      status: "preparing",
-      route: "Bà Rịa–Vũng Tàu",
-      start: [10.5473, 107.2429],
-      end: [10.3459, 107.0843],
-      times: [
-        "1/9/2025, 8:00",
-        "1/9/2025, 10:00",
-        "1/9/2025, 15:00",
-        "1/9/2025, 18:00",
-      ],
-      active: 0,
-    },
-    {
-      id: "SHIPID 09",
-      plate: "63C-555.88",
-      driver: "Q. Vũ",
-      status: "preparing",
-      route: "Hà Nội–Hải Phòng",
-      start: [21.0278, 105.8342],
-      end: [20.8449, 106.6881],
-      times: [
-        "12/12/2025, 9:00",
-        "12/12/2025, 12:00",
-        "14/12/2025, 15:00",
-        "14/12/2025, 20:00",
-      ],
-      active: 0,
-    },
-    {
-      id: "SHIPID 10",
-      plate: "50F-999.11",
-      driver: "K. Bình",
-      status: "departed",
-      route: "TPHCM–Đà Lạt",
-      start: [10.8231, 106.6297],
-      end: [11.9404, 108.4583],
-      times: [
-        "8/9/2025, 6:00",
-        "8/9/2025, 9:00",
-        "8/9/2025, 17:00",
-        "8/9/2025, 22:00",
-      ],
-      active: 3,
-    },
-    {
-      id: "SHIPID 11",
-      plate: "36C-222.66",
-      driver: "H. Hà",
-      status: "loading",
-      route: "Thanh Hóa–Nghệ An",
-      start: [19.8067, 105.7856],
-      end: [18.6736, 105.6923],
-      times: [
-        "6/9/2025, 6:00",
-        "6/9/2025, 10:00",
-        "6/9/2025, 19:30",
-        "6/9/2025, 22:00",
-      ],
-      active: 1,
-    },
-    {
-      id: "SHIPID 12",
-      plate: "14C-777.00",
-      driver: "B. Sơn",
-      status: "arriving",
-      route: "Quảng Ninh–Hải Phòng",
-      start: [20.9711, 107.0448],
-      end: [20.8449, 106.6881],
-      times: [
-        "4/9/2025, 7:00",
-        "4/9/2025, 11:30",
-        "4/9/2025, 18:00",
-        "4/9/2025, 20:30",
-      ],
-      active: 2,
-    },
-    {
-      id: "SHIPID 13",
-      plate: "92C-313.14",
-      driver: "T. Dũng",
-      status: "unloading",
-      route: "Quảng Nam–Đà Nẵng",
-      start: [15.5736, 108.474],
-      end: [16.0544, 108.2022],
-      times: [
-        "3/9/2025, 8:00",
-        "3/9/2025, 10:00",
-        "3/9/2025, 13:45",
-        "3/9/2025, 16:00",
-      ],
-      active: 2,
-    },
-  ];
 
-  // ====== DỮ LIỆU ĐƠN HÀNG ======
-  const ORDERS = [
-    { id: "ORDER 0155", weight: 88.9, route: "Bình Định – Đà Nẵng", date: "11/9/2025" },
-    { id: "ORDER 7723", weight: 76, route: "Bình Định – Đà Nẵng", date: "11/9/2025" },
-    { id: "ORDER 0856", weight: 88.9, route: "Bình Định – Đà Nẵng", date: "11/9/2025" },
-    { id: "ORDER 6655", weight: 96, route: "Bình Định – Đà Nẵng", date: "11/9/2025" },
-    { id: "ORDER 0152", weight: 99, route: "Quy Nhơn – Đà Nẵng", date: "10/9/2025" },
-    { id: "ORDER 2353", weight: 100, route: "Quy Nhơn – Đà Nẵng", date: "10/9/2025" },
-    { id: "ORDER 0123", weight: 88.9, route: "Quy Nhơn – Đà Nẵng", date: "10/9/2025" },
-    { id: "ORDER 0128", weight: 88.9, route: "Quy Nhơn – Đà Nẵng", date: "10/9/2025" },
-    { id: "ORDER 5923", weight: 160, route: "Đà Nẵng – Huế", date: "11/9/2025" },
-    { id: "ORDER 0156", weight: 187, route: "Đà Nẵng – Huế", date: "11/9/2025" },
-    { id: "ORDER 0178", weight: 165.9, route: "Bình Dương – TP.HCM", date: "10/9/2025" },
-    { id: "ORDER 0243", weight: 88.9, route: "Bình Dương – TP.HCM", date: "10/9/2025" },
-  ];
-
-  // giống :root --load:50
-  const LOAD_PERCENT = 50;
-  const MAX_TON = 15;
 
   // xe đang chọn
-  const [selectedId, setSelectedId] = useState(VEHICLES[0]?.id);
-  const selectedVehicle = useMemo(
-    () => VEHICLES.find((v) => v.id === selectedId) || VEHICLES[0],
-    [selectedId, VEHICLES]
-  );
+  const [selectedId, setSelectedId] = useState(null);
+  
+  // Transform vehicle từ API format sang format cho TruckPanel
+  const selectedVehicle = useMemo(() => {
+    if (!selectedId || !vehicles.length) return null;
+    
+    const vehicle = vehicles.find((v) => v.vehicle_id === selectedId);
+    if (!vehicle) return null;
+
+    // Transform API vehicle data sang format mà TruckPanel cần
+    return {
+      id: `VEHICLE-${vehicle.vehicle_id}`,
+      plate: vehicle.license_plate,
+      driver: vehicle.driver_name || "Chưa phân công",
+      status: vehicle.status?.toLowerCase() || "available",
+      route: vehicle.current_location || "Chưa có thông tin",
+      capacity: vehicle.capacity_ton || 15,
+      vehicle_type: vehicle.vehicle_type,
+      // Mock data cho timeline (có thể fetch từ API sau)
+      start: [10.8231, 106.6297],
+      end: [16.0544, 108.2022],
+      times: [
+        new Date().toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+        new Date(Date.now() + 4 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+        new Date(Date.now() + 12 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+        new Date(Date.now() + 16 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      ],
+      active: vehicle.status === "IN_USE" ? 1 : vehicle.status === "MAINTENANCE" ? 2 : 0,
+    };
+  }, [selectedId, vehicles]);
+  
+  const MAX_TON = selectedVehicle?.capacity || 15;
+
+  // Tính load percent dựa trên tổng weight của orders (chuyển từ kg sang tấn)
+  const LOAD_PERCENT = useMemo(() => {
+    if (!orders.length || !MAX_TON) return 0;
+    const totalWeightKg = orders.reduce((sum, order) => sum + (Number(order.weight) || 0), 0);
+    const totalWeightTon = totalWeightKg / 1000; // Chuyển từ kg sang tấn
+    const percent = (totalWeightTon / MAX_TON) * 100;
+    return Math.min(percent, 100); // Không vượt quá 100%
+  }, [orders, MAX_TON]);
+
+  // Sử dụng hook để fetch orders với caching và filter theo vehicle_id
+  const { orders: fetchedOrders, loading: ordersLoadingFromHook } = useOrdersData({
+    vehicleId: selectedId,
+    autoRefresh: true,
+    refreshInterval: 30000,
+    silentRefresh: true,
+  });
+
+  // Filter orders: chỉ hiển thị các đơn hàng đã ACCEPTED và các status sau đó
+  // Chỉ hiển thị orders thuộc về xe được chọn (đảm bảo vehicle_id khớp)
+  // Transform orders để match với OrdersGrid format
+  useEffect(() => {
+    if (!selectedId) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+
+    // Filter chỉ các status hợp lệ (từ ACCEPTED trở đi) và đảm bảo vehicle_id khớp
+    const VALID_STATUSES = ['ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
+    const validOrders = fetchedOrders.filter(order => {
+      // Đảm bảo order thuộc về xe được chọn
+      const orderVehicleId = order.vehicle_id;
+      const matchesVehicle = orderVehicleId === selectedId || orderVehicleId === Number(selectedId);
+      // Đảm bảo status hợp lệ
+      const matchesStatus = VALID_STATUSES.includes(order.status);
+      return matchesVehicle && matchesStatus;
+    });
+    
+    const transformedOrders = validOrders.map(order => ({
+      id: order.order_id, // Giữ nguyên order_id để dùng cho navigation
+      weight: order.weight_kg || 0,
+      route: order.pickup_address && order.dropoff_address 
+        ? `${order.pickup_address} – ${order.dropoff_address}`
+        : order.pickup_address || order.dropoff_address || "Chưa có thông tin",
+      date: order.created_at 
+        ? new Date(order.created_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "—",
+      status: order.status,
+      cargo_name: order.cargo_name,
+    }));
+
+    setOrders(transformedOrders);
+    setOrdersLoading(ordersLoadingFromHook);
+  }, [selectedId, fetchedOrders, ordersLoadingFromHook]);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FD] text-[#1C2A44] font-['Roboto',sans-serif]">
-      {/* Sidebar cố định bên trái */}
-      <Sidebar />
-
-      {/* Topbar cố định trên cùng */}
-      <Topbar />
-
-      {/* Phần nội dung chính - dịch qua phải 80px (sidebar) và xuống dưới 72px (topbar) */}
-      <main className="ml-20 pt-[72px] min-h-screen">
-        <div className="p-6 h-[calc(100vh-72px)] overflow-hidden">
+    <AppLayout className="bg-[#F8F9FD] text-[#1C2A44]">
+      <div className="p-6 h-[calc(100vh-72px)] overflow-hidden">
           {/* lưới 2 cột: trái = danh sách xe, phải = truck panel + load + orders */}
           <div className="grid grid-cols-[390px_1fr] gap-6 h-full">
             {/* LEFT: danh sách xe có scroll riêng */}
             <VehiclesPanel
-              vehicles={VEHICLES}
               selectedId={selectedId}
               onSelectVehicle={setSelectedId}
             />
 
             {/* RIGHT */}
             <div className="flex flex-col min-h-0 overflow-auto">
+              {selectedVehicle ? (
+                <>
               <TruckPanel
                 vehicle={selectedVehicle}
                 loadPercent={LOAD_PERCENT}
                 maxTon={MAX_TON}
               />
               <LoadManagement loadPercent={LOAD_PERCENT} maxTon={MAX_TON} />
-              <OrdersGrid orders={ORDERS} />
+              <OrdersGrid orders={orders} loading={ordersLoading} />
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-500">
+                  {loading ? "Đang tải..." : "Chọn một xe để xem thông tin"}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </AppLayout>
   );
 }

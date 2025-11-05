@@ -1,5 +1,6 @@
 // src/components/theo doi don hang/TopbarTrack.jsx
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   IconSearch,
   IconFilter,
@@ -7,9 +8,90 @@ import {
   IconBell,
   IconArchive,
   IconChevronDown,
+  IconLogOut,
 } from "./IconsFeather";
 
 export default function TopbarTrack() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [roleName, setRoleName] = useState("");
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const userData = localStorage.getItem("gd_user");
+        const role = localStorage.getItem("role");
+        const isAdmin = localStorage.getItem("isAdmin") === "true";
+        
+        if (userData) {
+          const userInfo = JSON.parse(userData);
+          setUser(userInfo);
+          
+          // Xác định role name
+          let displayRole = "";
+          if (role === "transport_company" && isAdmin) {
+            displayRole = userInfo.company_name 
+              ? `Admin - ${userInfo.company_name}` 
+              : "Admin Công ty vận tải";
+          } else {
+            const roleMap = {
+              user: "Khách hàng",
+              driver: "Tài xế",
+              transport_company: "Công ty vận tải",
+              warehouse: "Nhà kho"
+            };
+            displayRole = roleMap[role] || "Người dùng";
+          }
+          
+          setRoleName(displayRole);
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    
+    loadUser();
+    
+    // Listen for storage changes
+    const handleStorageChange = () => loadUser();
+    window.addEventListener("storage", handleStorageChange);
+    
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Click ngoài + Esc để đóng dropdown
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!open) return;
+      if (
+        btnRef.current &&
+        !btnRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const onEsc = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("gd_user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("remember");
+    navigate("/sign-in", { replace: true });
+    setOpen(false);
+  };
   return (
     <header
       className="h-[64px] flex-shrink-0 border-b bg-white/95 backdrop-blur bg-gradient-to-l from-blue-900 via-sky-200 to-white flex items-center"
@@ -56,24 +138,63 @@ export default function TopbarTrack() {
               <IconArchive className="w-[18px] h-[18px]" />
             </button>
 
-            {/* User dropdown */}
-            <button
-              type="button"
-              className="group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              <img
-                src="https://i.pravatar.cc/40?img=8"
-                alt="Avatar"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className="text-left leading-tight hidden sm:block">
-                <div className="text-[13px] font-semibold">Harsh Vani</div>
-                <div className="text-[11px] text-slate-500 -mt-0.5">
-                  Deportation Manager
+            {/* User button + Dropdown */}
+            <div className="relative">
+              <button
+                ref={btnRef}
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={() => setOpen((v) => !v)}
+                className="relative z-20 group inline-flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-full bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50 transition"
+              >
+                <img
+                  src="https://i.pravatar.cc/40?img=8"
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="text-left leading-tight hidden sm:block">
+                  <div className="text-[13px] font-semibold">{user?.name || "Người dùng"}</div>
+                  <div className="text-[11px] text-slate-500 -mt-0.5">
+                    {roleName || "Vai trò"}
+                  </div>
                 </div>
+                <IconChevronDown 
+                  className={`w-[18px] h-[18px] text-slate-400 transition-transform duration-200 ${
+                    open ? "rotate-180" : "rotate-0"
+                  }`} 
+                />
+              </button>
+
+              {/* Dropdown menu */}
+              <div
+                ref={menuRef}
+                role="menu"
+                aria-label="User menu"
+                className={`
+                  absolute right-0 top-full -mt-5 pt-5 z-0 w-[182px] 
+                  overflow-hidden bg-white border border-slate-200 border-t-0 rounded-b-xl
+                  shadow-md ring-1 ring-black/5
+                  origin-top transition-all duration-200 ease-out
+                  ${
+                    open
+                      ? "opacity-100 scale-y-100"
+                      : "opacity-0 scale-y-95 pointer-events-none"
+                  }
+                `}
+                style={{ transformOrigin: "top" }}
+                onKeyDown={(e) => e.key === "Tab" && setOpen(false)}
+              >
+                <button
+                  role="menuitem"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
+                  <IconLogOut className="w-4 h-4" />
+                  Đăng xuất
+                </button>
               </div>
-              <IconChevronDown className="w-[18px] h-[18px] text-slate-400" />
-            </button>
+            </div>
           </div>
         </div>
       </div>

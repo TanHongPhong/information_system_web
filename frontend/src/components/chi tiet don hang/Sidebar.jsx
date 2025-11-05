@@ -43,9 +43,9 @@ export default function Sidebar() {
         </button>
 
         <button
-          onClick={() => navigate("/quan-li-doi-xe")}
+          onClick={() => navigate("/transports-management")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/quan-li-doi-xe")
+            isActive("/transports-management")
               ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
           }`}

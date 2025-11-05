@@ -41,8 +41,11 @@ const pool = new Pool({
   // Connection pool settings
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 30000, // Tăng từ 5s lên 30s để tránh timeout
   allowExitOnIdle: true,
+  // Thêm keepalive để duy trì kết nối
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Event handlers
@@ -79,7 +82,18 @@ if (!isPlaceholder) {
     .catch((err) => {
       console.error("❌ Database connection test: FAILED");
       console.error("   Error:", err.message);
-      if (!err.message.includes("invalid")) {
+      
+      // Cung cấp thông báo chi tiết hơn cho các lỗi phổ biến
+      if (err.message.includes("timeout") || err.message.includes("ETIMEDOUT")) {
+        console.error("⚠️  Connection timeout - Có thể do:");
+        console.error("   1. Database server chậm hoặc không phản hồi");
+        console.error("   2. Network connection không ổn định");
+        console.error("   3. Connection string không đúng (host/port)");
+        console.error("   4. Firewall chặn kết nối");
+      } else if (err.message.includes("ECONNREFUSED")) {
+        console.error("⚠️  Connection refused - Database server không chấp nhận kết nối");
+        console.error("   Kiểm tra host/port trong PSQLDB_CONNECTIONSTRING");
+      } else if (!err.message.includes("invalid")) {
         console.error("💡 Kiểm tra lại PSQLDB_CONNECTIONSTRING trong .env");
       }
     });

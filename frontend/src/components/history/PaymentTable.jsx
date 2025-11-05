@@ -101,15 +101,12 @@ const CompanyChip = ({ name }) => {
 };
 
 // ==== Main table ====
-export function PaymentTable({ rows, page, pageSize, onPrev, onNext, totalCount, fmt }) {
-  const start = rows.length ? (page - 1) * pageSize + 1 : 0;
-  const end = (page - 1) * pageSize + rows.length;
-
+export function PaymentTable({ rows, totalCount, fmt }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden flex flex-col">
+      <div className="overflow-x-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-100 text-blue-800">
+          <thead className="bg-slate-100 text-blue-800 sticky top-0 z-10">
             <tr className="text-left">
               <th className="font-semibold px-5 md:px-6 py-3">Mã đơn</th>
               <th className="font-semibold px-5 md:px-6 py-3">Ngày thanh toán</th>
@@ -161,16 +158,8 @@ export function PaymentTable({ rows, page, pageSize, onPrev, onNext, totalCount,
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
         <p className="text-sm text-slate-600">
-          Hiển thị {start}–{end} / {totalCount} giao dịch
+          Tổng cộng: {totalCount} giao dịch
         </p>
-        <div className="flex items-center gap-2">
-          <button onClick={onPrev} className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50">
-            Trước 
-          </button>
-          <button onClick={onNext} className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50">
-            Sau
-          </button>
-        </div>
       </div>
     </div>
   );

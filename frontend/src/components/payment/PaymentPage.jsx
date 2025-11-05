@@ -47,10 +47,10 @@ export default function PaymentPage({ orderId }) {
         setLoading(true);
         setError(null);
         
-        // Fetch order by ID
+        // Fetch order by ID (order_id giờ là VARCHAR(4))
         const response = await api.get(`/cargo-orders?order_id=${orderId}`);
         const orders = response.data || [];
-        const order = Array.isArray(orders) ? orders.find(o => o.order_id === Number(orderId)) : null;
+        const order = Array.isArray(orders) ? orders.find(o => o.order_id === String(orderId)) : null;
         
         if (!order) {
           throw new Error("Đơn hàng không tồn tại");
@@ -124,18 +124,67 @@ export default function PaymentPage({ orderId }) {
     transactionSavedRef.current = true;
     
     try {
-      const response = await api.post("/transactions", {
-        order_id: Number(orderId),
+      // Lấy customer_id từ orderData (ưu tiên)
+      let customerId = orderData.customer_id;
+      console.log("💳 PaymentPage - orderData.customer_id:", customerId);
+      console.log("💳 PaymentPage - Full orderData:", JSON.stringify(orderData, null, 2));
+      
+      // Nếu không có trong orderData, thử lấy từ localStorage
+      // Sử dụng key 'gd_user' (giống như các component khác trong app)
+      if (!customerId) {
+        console.log("💳 PaymentPage - customer_id not in orderData, trying localStorage...");
+        try {
+          const userDataStr = localStorage.getItem('gd_user'); // Sửa từ 'user' thành 'gd_user'
+          const role = localStorage.getItem('role');
+          if (userDataStr && role === 'user') {
+            const userData = JSON.parse(userDataStr);
+            console.log("💳 PaymentPage - User from localStorage:", userData);
+            if (userData.id) {
+              customerId = userData.id;
+              console.log("💳 PaymentPage - Found customer_id from localStorage:", customerId);
+            } else {
+              console.warn("💳 PaymentPage - User data exists but no id found:", userData);
+            }
+          } else {
+            console.warn("💳 PaymentPage - No user data or wrong role:", { hasUserData: !!userDataStr, role });
+          }
+        } catch (e) {
+          console.error("💳 PaymentPage - Error getting customer_id from localStorage:", e);
+        }
+      }
+      
+      if (!customerId) {
+        console.warn("💳 PaymentPage - ⚠️ customer_id is NULL! Transaction will be created without customer_id.");
+      }
+      
+      // Đảm bảo order_id là string 4 chữ số (VARCHAR(4) format)
+      const formattedOrderId = String(orderId).padStart(4, '0').substring(0, 4);
+      
+      const transactionData = {
+        order_id: formattedOrderId, // VARCHAR(4) format: "0001", "1234", etc.
         company_id: Number(orderData.company_id),
+        customer_id: customerId || null, // Truyền customer_id để đảm bảo được lưu đúng
         amount: Number(payAmount),
         payment_method: method,
         payment_status: "SUCCESS",
         transaction_code: `TXN-${Date.now()}`,
         note: `Payment for order #${orderId}`,
-      });
-      console.log("Transaction saved successfully:", response.data);
+      };
+      
+      console.log("💳 PaymentPage - Sending transaction data:", JSON.stringify(transactionData, null, 2));
+      
+      const response = await api.post("/transactions", transactionData);
+      console.log("💳 PaymentPage - Transaction saved successfully:", JSON.stringify(response.data, null, 2));
+      
+      // Verify customer_id was saved
+      if (response.data?.data?.customer_id) {
+        console.log("✅ PaymentPage - Customer ID confirmed in response:", response.data.data.customer_id);
+      } else {
+        console.warn("⚠️ PaymentPage - Customer ID not found in response!");
+      }
     } catch (err) {
-      console.error("Error saving transaction:", err);
+      console.error("💳 PaymentPage - Error saving transaction:", err);
+      console.error("💳 PaymentPage - Error response:", err.response?.data);
       transactionSavedRef.current = false; // Reset để retry nếu cần
       // Không throw error để không crash app, chỉ log
     }
@@ -185,11 +234,48 @@ export default function PaymentPage({ orderId }) {
     if (status === "success" || status === "expired") return;
     let aborted = false;
     let pollCount = 0;
+    const maxPollAttempts = 100; // Giới hạn số lần poll
+    
+    // Format order_id đúng (VARCHAR(4))
+    const formattedOrderId = String(orderId).padStart(4, '0').substring(0, 4);
+    
+    // Lấy customer_id từ orderData hoặc localStorage
+    // Sử dụng key 'gd_user' (giống như các component khác trong app)
+    let customerId = orderData?.customer_id;
+    if (!customerId) {
+      try {
+        const userDataStr = localStorage.getItem('gd_user'); // Sửa từ 'user' thành 'gd_user'
+        const role = localStorage.getItem('role');
+        if (userDataStr && role === 'user') {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id) {
+            customerId = userData.id;
+          }
+        }
+      } catch (e) {
+        console.warn("💳 PaymentPage - Error getting customer_id in polling:", e);
+      }
+    }
+    
     const iv = setInterval(async () => {
       try {
         pollCount++;
-        console.log(`[PaymentPage] Polling transaction status (attempt ${pollCount}) for order_id=${orderId}`);
-        const res = await api.get(`/transactions?order_id=${orderId}&payment_status=SUCCESS`);
+        
+        // Dừng polling sau max attempts
+        if (pollCount > maxPollAttempts) {
+          console.warn(`[PaymentPage] Max polling attempts reached (${maxPollAttempts}), stopping...`);
+          clearInterval(iv);
+          return;
+        }
+        
+        // Build query với order_id đã format và customer_id nếu có
+        let queryUrl = `/transactions?order_id=${formattedOrderId}&payment_status=SUCCESS`;
+        if (customerId) {
+          queryUrl += `&customer_id=${customerId}`;
+        }
+        
+        console.log(`[PaymentPage] Polling transaction status (attempt ${pollCount}) for order_id=${formattedOrderId}`);
+        const res = await api.get(queryUrl);
         const arr = Array.isArray(res.data) ? res.data : [];
         console.log(`[PaymentPage] Poll response:`, arr.length, "transactions found");
         
@@ -203,8 +289,14 @@ export default function PaymentPage({ orderId }) {
         }
       } catch (err) {
         console.error("[PaymentPage] Polling error:", err);
+        // Nếu lỗi quá nhiều lần, dừng polling
+        if (pollCount > 10 && err.response?.status >= 500) {
+          console.error("[PaymentPage] Too many polling errors, stopping...");
+          clearInterval(iv);
+        }
       }
-    }, 3000);
+    }, 2000); // Giảm interval xuống 2 giây để nhanh hơn
+    
     return () => { aborted = true; clearInterval(iv); };
   }, [orderId, orderData, status]);
 

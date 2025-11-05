@@ -5,7 +5,7 @@ SET search_path TO public;
 -- 1) Bảng WarehouseOperations (Quản lý nhập/xuất kho)
 CREATE TABLE IF NOT EXISTS "WarehouseOperations" (
   operation_id SERIAL PRIMARY KEY,
-  order_id INTEGER NOT NULL REFERENCES "CargoOrders"(order_id) ON DELETE RESTRICT,
+  order_id VARCHAR(4) NOT NULL REFERENCES "CargoOrders"(order_id) ON DELETE RESTRICT,
   warehouse_id INTEGER, -- Có thể tham chiếu đến bảng Warehouses nếu cần quản lý nhiều kho
   -- Loại hoạt động
   operation_type VARCHAR(50) NOT NULL CHECK (operation_type IN ('IN', 'OUT', 'TRANSFER', 'RETURN')),
