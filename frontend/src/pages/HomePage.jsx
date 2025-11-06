@@ -7,7 +7,7 @@ import Fleet from "../components/home/Fleet";
 import Features from "../components/home/Features";
 import Routes from "../components/home/Routes";
 import Pricing from "../components/home/Pricing";
-import Timeline from "../components/home/TimeLine";
+import Timeline from "../components/home/Timeline";
 import Testimonials from "../components/home/Testimonials";
 import FAQ from "../components/home/FAQ";
 import ServicePromise from "../components/home/ServicePromise";
