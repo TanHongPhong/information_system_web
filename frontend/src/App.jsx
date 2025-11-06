@@ -28,12 +28,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Public routes - không cần đăng nhập */}
-        <Route path="/" element={<HomePageAdmin />} />
-        <Route path="/home-page" element={<HomePage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/admin" element={<HomePageAdmin />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/transport-companies" element={<TransportCompanies />} />
-        <Route path="/homepage-admin" element={<HomePageAdmin />} />
+        {/* Legacy redirects */}
+        <Route path="/home-page" element={<Navigate to="/" replace />} />
+        <Route path="/homepage-admin" element={<Navigate to="/admin" replace />} />
 
         {/* Protected routes - User (khách hàng) */}
         <Route

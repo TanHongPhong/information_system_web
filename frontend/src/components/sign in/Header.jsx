@@ -9,7 +9,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <button 
-          onClick={() => navigate("/home-page")}
+          onClick={() => navigate("/")}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
           <img src="/web_logo.png" alt="6A Logistics" className="h-10 w-10 rounded-2xl object-contain" />
@@ -23,7 +23,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate("/home-page")}
+            onClick={() => navigate("/")}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm shadow-soft btn-shine btn-blue"
           >
             <Truck className="w-4 h-4" /> Về trang chủ

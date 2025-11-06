@@ -26,9 +26,9 @@ export default function Sidebar() {
       </div>
       <div className="flex flex-col items-center gap-4">
         <button
-          onClick={() => navigate("/home-page")}
+          onClick={() => navigate("/")}
           className={`w-10 h-10 rounded-xl grid place-items-center ${
-            isActive("/home-page")
+            isActive("/")
               ? "text-blue-600 bg-blue-50 ring-1 ring-blue-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
           }`}

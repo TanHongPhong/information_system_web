@@ -18,7 +18,7 @@ export default function RolePanel() {
 
       <div className="mt-6">
         <button
-          onClick={() => navigate("/home-page")}
+          onClick={() => navigate("/")}
           className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium"
         >
           ← Quay lại trang chủ

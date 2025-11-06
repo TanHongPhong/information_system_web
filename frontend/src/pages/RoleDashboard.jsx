@@ -44,7 +44,7 @@ const DASHBOARD_DATA = {
       },
     ],
     user: [
-      { name: "Trang Chủ", path: "/home-page", icon: "Home" },
+      { name: "Trang Chủ", path: "/", icon: "Home" },
       { name: "Đăng nhập/ đăng kí", path: "/sign-in", icon: "User" },
       { name: "Danh sách công ty", path: "/transport-companies", icon: "Building2" },
       { name: "Chọn xe", path: "/vehicle-list", icon: "Truck" },

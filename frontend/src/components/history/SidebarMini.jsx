@@ -33,7 +33,7 @@ export function SidebarMini({
       {/* Nav */}
       <div className="flex flex-col items-center gap-4">
         {/* home */}
-        <button onClick={() => navigate("/home-page")} className={`${base} ${is("home")} ${isActive("/home-page") ? on : ""}`} title="Home">
+        <button onClick={() => navigate("/")} className={`${base} ${is("home")} ${isActive("/") ? on : ""}`} title="Home">
           <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
           </svg>
