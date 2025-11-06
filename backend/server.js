@@ -5,7 +5,7 @@ import path from "path";
 import testRouter from "./src/routes/testRouter.js";
 
 // Controllers để truy xuất dữ liệu từ Neon (PostgreSQL)
-import { getCompanies, getCompanyById, getVehiclesByCompany, getRoutesByCompany, getAvailableRegionsByCompany, getAllAvailableRegions, getWarehouseHCMInfo } from "./src/controllers/companyControllers.js";
+import { getCompanies, getCompanyById, getVehiclesByCompany, getRoutesByCompany, getAvailableRegionsByCompany, getAllAvailableRegions, getWarehouseHCMInfo, getWarehouseByRegion } from "./src/controllers/companyControllers.js";
 import { getCargoOrders, createCargoOrder, updateCargoOrder } from "./src/controllers/orderControllers.js";
 import { getTransactions, createTransaction } from "./src/controllers/transactionControllers.js";
 import { sepayWebhook } from "./src/controllers/paymentControllers.js";
@@ -18,6 +18,7 @@ import {
   recordDeparture,
   recordWarehouseArrival,
   acceptWarehouseEntry,
+  loadOrder,
   recordMovementEvent,
   getMovementEvents,
 } from "./src/controllers/driverControllers.js";
@@ -125,6 +126,7 @@ app.get("/api/driver/vehicle-info", getDriverVehicleInfo);
 app.post("/api/driver/departure", recordDeparture);
 app.post("/api/driver/warehouse-arrival", recordWarehouseArrival);
 app.post("/api/driver/accept-warehouse-entry", acceptWarehouseEntry);
+app.post("/api/driver/load-order", loadOrder);
 app.post("/api/driver/movement-event", recordMovementEvent);
 app.get("/api/driver/movement-events", getMovementEvents);
 
@@ -137,6 +139,7 @@ app.get("/api/warehouse/inventory", getWarehouseInventory);
 app.post("/api/warehouse/inventory/create", createInventory);
 app.post("/api/warehouse/inventory/update-status", updateInventoryStatus);
 app.get("/api/warehouse/hcm-info", getWarehouseHCMInfo);
+app.get("/api/warehouse/by-region", getWarehouseByRegion);
 
 // Order Status History API
 app.get("/api/orders/:orderId/status-history", getOrderStatusHistory);

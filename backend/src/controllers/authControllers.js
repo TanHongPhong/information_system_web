@@ -99,22 +99,37 @@ export const login = async (req, res) => {
       role: user.role,
       type: "user"
     };
+    
+    // Thêm warehouse_id vào token nếu user là warehouse
+    if (user.role === 'warehouse' && user.warehouse_id) {
+      tokenPayload.warehouse_id = user.warehouse_id;
+    }
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     
     // Log để debug
     console.log(`✅ Login successful: ${user.email} (role: ${user.role})`);
+    if (user.role === 'warehouse' && user.warehouse_id) {
+      console.log(`   Warehouse ID: ${user.warehouse_id}`);
+    }
     
     // Trả về response với role từ database (có thể là user, driver, warehouse, etc.)
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      role: user.role // Role từ database: user, driver, warehouse, transport_company
+    };
+    
+    // Thêm warehouse_id vào response nếu user là warehouse
+    if (user.role === 'warehouse' && user.warehouse_id) {
+      userResponse.warehouse_id = user.warehouse_id;
+    }
+    
     res.json({
       message: "Đăng nhập thành công",
       token, // Gửi token về frontend
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role // Role từ database: user, driver, warehouse, transport_company
-      },
+      user: userResponse,
       isAdmin: false
     });
   } catch (error) {

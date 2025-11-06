@@ -17,6 +17,13 @@ export const getWarehouseOperations = async (req, res) => {
       offset = 0
     } = req.query;
 
+    // Tự động lấy warehouse_id từ user nếu user là warehouse
+    let finalWarehouseId = warehouse_id;
+    if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
+      finalWarehouseId = req.user.warehouse_id;
+      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
+    }
+
     let query = `
       SELECT 
         wo.operation_id,
@@ -55,9 +62,9 @@ export const getWarehouseOperations = async (req, res) => {
     const params = [];
     let paramCount = 1;
 
-    if (warehouse_id) {
+    if (finalWarehouseId) {
       query += ` AND wo.warehouse_id = $${paramCount}`;
-      params.push(Number(warehouse_id));
+      params.push(Number(finalWarehouseId));
       paramCount++;
     }
 
@@ -133,11 +140,18 @@ export const getWarehouseKPIs = async (req, res) => {
   try {
     const { warehouse_id } = req.query;
 
+    // Tự động lấy warehouse_id từ user nếu user là warehouse
+    let finalWarehouseId = warehouse_id;
+    if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
+      finalWarehouseId = req.user.warehouse_id;
+      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
+    }
+
     let whereClause = '';
     const params = [];
-    if (warehouse_id) {
+    if (finalWarehouseId) {
       whereClause = 'WHERE warehouse_id = $1';
-      params.push(Number(warehouse_id));
+      params.push(Number(finalWarehouseId));
     }
 
     // Lấy KPI từ WarehouseInventory (hàng hóa trong kho)
@@ -569,6 +583,13 @@ export const getWarehouseInventory = async (req, res) => {
       offset = 0
     } = req.query;
 
+    // Tự động lấy warehouse_id từ user nếu user là warehouse
+    let finalWarehouseId = warehouse_id;
+    if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
+      finalWarehouseId = req.user.warehouse_id;
+      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
+    }
+
     let query = `
       SELECT 
         inv.inventory_id,
@@ -606,9 +627,9 @@ export const getWarehouseInventory = async (req, res) => {
     const params = [];
     let paramCount = 1;
 
-    if (warehouse_id) {
+    if (finalWarehouseId) {
       query += ` AND inv.warehouse_id = $${paramCount}`;
-      params.push(Number(warehouse_id));
+      params.push(Number(finalWarehouseId));
       paramCount++;
     }
 

@@ -236,7 +236,13 @@ export const getVehiclesByCompany = async (req, res) => {
     //            destination_region = điểm đến = nơi xe sẽ đến
     if (origin_region && destination_region) {
       try {
-        console.log(`🔍 Filtering vehicles: origin_region="${origin_region}" (điểm đi), destination_region="${destination_region}" (điểm đến)`);
+        console.log(`🔍 ============================================`);
+        console.log(`🔍 Filtering vehicles:`);
+        console.log(`   Company ID: ${companyId}`);
+        console.log(`   Origin (điểm đi): "${origin_region}"`);
+        console.log(`   Destination (điểm đến): "${destination_region}"`);
+        console.log(`   Status filter: ${status || 'none'}`);
+        console.log(`🔍 ============================================`);
         
         // Sử dụng function mới để filter theo vị trí hiện tại và điểm đến
         const { rows } = await pool.query(
@@ -246,23 +252,54 @@ export const getVehiclesByCompany = async (req, res) => {
         
         console.log(`📊 Function returned ${rows.length} vehicles`);
         
+        // Log chi tiết từng xe để debug
+        if (rows.length > 0) {
+          console.log(`📋 Vehicle details:`);
+          rows.forEach((v, idx) => {
+            console.log(`   ${idx + 1}. ${v.license_plate}`);
+            console.log(`      Status: ${v.status}`);
+            console.log(`      Current Location: ${v.current_location || 'NULL'}`);
+            console.log(`      Vehicle Region: ${v.vehicle_region || 'UNKNOWN'}`);
+            console.log(`      Route: ${v.route_name || 'N/A'}`);
+          });
+        } else {
+          console.warn(`⚠️ No vehicles found! Checking database...`);
+          
+          // Debug: Kiểm tra có xe nào ở vùng này không
+          const debugQuery = await pool.query(`
+            SELECT 
+              v.vehicle_id,
+              v.license_plate,
+              v.status,
+              v.current_location,
+              get_region_from_address(v.current_location) as vehicle_region
+            FROM "Vehicles" v
+            WHERE v.company_id = $1
+            LIMIT 10
+          `, [companyId]);
+          
+          console.log(`🔍 Sample vehicles in company (first 10):`);
+          debugQuery.rows.forEach(v => {
+            console.log(`   - ${v.license_plate}: status=${v.status}, location="${v.current_location}", region="${v.vehicle_region}"`);
+          });
+        }
+        
         // Filter theo status nếu có
         let filteredRows = rows;
         if (status) {
           filteredRows = rows.filter(v => v.status === status);
+          console.log(`📊 After status filter "${status}": ${filteredRows.length} vehicles`);
         }
         
-        // Log từng xe để debug
-        filteredRows.forEach(v => {
-          console.log(`   ✅ ${v.license_plate}: ${v.current_location} (region: ${v.vehicle_region})`);
-        });
+        console.log(`✅ Final result: ${filteredRows.length} vehicles at ${origin_region} (điểm đi) going to ${destination_region} (điểm đến)`);
+        console.log(`🔍 ============================================\n`);
         
-        console.log(`✅ Found ${filteredRows.length} vehicles at ${origin_region} (điểm đi) going to ${destination_region} (điểm đến)`);
         return res.json(filteredRows);
       } catch (funcErr) {
         // Nếu function chưa tồn tại, fallback về query cũ
-        console.warn("Function get_available_vehicles_by_location_and_destination not found, using fallback query:", funcErr.message);
+        console.error("❌ Function get_available_vehicles_by_location_and_destination error:", funcErr.message);
         console.error("Error details:", funcErr);
+        console.log("⚠️ Falling back to direct query...");
       }
     } else if (destination_region) {
       // Chỉ có destination_region, không có origin_region
@@ -284,11 +321,12 @@ export const getVehiclesByCompany = async (req, res) => {
     }
 
     // Query cũ (fallback hoặc khi không có destination_region)
+    // SỬA: Sử dụng DISTINCT ON để tránh duplicate vehicles khi có nhiều routes
     const params = [companyId];
     let paramCount = 2;
     
     let query = `
-      SELECT
+      SELECT DISTINCT ON (v.vehicle_id)
         v.vehicle_id,
         v.company_id,
         v.license_plate,
@@ -396,7 +434,8 @@ export const getVehiclesByCompany = async (req, res) => {
       paramCount++;
     }
 
-    query += ` ORDER BY v.vehicle_type ASC, v.license_plate ASC;`;
+    // DISTINCT ON yêu cầu ORDER BY phải bắt đầu với vehicle_id
+    query += ` ORDER BY v.vehicle_id, v.vehicle_type ASC, v.license_plate ASC;`;
 
     const { rows } = await pool.query(query, params);
 
@@ -569,6 +608,110 @@ export const getWarehouseHCMInfo = async (req, res) => {
       warehouse_name: "Kho HCM",
       address: "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
       full_address: "Kho HCM - 123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+    });
+  }
+};
+
+/** GET /api/warehouse/by-region?region=HCM */
+export const getWarehouseByRegion = async (req, res) => {
+  try {
+    const { region } = req.query;
+    
+    console.log("📋 GET /api/warehouse/by-region", { region });
+    
+    if (!region) {
+      return res.status(400).json({
+        error: "Missing region parameter",
+        message: "Please provide region parameter (e.g., ?region=HCM)"
+      });
+    }
+
+    // Tìm warehouse theo region
+    // Sử dụng get_region_from_address để tìm warehouse có địa chỉ match với region
+    const { rows } = await pool.query(`
+      SELECT 
+        w.warehouse_id,
+        w.warehouse_name,
+        w.address,
+        COALESCE(w.warehouse_name || ' - ' || w.address, w.warehouse_name) as full_address,
+        get_region_from_address(w.address) as warehouse_region,
+        get_region_from_address(w.warehouse_name) as name_region
+      FROM "Warehouses" w
+      WHERE w.status = 'ACTIVE'
+        AND (
+          get_region_from_address(w.address) = $1
+          OR get_region_from_address(w.warehouse_name) = $1
+          OR w.warehouse_name ILIKE '%' || $1 || '%'
+          OR w.address ILIKE '%' || $1 || '%'
+        )
+      ORDER BY 
+        CASE 
+          WHEN get_region_from_address(w.address) = $1 THEN 1
+          WHEN get_region_from_address(w.warehouse_name) = $1 THEN 2
+          ELSE 3
+        END,
+        w.warehouse_id
+      LIMIT 1;
+    `, [region]);
+
+    if (rows.length > 0) {
+      console.log("✅ Found warehouse:", rows[0]);
+      return res.json({
+        warehouse_name: rows[0].warehouse_name,
+        address: rows[0].address,
+        full_address: rows[0].full_address,
+        region: rows[0].warehouse_region || rows[0].name_region || region
+      });
+    }
+
+    // Nếu không tìm thấy, trả về giá trị mặc định theo region
+    console.log("⚠️ No warehouse found for region, using default");
+    const defaultWarehouses = {
+      'HCM': {
+        warehouse_name: "Kho HCM",
+        address: "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+        full_address: "Kho HCM - 123 Đường ABC, Quận 1, TP. Hồ Chí Minh"
+      },
+      'Cần Thơ': {
+        warehouse_name: "Kho Cần Thơ",
+        address: "456 Đường XYZ, Ninh Kiều, Cần Thơ",
+        full_address: "Kho Cần Thơ - 456 Đường XYZ, Ninh Kiều, Cần Thơ"
+      },
+      'Hà Nội': {
+        warehouse_name: "Kho Hà Nội",
+        address: "789 Đường DEF, Quận Hoàn Kiếm, Hà Nội",
+        full_address: "Kho Hà Nội - 789 Đường DEF, Quận Hoàn Kiếm, Hà Nội"
+      },
+      'Đà Nẵng': {
+        warehouse_name: "Kho Đà Nẵng",
+        address: "321 Đường GHI, Quận Hải Châu, Đà Nẵng",
+        full_address: "Kho Đà Nẵng - 321 Đường GHI, Quận Hải Châu, Đà Nẵng"
+      },
+      'Hải Phòng': {
+        warehouse_name: "Kho Hải Phòng",
+        address: "654 Đường JKL, Quận Ngô Quyền, Hải Phòng",
+        full_address: "Kho Hải Phòng - 654 Đường JKL, Quận Ngô Quyền, Hải Phòng"
+      }
+    };
+
+    const defaultWarehouse = defaultWarehouses[region] || {
+      warehouse_name: `Kho ${region}`,
+      address: `Địa chỉ kho tại ${region}`,
+      full_address: `Kho ${region} - Địa chỉ kho tại ${region}`
+    };
+
+    return res.json(defaultWarehouse);
+  } catch (err) {
+    console.error("=== GET /api/warehouse/by-region ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    
+    // Trả về giá trị mặc định
+    const { region = 'HCM' } = req.query;
+    res.json({
+      warehouse_name: `Kho ${region}`,
+      address: `Địa chỉ kho tại ${region}`,
+      full_address: `Kho ${region} - Địa chỉ kho tại ${region}`
     });
   }
 };
