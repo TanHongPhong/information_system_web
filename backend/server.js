@@ -5,7 +5,7 @@ import path from "path";
 import testRouter from "./src/routes/testRouter.js";
 
 // Controllers để truy xuất dữ liệu từ Neon (PostgreSQL)
-import { getCompanies, getCompanyById, getVehiclesByCompany } from "./src/controllers/companyControllers.js";
+import { getCompanies, getCompanyById, getVehiclesByCompany, getRoutesByCompany, getAvailableRegionsByCompany, getAllAvailableRegions, getWarehouseHCMInfo } from "./src/controllers/companyControllers.js";
 import { getCargoOrders, createCargoOrder, updateCargoOrder } from "./src/controllers/orderControllers.js";
 import { getTransactions, createTransaction } from "./src/controllers/transactionControllers.js";
 import { sepayWebhook } from "./src/controllers/paymentControllers.js";
@@ -98,8 +98,11 @@ app.use("/api/test", testRouter);
 
 // Transport Companies API (từ Neon database)
 app.get("/api/transport-companies", getCompanies);
+app.get("/api/transport-companies/available-regions", getAllAvailableRegions);
 app.get("/api/transport-companies/:id", getCompanyById);
 app.get("/api/transport-companies/:id/vehicles", getVehiclesByCompany);
+app.get("/api/transport-companies/:id/routes", getRoutesByCompany);
+app.get("/api/transport-companies/:id/available-regions", getAvailableRegionsByCompany);
 
 // Cargo Orders API
 app.get("/api/cargo-orders", getCargoOrders);
@@ -133,6 +136,7 @@ app.post("/api/warehouse/update-operation", updateWarehouseOperation);
 app.get("/api/warehouse/inventory", getWarehouseInventory);
 app.post("/api/warehouse/inventory/create", createInventory);
 app.post("/api/warehouse/inventory/update-status", updateInventoryStatus);
+app.get("/api/warehouse/hcm-info", getWarehouseHCMInfo);
 
 // Order Status History API
 app.get("/api/orders/:orderId/status-history", getOrderStatusHistory);

@@ -63,6 +63,8 @@ export const getCompanies = async (req, res) => {
       vehicle_type = "",
       min_rating = null,
       max_cost_per_km = null,
+      origin_region = "",
+      destination_region = "",
     } = req.query;
 
     // Full query with proper joins for areas and rates
@@ -98,10 +100,22 @@ export const getCompanies = async (req, res) => {
       WHERE lc.status = 'ACTIVE'
         AND ($1 = '' OR lc.company_name ILIKE '%'||$1||'%' OR lc.address ILIKE '%'||$1||'%')
         AND ($4::numeric IS NULL OR COALESCE(lc.rating, 0) >= $4::numeric)
+        AND (
+          $6 = '' OR $7 = '' OR
+          EXISTS (
+            SELECT 1 FROM "Routes" r
+            WHERE r.company_id = lc.company_id
+              AND r.is_active = TRUE
+              AND (
+                (r.origin_region = $6 AND r.destination_region = $7)
+                OR (r.origin_region = $7 AND r.destination_region = $6)
+              )
+          )
+        )
       ORDER BY lc.rating DESC NULLS LAST, lc.company_name ASC
       LIMIT 50;
       `,
-      [q, area, vehicle_type, min_rating, max_cost_per_km]
+      [q, area, vehicle_type, min_rating, max_cost_per_km, origin_region, destination_region]
     );
 
     res.json(rows || []);
@@ -205,10 +219,75 @@ export const getVehiclesByCompany = async (req, res) => {
       return res.status(400).json({ error: "Invalid company ID" });
     }
 
-    const { status = "" } = req.query;
+    const { status = "", origin_region = "", destination_region = "" } = req.query;
 
-    const { rows } = await pool.query(
-      `
+    console.log("📋 GET /api/transport-companies/:id/vehicles", {
+      companyId,
+      origin_region,
+      destination_region,
+      status
+    });
+    
+    // Log query params để debug
+    console.log("🔍 Query params:", req.query);
+
+    // Nếu có origin_region (điểm đi) và destination_region, filter xe phải ở vị trí origin_region
+    // QUAN TRỌNG: origin_region = điểm đi = nơi xe phải ở để bốc hàng
+    //            destination_region = điểm đến = nơi xe sẽ đến
+    if (origin_region && destination_region) {
+      try {
+        console.log(`🔍 Filtering vehicles: origin_region="${origin_region}" (điểm đi), destination_region="${destination_region}" (điểm đến)`);
+        
+        // Sử dụng function mới để filter theo vị trí hiện tại và điểm đến
+        const { rows } = await pool.query(
+          `SELECT * FROM get_available_vehicles_by_location_and_destination($1, $2, $3)`,
+          [companyId, origin_region, destination_region]
+        );
+        
+        console.log(`📊 Function returned ${rows.length} vehicles`);
+        
+        // Filter theo status nếu có
+        let filteredRows = rows;
+        if (status) {
+          filteredRows = rows.filter(v => v.status === status);
+        }
+        
+        // Log từng xe để debug
+        filteredRows.forEach(v => {
+          console.log(`   ✅ ${v.license_plate}: ${v.current_location} (region: ${v.vehicle_region})`);
+        });
+        
+        console.log(`✅ Found ${filteredRows.length} vehicles at ${origin_region} (điểm đi) going to ${destination_region} (điểm đến)`);
+        return res.json(filteredRows);
+      } catch (funcErr) {
+        // Nếu function chưa tồn tại, fallback về query cũ
+        console.warn("Function get_available_vehicles_by_location_and_destination not found, using fallback query:", funcErr.message);
+        console.error("Error details:", funcErr);
+      }
+    } else if (destination_region) {
+      // Chỉ có destination_region, không có origin_region
+      try {
+        const { rows } = await pool.query(
+          `SELECT * FROM get_available_vehicles_by_route($1, $2)`,
+          [companyId, destination_region]
+        );
+        
+        let filteredRows = rows;
+        if (status) {
+          filteredRows = rows.filter(v => v.status === status);
+        }
+        
+        return res.json(filteredRows);
+      } catch (funcErr) {
+        console.warn("Function get_available_vehicles_by_route not found, using fallback query:", funcErr.message);
+      }
+    }
+
+    // Query cũ (fallback hoặc khi không có destination_region)
+    const params = [companyId];
+    let paramCount = 2;
+    
+    let query = `
       SELECT
         v.vehicle_id,
         v.company_id,
@@ -221,15 +300,105 @@ export const getVehiclesByCompany = async (req, res) => {
         v.current_location,
         v.created_at,
         v.updated_at,
-        lc.company_name
+        lc.company_name,
+        r.route_id,
+        r.route_name,
+        r.origin_region,
+        r.destination_region,
+        get_region_from_address(v.current_location) as vehicle_region
+    `;
+    
+    // Thêm availability nếu có destination_region
+    if (destination_region) {
+      query += `, get_vehicle_availability(v.vehicle_id, $${paramCount}) as availability`;
+      params.push(destination_region);
+      paramCount++;
+    } else {
+      query += `, NULL::jsonb as availability`;
+    }
+    
+    query += `
       FROM "Vehicles" v
       INNER JOIN "LogisticsCompany" lc ON v.company_id = lc.company_id
-      WHERE v.company_id = $1
-        AND ($2 = '' OR v.status = $2)
-      ORDER BY v.vehicle_type ASC, v.license_plate ASC;
-      `,
-      [companyId, status]
-    );
+    `;
+
+    // Nếu có filter theo route, join với VehicleRoutes và Routes
+    if (origin_region && destination_region) {
+      query += `
+        INNER JOIN "VehicleRoutes" vr ON v.vehicle_id = vr.vehicle_id AND vr.is_active = TRUE
+        INNER JOIN "Routes" r ON vr.route_id = r.route_id AND r.is_active = TRUE
+      `;
+    } else {
+      query += `
+        LEFT JOIN "VehicleRoutes" vr ON v.vehicle_id = vr.vehicle_id AND vr.is_active = TRUE
+        LEFT JOIN "Routes" r ON vr.route_id = r.route_id AND r.is_active = TRUE
+      `;
+    }
+
+    query += ` WHERE v.company_id = $1`;
+
+    if (status) {
+      query += ` AND v.status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+
+    // Filter theo route: tìm xe có route từ origin_region đến destination_region (hoặc ngược lại)
+    if (origin_region && destination_region) {
+      // QUAN TRỌNG: Xe phải ở vị trí = origin_region (điểm đi)
+      // Và có route từ origin_region đến destination_region
+      query += ` AND (
+        -- Xe phải ở vị trí origin_region (điểm đi)
+        get_region_from_address(v.current_location) = $${paramCount}
+        OR (v.current_location IS NULL AND EXISTS(
+          SELECT 1 FROM "VehicleRoutes" vr3
+          INNER JOIN "Routes" r3 ON vr3.route_id = r3.route_id
+          WHERE vr3.vehicle_id = v.vehicle_id
+            AND vr3.is_active = TRUE
+            AND r3.is_active = TRUE
+            AND r3.origin_region = $${paramCount}
+            AND r3.destination_region = $${paramCount + 1}
+        ))
+      ) AND (
+        -- Xe phải có route từ origin_region đến destination_region
+        EXISTS(
+          SELECT 1 FROM "VehicleRoutes" vr2
+          INNER JOIN "Routes" r2 ON vr2.route_id = r2.route_id
+          WHERE vr2.vehicle_id = v.vehicle_id
+            AND vr2.is_active = TRUE
+            AND r2.is_active = TRUE
+            AND (
+              (r2.origin_region = $${paramCount} AND r2.destination_region = $${paramCount + 1})
+              OR (r2.origin_region = $${paramCount + 1} AND r2.destination_region = $${paramCount})
+            )
+        )
+      )`;
+      params.push(origin_region, destination_region);
+      paramCount += 2;
+    } else if (destination_region) {
+      // Nếu chỉ có destination_region, filter xe theo vị trí hiện tại
+      // Xe phải ở vị trí có route đến destination_region
+      query += ` AND (
+        EXISTS(
+          SELECT 1 FROM "VehicleRoutes" vr2
+          INNER JOIN "Routes" r2 ON vr2.route_id = r2.route_id
+          WHERE vr2.vehicle_id = v.vehicle_id
+            AND vr2.is_active = TRUE
+            AND r2.is_active = TRUE
+            AND (
+              (r2.origin_region = get_region_from_address(v.current_location) AND r2.destination_region = $${paramCount})
+              OR (r2.destination_region = get_region_from_address(v.current_location) AND r2.origin_region = $${paramCount})
+              OR (v.current_location IS NULL AND r2.destination_region = $${paramCount})
+            )
+        )
+      )`;
+      params.push(destination_region);
+      paramCount++;
+    }
+
+    query += ` ORDER BY v.vehicle_type ASC, v.license_plate ASC;`;
+
+    const { rows } = await pool.query(query, params);
 
     res.json(rows);
   } catch (err) {
@@ -244,4 +413,164 @@ export const getVehiclesByCompany = async (req, res) => {
     });
   }
 };
+
+/** GET /api/transport-companies/:id/routes */
+export const getRoutesByCompany = async (req, res) => {
+  try {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId)) {
+      return res.status(400).json({ error: "Invalid company ID" });
+    }
+
+    const { rows } = await pool.query(
+      `
+      SELECT
+        route_id,
+        company_id,
+        route_name,
+        origin_region,
+        destination_region,
+        estimated_distance_km,
+        estimated_duration_hours,
+        is_active,
+        created_at,
+        updated_at
+      FROM "Routes"
+      WHERE company_id = $1
+        AND is_active = TRUE
+      ORDER BY route_name ASC;
+      `,
+      [companyId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("=== GET /api/transport-companies/:id/routes ERROR ===");
+    console.error("Error message:", err.message);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/** GET /api/transport-companies/:id/available-regions */
+export const getAvailableRegionsByCompany = async (req, res) => {
+  try {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId)) {
+      return res.status(400).json({ error: "Invalid company ID" });
+    }
+
+    // Lấy danh sách các region có sẵn từ routes của công ty
+    const { rows } = await pool.query(
+      `
+      SELECT DISTINCT
+        origin_region as region,
+        'origin' as type
+      FROM "Routes"
+      WHERE company_id = $1 AND is_active = TRUE
+      UNION
+      SELECT DISTINCT
+        destination_region as region,
+        'destination' as type
+      FROM "Routes"
+      WHERE company_id = $1 AND is_active = TRUE
+      ORDER BY region ASC;
+      `,
+      [companyId]
+    );
+
+    // Tạo danh sách regions và routes
+    const regions = [...new Set(rows.map(r => r.region))];
+    const routes = await pool.query(
+      `SELECT route_id, route_name, origin_region, destination_region
+       FROM "Routes"
+       WHERE company_id = $1 AND is_active = TRUE
+       ORDER BY route_name ASC`,
+      [companyId]
+    );
+
+    res.json({
+      regions,
+      routes: routes.rows,
+    });
+  } catch (err) {
+    console.error("=== GET /api/transport-companies/:id/available-regions ERROR ===");
+    console.error("Error message:", err.message);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/** GET /api/transport-companies/available-regions */
+export const getAllAvailableRegions = async (req, res) => {
+  try {
+    // Lấy tất cả regions có sẵn từ tất cả routes
+    const { rows } = await pool.query(
+      `SELECT * FROM get_available_regions()`
+    );
+
+    const regions = [...new Set(rows.map(r => r.region))].sort();
+
+    res.json({
+      regions,
+    });
+  } catch (err) {
+    console.error("=== GET /api/transport-companies/available-regions ERROR ===");
+    console.error("Error message:", err.message);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/** GET /api/warehouse/hcm-info */
+export const getWarehouseHCMInfo = async (req, res) => {
+  try {
+    console.log("📋 GET /api/warehouse/hcm-info");
+    
+    // Thử gọi function
+    try {
+      const { rows } = await pool.query(
+        `SELECT * FROM get_warehouse_hcm_info()`
+      );
+
+      if (rows.length === 0) {
+        console.log("⚠️ Function returned no rows, using default");
+        return res.json({
+          warehouse_name: "Kho HCM",
+          address: "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+          full_address: "Kho HCM - 123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+        });
+      }
+
+      console.log("✅ Function returned:", rows[0]);
+      return res.json(rows[0]);
+    } catch (funcErr) {
+      // Nếu function không tồn tại, trả về giá trị mặc định
+      console.warn("⚠️ Function get_warehouse_hcm_info not found, using default:", funcErr.message);
+      return res.json({
+        warehouse_name: "Kho HCM",
+        address: "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+        full_address: "Kho HCM - 123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+      });
+    }
+  } catch (err) {
+    console.error("=== GET /api/warehouse/hcm-info ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    
+    // Trả về giá trị mặc định ngay cả khi có lỗi
+    res.json({
+      warehouse_name: "Kho HCM",
+      address: "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+      full_address: "Kho HCM - 123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+    });
+  }
+};
+
 

@@ -411,12 +411,13 @@ export const getDriverVehicleInfo = async (req, res) => {
       });
     }
 
-    // Lấy tất cả đơn hàng đang trên xe này (status: LOADING, IN_TRANSIT, WAREHOUSE_RECEIVED)
+    // Lấy tất cả đơn hàng đang trên xe này (status: LOADING, IN_TRANSIT)
+    // Không bao gồm WAREHOUSE_RECEIVED vì đã nhận kho, không còn trên xe nữa
     // Nếu không có, sẽ lấy cả ACCEPTED (đơn đã được chấp nhận nhưng chưa bắt đầu bốc hàng)
     // Debug: Log vehicle_id để kiểm tra
     console.log("🔍 Fetching orders for vehicle_id:", vehicle.vehicle_id, "License plate:", vehicle.license_plate);
     
-    // Trước tiên, tìm đơn hàng với status LOADING, IN_TRANSIT, WAREHOUSE_RECEIVED
+    // Trước tiên, tìm đơn hàng với status LOADING, IN_TRANSIT (không bao gồm WAREHOUSE_RECEIVED vì đã nhận kho)
     const ordersQuery = `
       SELECT 
         co.order_id,
@@ -444,18 +445,18 @@ export const getDriverVehicleInfo = async (req, res) => {
       FROM "CargoOrders" co
       LEFT JOIN users u ON co.customer_id = u.id
       WHERE co.vehicle_id = $1
-        AND co.status IN ('LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED')
+        AND co.status IN ('LOADING', 'IN_TRANSIT')
       ORDER BY co.created_at DESC;
     `;
 
     let ordersResult = await pool.query(ordersQuery, [vehicle.vehicle_id]);
     
     // Debug: Log số lượng đơn hàng tìm thấy
-    console.log(`📦 Found ${ordersResult.rows.length} orders with status LOADING/IN_TRANSIT/WAREHOUSE_RECEIVED for vehicle ${vehicle.vehicle_id} (${vehicle.license_plate})`);
+    console.log(`📦 Found ${ordersResult.rows.length} orders with status LOADING/IN_TRANSIT for vehicle ${vehicle.vehicle_id} (${vehicle.license_plate})`);
     
     // Nếu không có đơn hàng với status trên, kiểm tra và lấy cả ACCEPTED
     if (ordersResult.rows.length === 0) {
-      console.log("⚠️ No orders with status LOADING/IN_TRANSIT/WAREHOUSE_RECEIVED. Checking for ACCEPTED orders...");
+      console.log("⚠️ No orders with status LOADING/IN_TRANSIT. Checking for ACCEPTED orders...");
       
       const acceptedOrdersQuery = `
         SELECT 
@@ -631,6 +632,17 @@ export const recordDeparture = async (req, res) => {
 
       const locationResult = await pool.query(locationQuery, [vehicle_id, lat, lng, departure_location || null]);
       console.log("✅ LocationHistory recorded:", locationResult.rows[0]?.location_id);
+      
+      // Cập nhật vị trí hiện tại của xe khi xuất phát (nếu có departure_location)
+      if (departure_location && typeof departure_location === 'string') {
+        await pool.query(`
+          UPDATE "Vehicles"
+          SET current_location = $1,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE vehicle_id = $2;
+        `, [departure_location, vehicle_id]);
+        console.log(`✅ Vehicle ${vehicle_id} current_location updated to: ${departure_location}`);
+      }
     } catch (locationErr) {
       console.error("⚠️ Error recording LocationHistory:", locationErr.message);
       // Không throw error, chỉ log để tiếp tục
@@ -723,16 +735,18 @@ export const recordWarehouseArrival = async (req, res) => {
     // KHÔNG ghi vào WarehouseOperations ở đây
     // WarehouseOperations sẽ được ghi khi driver nhấn "Nhập kho" từng đơn hàng
 
-    // Cập nhật vị trí hiện tại của xe
+    // Cập nhật vị trí hiện tại của xe (khi đến kho)
     try {
-      const updateVehicleQuery = `
-        UPDATE "Vehicles"
-        SET current_location = $1,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE vehicle_id = $2;
-      `;
-      await pool.query(updateVehicleQuery, [warehouse_location || null, vehicle_id]);
-      console.log("✅ Vehicle current_location updated");
+      if (warehouse_location) {
+        const updateVehicleQuery = `
+          UPDATE "Vehicles"
+          SET current_location = $1,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE vehicle_id = $2;
+        `;
+        await pool.query(updateVehicleQuery, [warehouse_location, vehicle_id]);
+        console.log(`✅ Vehicle ${vehicle_id} current_location updated to: ${warehouse_location}`);
+      }
     } catch (vehicleErr) {
       console.error("⚠️ Error updating vehicle location:", vehicleErr.message);
       // Không throw error, chỉ log để tiếp tục
@@ -808,6 +822,22 @@ export const acceptWarehouseEntry = async (req, res) => {
     }
 
     console.log(`✅ Updated order ${order_id} to WAREHOUSE_RECEIVED`);
+
+    // Cập nhật vị trí xe khi nhập kho (nếu có warehouse_location)
+    if (warehouse_location && vehicle_id) {
+      try {
+        await pool.query(`
+          UPDATE "Vehicles"
+          SET current_location = $1,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE vehicle_id = $2;
+        `, [warehouse_location, vehicle_id]);
+        console.log(`✅ Vehicle ${vehicle_id} current_location updated to: ${warehouse_location}`);
+      } catch (locationErr) {
+        console.error("⚠️ Error updating vehicle location:", locationErr.message);
+        // Không throw error, chỉ log để tiếp tục
+      }
+    }
 
     // Lấy thông tin đơn hàng để tạo inventory
     const orderInfoQuery = `
@@ -1107,14 +1137,15 @@ export const recordMovementEvent = async (req, res) => {
       }
     }
 
-    // Cập nhật vị trí hiện tại của xe
-    if (latitude && longitude && address) {
+    // Cập nhật vị trí hiện tại của xe (khi có địa chỉ)
+    if (address) {
       await pool.query(`
         UPDATE "Vehicles"
         SET current_location = $1,
             updated_at = CURRENT_TIMESTAMP
         WHERE vehicle_id = $2;
       `, [address, vehicle_id]);
+      console.log(`✅ Vehicle ${vehicle_id} current_location updated to: ${address}`);
     }
 
     // Ghi vào LocationHistory

@@ -48,6 +48,42 @@ export const createCargoOrder = async (req, res) => {
       });
     }
 
+    // Validate route: kiểm tra xem pickup_address và dropoff_address có thuộc tuyến đường của công ty không
+    const pickupRegionResult = await pool.query(
+      `SELECT get_region_from_address($1) as region`,
+      [pickup_address]
+    );
+    const dropoffRegionResult = await pool.query(
+      `SELECT get_region_from_address($1) as region`,
+      [dropoff_address]
+    );
+    
+    const originRegion = pickupRegionResult.rows[0]?.region;
+    const destRegion = dropoffRegionResult.rows[0]?.region;
+    
+    if (originRegion && destRegion && originRegion !== 'UNKNOWN' && destRegion !== 'UNKNOWN') {
+      // Kiểm tra route có tồn tại trong Routes của công ty không
+      const routeCheck = await pool.query(
+        `SELECT route_id, route_name 
+         FROM "Routes"
+         WHERE company_id = $1
+           AND origin_region = $2
+           AND destination_region = $3
+           AND is_active = TRUE
+         LIMIT 1`,
+        [Number(company_id), originRegion, destRegion]
+      );
+      
+      if (routeCheck.rows.length === 0) {
+        return res.status(400).json({
+          error: "Invalid route",
+          message: `Tuyến đường từ ${originRegion} đến ${destRegion} không tồn tại hoặc không được hỗ trợ bởi công ty này. Vui lòng chọn tuyến đường hợp lệ.`,
+          pickup_region: originRegion,
+          dropoff_region: destRegion,
+        });
+      }
+    }
+
     let finalCustomerId = customer_id || req.user?.id || req.headers['x-user-id'] || null;
     if (finalCustomerId) {
       finalCustomerId = String(finalCustomerId).trim();
@@ -106,6 +142,39 @@ export const updateCargoOrder = async (req, res) => {
     }
 
     const oldStatus = oldStatusResult.rows[0].status;
+    
+    // Nếu đang phân công vehicle_id, kiểm tra xe có thể nhận đơn không
+    if (vehicle_id !== undefined && vehicle_id !== null) {
+      // Lấy thông tin đơn hàng để kiểm tra pickup_address
+      const orderInfoResult = await pool.query(
+        `SELECT pickup_address FROM "CargoOrders" WHERE order_id = $1`,
+        [orderId]
+      );
+      
+      if (orderInfoResult.rows.length > 0) {
+        const pickupAddress = orderInfoResult.rows[0].pickup_address;
+        
+        // Kiểm tra xe có thể nhận đơn không
+        const checkResult = await pool.query(
+          `SELECT can_vehicle_accept_order($1, $2) as result`,
+          [vehicle_id, pickupAddress || '']
+        );
+        
+        if (checkResult.rows.length > 0) {
+          const checkData = checkResult.rows[0].result;
+          
+          if (!checkData.can_accept) {
+            return res.status(400).json({
+              error: "Cannot assign order to vehicle",
+              reason: checkData.reason,
+              vehicle_region: checkData.vehicle_region,
+              order_region: checkData.order_region
+            });
+          }
+        }
+      }
+    }
+    
     const updateFields = [`status = $1`, `updated_at = CURRENT_TIMESTAMP`];
     const params = [status];
     let paramCount = 2;
