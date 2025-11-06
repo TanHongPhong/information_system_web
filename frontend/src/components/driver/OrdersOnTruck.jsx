@@ -58,6 +58,9 @@ function OrderCard({ order, index, onAcceptWarehouseEntry, vehicleId, warehouseL
   // Kiểm tra xem có thể nhập kho không (chỉ đơn hàng có status IN_TRANSIT)
   const canAcceptWarehouse = order.status === 'IN_TRANSIT' && onAcceptWarehouseEntry;
   const isUpdating = updatingOrderId === (order.order_id || order.id);
+  
+  // Check if order is loaded
+  const isLoaded = order.is_loaded === true;
 
   // Format date từ API
   const formatDate = (dateString) => {
@@ -80,58 +83,69 @@ function OrderCard({ order, index, onAcceptWarehouseEntry, vehicleId, warehouseL
     return typeof weight === "number" ? weight.toLocaleString("vi-VN") : weight;
   };
 
+  // Format order code: loại bỏ tiền tố như GMD, gmd, ORD- để chỉ hiển thị mã số
+  const formatOrderCode = (code) => {
+    if (!code) return null;
+    
+    // Loại bỏ tiền tố GMD/gmd (case insensitive)
+    let formatted = code.replace(/^gmd/i, '');
+    
+    // Loại bỏ tiền tố ORD- nếu có
+    formatted = formatted.replace(/^ORD-/i, '');
+    
+    // Loại bỏ các ký tự chữ cái ở đầu (tiền tố khác)
+    formatted = formatted.replace(/^[A-Za-z]+/, '');
+    
+    // Loại bỏ các số 0 ở đầu để hiển thị gọn hơn
+    formatted = formatted.replace(/^0+/, '') || '0';
+    
+    return formatted;
+  };
+
   return (
     <article
       className={`rounded-lg p-3 ${style.cardBg} ring-1 ring-inset ${style.ring}`}
     >
-      {/* header */}
+      {/* header - gọn hơn */}
       <div
         className={`flex items-center justify-between text-[11px] ${style.headerText}`}
       >
-        <span className="font-medium">ID: {order.order_id || order.id}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">
+            {order.order_code ? formatOrderCode(order.order_code) : `ID: ${order.order_id || order.id}`}
+          </span>
+          {/* Checkbox đã bốc hàng */}
+          <div className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={isLoaded}
+              disabled
+              className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-[10px] text-slate-500">
+              {isLoaded ? "Đã bốc" : "Chưa bốc"}
+            </span>
+          </div>
+        </div>
         <MoreHorizontalIcon className="w-4 h-4" />
       </div>
 
-      {/* Hàng hóa (cargo name) */}
-      {order.cargo_name && (
-        <div className="mt-1.5">
-          <p className={`text-xs ${style.routeText} font-medium`}>
-            {order.cargo_name}
-          </p>
-          {order.cargo_type && (
-            <p className={`text-[10px] ${style.dateText} mt-0.5`}>
-              Loại: {order.cargo_type}
+      {/* Hàng hóa + weight - gọn hơn */}
+      <div className="mt-1.5 flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          {order.cargo_name && (
+            <p className={`text-xs ${style.routeText} font-medium truncate`}>
+              {order.cargo_name}
             </p>
           )}
         </div>
-      )}
-
-      {/* weight / icon */}
-      <div className="mt-2 flex items-center gap-2">
-        <span className="inline-flex w-8 h-8 items-center justify-center rounded-md bg-white/60">
-          <BoxIcon className={`w-4 h-4 ${style.iconColor}`} />
-        </span>
-        <div>
-          <p
-            className={`text-xl font-bold leading-none ${style.weightText}`}
-          >{`${formatWeight(order.weight_kg || order.weight)} kg`}</p>
-          {order.volume_m3 && (
-            <p className={`text-[10px] ${style.dateText} mt-0.5`}>
-              {order.volume_m3} m³
-            </p>
-          )}
+        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          <BoxIcon className={`w-3.5 h-3.5 ${style.iconColor}`} />
+          <p className={`text-sm font-bold ${style.weightText}`}>
+            {formatWeight(order.weight_kg || order.weight)} kg
+          </p>
         </div>
       </div>
-
-      {/* route + date */}
-      <p className={`mt-2 text-sm ${style.routeText}`}>
-        {order.pickup_address && order.dropoff_address
-          ? `${order.pickup_address} – ${order.dropoff_address}`
-          : order.route || "Chưa có thông tin"}
-      </p>
-      <p className={`text-xs ${style.dateText} mt-1`}>
-        {formatDate(order.created_at || order.date)}
-      </p>
 
       {/* Status badge và button nhập kho */}
       <div className="mt-2 pt-2 border-t border-white/40">

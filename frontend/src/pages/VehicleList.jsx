@@ -9,6 +9,18 @@ export default function App() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const companyId = searchParams.get("companyId");
+  const originRegion = searchParams.get("origin_region");
+  const destinationRegion = searchParams.get("destination_region");
+
+  // Log params để debug
+  useEffect(() => {
+    console.log("📍 VehicleList: Received params", {
+      companyId,
+      originRegion,
+      destinationRegion,
+      allParams: Object.fromEntries(searchParams)
+    });
+  }, [companyId, originRegion, destinationRegion, searchParams]);
 
   // Kiểm tra role và logout nếu không đúng
   useEffect(() => {
@@ -31,7 +43,12 @@ export default function App() {
   
   return (
     <AppLayout>
-      <VehiclePage keyword={keyword} companyId={companyId} />
+      <VehiclePage 
+        keyword={keyword} 
+        companyId={companyId}
+        originRegion={originRegion}
+        destinationRegion={destinationRegion}
+      />
     </AppLayout>
   );
 }

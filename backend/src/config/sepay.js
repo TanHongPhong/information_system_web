@@ -5,15 +5,17 @@ dotenv.config();
  * Cấu hình Sepay Payment Gateway
  * 
  * Các biến môi trường cần thiết:
- * - SEPAY_API_KEY: API Key từ Sepay
- * - SEPAY_API_SECRET: API Secret để verify webhook signature
+ * - SEPAY_API_TOKEN: Token để gọi API chủ động (Bearer token)
+ * - SEPAY_WEBHOOK_APIKEY: API Key để verify webhook header (Authorization: Apikey <KEY>)
  * - SEPAY_ACCOUNT: Số tài khoản/điện thoại ví nhận tiền
- * - SEPAY_BANK: Mã ngân hàng (VD: BIDV, VCB, MB, TCB...)
- * - SEPAY_WEBHOOK_SECRET: Secret key để validate webhook (nếu có)
+ * - SEPAY_BANK: Mã ngân hàng (VD: BIDV, VCB, MB, TCB, VPBank...)
+ * - SEPAY_WEBHOOK_URL: URL webhook (tự động build từ BACKEND_URL + WEBHOOK_PATH)
  */
 export const sepayConfig = {
   // API Credentials
-  apiKey: process.env.SEPAY_API_KEY || "",
+  apiToken: process.env.SEPAY_API_TOKEN || "",
+  // Legacy support (nếu vẫn dùng SEPAY_API_KEY và SEPAY_API_SECRET)
+  apiKey: process.env.SEPAY_API_KEY || process.env.SEPAY_API_TOKEN || "",
   apiSecret: process.env.SEPAY_API_SECRET || "",
   
   // Thông tin tài khoản nhận tiền
@@ -21,14 +23,16 @@ export const sepayConfig = {
   bank: process.env.SEPAY_BANK || "BIDV",
   
   // Webhook
-  webhookSecret: process.env.SEPAY_WEBHOOK_SECRET || "",
-  webhookUrl: process.env.SEPAY_WEBHOOK_URL || `${process.env.BACKEND_URL || "http://localhost:5001"}/api/sepay/webhook`,
+  webhookApiKey: process.env.SEPAY_WEBHOOK_APIKEY || process.env.SEPAY_WEBHOOK_SECRET || "",
+  webhookSecret: process.env.SEPAY_WEBHOOK_SECRET || process.env.SEPAY_WEBHOOK_APIKEY || "", // Backward compatibility
+  webhookPath: process.env.WEBHOOK_PATH || "/api/sepay/webhook",
+  webhookUrl: process.env.SEPAY_WEBHOOK_URL || (process.env.BACKEND_URL ? `${process.env.BACKEND_URL}${process.env.WEBHOOK_PATH || "/api/sepay/webhook"}` : null),
   
   // QR Code Settings
   qrTemplate: process.env.SEPAY_QR_TEMPLATE || "compact", // "compact" | "standard"
   
   // API Base URL
-  apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://api.sepay.vn", // Nếu Sepay có API
+  apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://api.sepay.vn",
   
   // QR Image URL
   qrImageUrl: process.env.SEPAY_QR_IMAGE_URL || "https://qr.sepay.vn/img",
@@ -97,12 +101,29 @@ export function buildSepayQrUrl({ amount, description }) {
 /**
  * Verify Webhook Signature (nếu Sepay hỗ trợ)
  * Validate webhook request từ Sepay để đảm bảo an toàn
+ * Hỗ trợ cả Authorization: Apikey <KEY> và x-sepay-signature header
  */
-export function verifyWebhookSignature(payload, signature, timestamp) {
-  const { webhookSecret } = sepayConfig;
+export function verifyWebhookSignature(payload, signature, timestamp, authHeader = null) {
+  const { webhookApiKey, webhookSecret } = sepayConfig;
   
-  if (!webhookSecret) {
-    console.warn("⚠️  SEPAY_WEBHOOK_SECRET not set, skipping signature verification");
+  // Nếu có Authorization header với format "Apikey <KEY>"
+  if (authHeader) {
+    const apikeyMatch = authHeader.match(/^Apikey\s+(.+)$/i);
+    if (apikeyMatch) {
+      const providedKey = apikeyMatch[1].trim();
+      if (webhookApiKey && providedKey === webhookApiKey) {
+        console.log("✅ Webhook API key verified via Authorization header");
+        return true;
+      } else {
+        console.error("❌ Invalid webhook API key in Authorization header");
+        return false;
+      }
+    }
+  }
+  
+  // Fallback: Verify signature nếu có (legacy method)
+  if (!webhookSecret && !webhookApiKey) {
+    console.warn("⚠️  SEPAY_WEBHOOK_APIKEY/SEPAY_WEBHOOK_SECRET not set, skipping signature verification");
     return true; // Nếu không có secret thì skip validation (development)
   }
   
@@ -110,7 +131,7 @@ export function verifyWebhookSignature(payload, signature, timestamp) {
   // Ví dụ: HMAC SHA256 với secret key
   // const crypto = require('crypto');
   // const expectedSignature = crypto
-  //   .createHmac('sha256', webhookSecret)
+  //   .createHmac('sha256', webhookSecret || webhookApiKey)
   //   .update(JSON.stringify(payload) + timestamp)
   //   .digest('hex');
   // return expectedSignature === signature;

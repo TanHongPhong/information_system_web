@@ -198,11 +198,10 @@ export default function TruckPanel({ vehicle, loadPercent, maxTon }) {
 
   const plate = vehicle?.plate || "—";
   const driver = vehicle?.driver || "—";
-  const route = (vehicle?.route || "—").replace("–", " → ");
+  const currentLocation = vehicle?.location || vehicle?.current_location || "Chưa có thông tin";
   const statusTxt = vehicle?.status
     ? vehicle.status[0].toUpperCase() + vehicle.status.slice(1)
     : "—";
-  const nextMilestone = vehicle?.times?.[3] || "—";
 
   return (
     <section
@@ -229,19 +228,13 @@ export default function TruckPanel({ vehicle, loadPercent, maxTon }) {
             label="Còn trống"
             value={`${freeTons.toFixed(1)} tấn`}
           />
-          <StatRow
-            Icon={IconClock}
-            label="ETA dự kiến"
-            value={nextMilestone}
-          />
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 text-[13px] leading-[1.3]">
           <InfoCard Icon={IconHash} k="Biển số" v={plate} />
           <InfoCard Icon={IconUser} k="Tài xế" v={driver} />
-          <InfoCard Icon={IconMapPin} k="Tuyến" v={route} />
+          <InfoCard Icon={IconMapPin} k="Vị trí" v={currentLocation} />
           <InfoCard Icon={IconActivity} k="Trạng thái" v={statusTxt} />
-          <InfoCard Icon={IconClock} k="Mốc kế tiếp" v={nextMilestone} />
           <InfoCard
             Icon={IconPhone}
             k="Liên hệ nhanh"

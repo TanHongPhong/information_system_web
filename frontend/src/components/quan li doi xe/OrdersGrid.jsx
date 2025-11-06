@@ -31,12 +31,6 @@ export default function OrdersGrid({ orders, loading }) {
 
   return (
     <section className="pt-4">
-      <div className="mb-3">
-        <h3 className="text-[18px] text-[#0f172a]" style={{ fontWeight: 400 }}>
-          Đơn hàng ({orders?.length || 0})
-        </h3>
-      </div>
-      
       {loading ? (
         <div className="text-center py-8 text-[13px] text-[#697386]" style={{ fontWeight: 400 }}>
           Đang tải đơn hàng...

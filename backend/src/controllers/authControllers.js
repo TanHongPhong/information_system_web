@@ -106,12 +106,6 @@ export const login = async (req, res) => {
     }
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     
-    // Log để debug
-    console.log(`✅ Login successful: ${user.email} (role: ${user.role})`);
-    if (user.role === 'warehouse' && user.warehouse_id) {
-      console.log(`   Warehouse ID: ${user.warehouse_id}`);
-    }
-    
     // Trả về response với role từ database (có thể là user, driver, warehouse, etc.)
     const userResponse = {
       id: user.id,

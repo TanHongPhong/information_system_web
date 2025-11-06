@@ -2,7 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
-import testRouter from "./src/routes/testRouter.js";
+// Test router removed for production
+// import testRouter from "./src/routes/testRouter.js";
 
 // Controllers để truy xuất dữ liệu từ Neon (PostgreSQL)
 import { getCompanies, getCompanyById, getVehiclesByCompany, getRoutesByCompany, getAvailableRegionsByCompany, getAllAvailableRegions, getWarehouseHCMInfo, getWarehouseByRegion } from "./src/controllers/companyControllers.js";
@@ -59,19 +60,39 @@ const requiredEnvVars = {
 };
 
 const missingEnvVars = [];
+const warnings = [];
+
 for (const [key, value] of Object.entries(requiredEnvVars)) {
   if (!value || value.includes("user:password") || value.includes("host:port")) {
     missingEnvVars.push(key);
   }
 }
 
+// Check JWT_SECRET for production
+if (process.env.NODE_ENV === "production") {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret || jwtSecret === "your-secret-key-change-in-production") {
+    warnings.push("JWT_SECRET must be set to a strong random string in production!");
+  }
+}
+
 if (missingEnvVars.length > 0) {
-  console.warn("⚠️  Cảnh báo: Một số biến môi trường chưa được cấu hình:");
+  console.error("❌ ERROR: Missing required environment variables:");
   missingEnvVars.forEach(key => {
-    console.warn(`   - ${key}`);
+    console.error(`   - ${key}`);
   });
-  console.warn("📝 Vui lòng cập nhật file backend/.env");
-  console.warn("💡 Lấy PSQLDB_CONNECTIONSTRING từ Neon Dashboard: https://console.neon.tech");
+  console.error("📝 Vui lòng cập nhật file backend/.env");
+  console.error("💡 Lấy PSQLDB_CONNECTIONSTRING từ Neon Dashboard: https://console.neon.tech");
+  if (process.env.NODE_ENV === "production") {
+    process.exit(1); // Exit in production if required vars are missing
+  }
+}
+
+if (warnings.length > 0) {
+  console.warn("⚠️  SECURITY WARNINGS:");
+  warnings.forEach(warning => {
+    console.warn(`   - ${warning}`);
+  });
 }
 
 const PORT = process.env.PORT || 5001;
@@ -85,17 +106,33 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Bật CORS cho development (cho phép frontend gọi API)
-if (process.env.NODE_ENV !== "production") {
-  app.use(cors({ origin: "http://localhost:5173" }));
-}
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : (process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173"]);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // ====== ROUTES ======
 // Auth routes
 app.use("/api/auth", authRouter);
 
-// Test route
-app.use("/api/test", testRouter);
+// Test route - removed for production
+// app.use("/api/test", testRouter);
 
 // Transport Companies API (từ Neon database)
 app.get("/api/transport-companies", getCompanies);
@@ -158,16 +195,23 @@ app.get("/api/documents", getDocuments);
 app.post("/api/documents", createDocument);
 app.delete("/api/documents/:id", deleteDocument);
 
-// ====== STATIC (production) ======
-if (process.env.NODE_ENV === "production") {
+// ====== STATIC FILES (optional - nếu không dùng Nginx riêng) ======
+// Nếu dùng Nginx để serve frontend, comment out phần này
+// Nếu muốn Express serve cả frontend, uncomment phần này
+/*
+if (process.env.NODE_ENV === "production" && process.env.SERVE_STATIC === "true") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
   });
 }
+*/
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`   Local: http://localhost:${PORT}`);
+  }
   
   // Chạy cleanup đơn hàng chờ thanh toán mỗi 5 phút
   // Tự động xóa đơn hàng PENDING_PAYMENT sau 15 phút
@@ -194,6 +238,23 @@ app.listen(PORT, () => {
       if (!err.message.includes("timeout") && !err.message.includes("ETIMEDOUT")) {
         console.error("❌ Initial cleanup error:", err.message);
       }
-    }
-  }, 3000); // Đợi 3 giây trước khi chạy cleanup lần đầu
+      }
+    }, 3000); // Đợi 3 giây trước khi chạy cleanup lần đầu
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
 });

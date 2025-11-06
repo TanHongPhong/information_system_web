@@ -228,78 +228,27 @@ export const getVehiclesByCompany = async (req, res) => {
       status
     });
     
-    // Log query params để debug
-    console.log("🔍 Query params:", req.query);
-
     // Nếu có origin_region (điểm đi) và destination_region, filter xe phải ở vị trí origin_region
     // QUAN TRỌNG: origin_region = điểm đi = nơi xe phải ở để bốc hàng
     //            destination_region = điểm đến = nơi xe sẽ đến
     if (origin_region && destination_region) {
       try {
-        console.log(`🔍 ============================================`);
-        console.log(`🔍 Filtering vehicles:`);
-        console.log(`   Company ID: ${companyId}`);
-        console.log(`   Origin (điểm đi): "${origin_region}"`);
-        console.log(`   Destination (điểm đến): "${destination_region}"`);
-        console.log(`   Status filter: ${status || 'none'}`);
-        console.log(`🔍 ============================================`);
-        
         // Sử dụng function mới để filter theo vị trí hiện tại và điểm đến
         const { rows } = await pool.query(
           `SELECT * FROM get_available_vehicles_by_location_and_destination($1, $2, $3)`,
           [companyId, origin_region, destination_region]
         );
         
-        console.log(`📊 Function returned ${rows.length} vehicles`);
-        
-        // Log chi tiết từng xe để debug
-        if (rows.length > 0) {
-          console.log(`📋 Vehicle details:`);
-          rows.forEach((v, idx) => {
-            console.log(`   ${idx + 1}. ${v.license_plate}`);
-            console.log(`      Status: ${v.status}`);
-            console.log(`      Current Location: ${v.current_location || 'NULL'}`);
-            console.log(`      Vehicle Region: ${v.vehicle_region || 'UNKNOWN'}`);
-            console.log(`      Route: ${v.route_name || 'N/A'}`);
-          });
-        } else {
-          console.warn(`⚠️ No vehicles found! Checking database...`);
-          
-          // Debug: Kiểm tra có xe nào ở vùng này không
-          const debugQuery = await pool.query(`
-            SELECT 
-              v.vehicle_id,
-              v.license_plate,
-              v.status,
-              v.current_location,
-              get_region_from_address(v.current_location) as vehicle_region
-            FROM "Vehicles" v
-            WHERE v.company_id = $1
-            LIMIT 10
-          `, [companyId]);
-          
-          console.log(`🔍 Sample vehicles in company (first 10):`);
-          debugQuery.rows.forEach(v => {
-            console.log(`   - ${v.license_plate}: status=${v.status}, location="${v.current_location}", region="${v.vehicle_region}"`);
-          });
-        }
-        
         // Filter theo status nếu có
         let filteredRows = rows;
         if (status) {
           filteredRows = rows.filter(v => v.status === status);
-          console.log(`📊 After status filter "${status}": ${filteredRows.length} vehicles`);
         }
-        
-        console.log(`✅ Final result: ${filteredRows.length} vehicles at ${origin_region} (điểm đi) going to ${destination_region} (điểm đến)`);
-        console.log(`🔍 ============================================\n`);
         
         return res.json(filteredRows);
       } catch (funcErr) {
         // Nếu function chưa tồn tại, fallback về query cũ
-        console.error("❌ Function get_available_vehicles_by_location_and_destination error:", funcErr.message);
-        console.error("Error details:", funcErr);
-        console.log("⚠️ Falling back to direct query...");
+        console.error("Error in get_available_vehicles_by_location_and_destination:", funcErr.message);
       }
     } else if (destination_region) {
       // Chỉ có destination_region, không có origin_region

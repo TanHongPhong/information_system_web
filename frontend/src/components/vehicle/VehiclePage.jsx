@@ -2,13 +2,11 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Hero from "./Hero";
-import FilterBar from "./FilterBar";
 import VehicleCard from "./VehicleCard";
 import { XCircle } from "lucide-react";
 import api from "../../lib/axios";
 
-export default function VehiclePage({ keyword, companyId }) {
-  const [filter, setFilter] = useState("all");
+export default function VehiclePage({ keyword, companyId, originRegion, destinationRegion }) {
   const [sort, setSort] = useState("depart-asc");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +37,12 @@ export default function VehiclePage({ keyword, companyId }) {
         setLoading(true);
         setError(null);
         
-        // Fetch vehicles for this company
-        const vehiclesRes = await api.get(`/transport-companies/${companyId}/vehicles`);
+        // Fetch vehicles for this company với filter theo route nếu có
+        const params = new URLSearchParams();
+        if (originRegion) params.append('origin_region', originRegion);
+        if (destinationRegion) params.append('destination_region', destinationRegion);
+        
+        const vehiclesRes = await api.get(`/transport-companies/${companyId}/vehicles?${params.toString()}`);
         const vehicles = vehiclesRes.data || [];
         
         // Fetch orders cho tất cả vehicles để tính load percent
@@ -52,45 +54,56 @@ export default function VehiclePage({ keyword, companyId }) {
         const activeOrders = allOrders.filter(order => VALID_STATUSES.includes(order.status));
         
         // Transform API data to match UI format với load percent thực tế
-        // Filter bỏ các xe đã di chuyển và đi bốc hàng (có orders với status LOADING hoặc IN_TRANSIT)
+        // Filter bỏ các xe đã di chuyển, đang sử dụng có orders, và đầy hàng
         const transformed = (await Promise.all(vehicles.map(async (v) => {
           // Tìm tất cả orders thuộc về xe này
           const vehicleOrders = activeOrders.filter(order => 
             order.vehicle_id === v.vehicle_id || order.vehicle_id === Number(v.vehicle_id)
           );
           
-          // Kiểm tra xem xe có đang bốc hàng hoặc đang vận chuyển không
+          // QUAN TRỌNG: Loại bỏ xe đang bốc hàng hoặc đang vận chuyển
           // (có orders với status LOADING hoặc IN_TRANSIT)
           const hasLoadingOrInTransitOrders = vehicleOrders.some(order => 
             order.status === 'LOADING' || order.status === 'IN_TRANSIT'
           );
           
-          // Nếu xe đã di chuyển và đi bốc hàng, không hiển thị (return null)
           if (hasLoadingOrInTransitOrders) {
             return null;
           }
           
-          // Tính tổng weight (kg) của các orders
-          const totalWeightKg = vehicleOrders.reduce((sum, order) => 
-            sum + (Number(order.weight_kg) || 0), 0
-          );
+          // QUAN TRỌNG: Loại bỏ xe có status IN_USE và có orders active
+          // (xe đang sử dụng nhưng đã có đơn hàng được gán)
+          if (v.status === 'IN_USE' && vehicleOrders.length > 0) {
+            return null;
+          }
+          
+          // Tính tổng weight (kg) của các orders đang active (ACCEPTED, LOADING, IN_TRANSIT)
+          const activeWeightKg = vehicleOrders
+            .filter(order => ['ACCEPTED', 'LOADING', 'IN_TRANSIT'].includes(order.status))
+            .reduce((sum, order) => sum + (Number(order.weight_kg) || 0), 0);
           
           // Chuyển từ kg sang tấn và tính percent
           const capacityTon = v.capacity_ton || 15;
-          const totalWeightTon = totalWeightKg / 1000;
+          const totalWeightTon = activeWeightKg / 1000;
           let percent = 0;
           
           if (capacityTon > 0 && totalWeightTon > 0) {
             percent = Math.min((totalWeightTon / capacityTon) * 100, 100);
           }
           
-          // Nếu xe không có orders nhưng status là IN_USE hoặc có orders, dùng percent thực tế
-          // Nếu xe AVAILABLE và không có orders, có thể để percent thấp hoặc 0
-          if (v.status === 'IN_USE' && vehicleOrders.length === 0) {
-            // Có thể đang sử dụng nhưng chưa có orders được gán
-            percent = 0;
-          } else if (v.status === 'MAINTENANCE' || v.status === 'INACTIVE') {
-            percent = 100; // Đang bảo trì hoặc không hoạt động
+          // QUAN TRỌNG: Loại bỏ xe đầy hàng (>= 95% capacity)
+          if (percent >= 95) {
+            return null;
+          }
+          
+          // Loại bỏ xe đang bảo trì hoặc không hoạt động
+          if (v.status === 'MAINTENANCE' || v.status === 'INACTIVE') {
+            return null;
+          }
+          
+          // Chỉ chấp nhận xe AVAILABLE hoặc IN_USE (nếu không có orders)
+          if (v.status !== 'AVAILABLE' && (v.status !== 'IN_USE' || vehicleOrders.length > 0)) {
+            return null;
           }
           
           return {
@@ -100,6 +113,9 @@ export default function VehiclePage({ keyword, companyId }) {
             vehicleType: v.vehicle_type,
             capacity: capacityTon,
             location: v.current_location,
+            vehicle_region: v.vehicle_region,
+            availability: v.availability,
+            route_name: v.route_name,
             status: v.status === 'AVAILABLE' ? 'Sẵn sàng' : 
                    v.status === 'IN_USE' ? 'Đang sử dụng' :
                    v.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động',
@@ -107,7 +123,7 @@ export default function VehiclePage({ keyword, companyId }) {
             depart: new Date().toISOString().split('T')[0],
             phone: v.driver_phone,
           };
-        }))).filter(v => v !== null); // Filter bỏ các xe null (đã di chuyển/đi bốc hàng)
+        }))).filter(v => v !== null); // Filter bỏ các xe null
         
         if (!aborted) {
           setData(transformed);
@@ -125,21 +141,14 @@ export default function VehiclePage({ keyword, companyId }) {
 
     fetchVehicles();
     return () => { aborted = true; };
-  }, [companyId]);
+  }, [companyId, originRegion, destinationRegion]);
 
   const filtered = useMemo(() => {
-    const byFilter = data.filter((x) => {
-      if (filter === "lt50") return x.percent < 50;
-      if (filter === "50-80") return x.percent >= 50 && x.percent <= 80;
-      if (filter === "gt80") return x.percent > 80;
-      return true;
-    });
-
     // text search theo plate/driver/status
     const k = (keyword || "").trim().toLowerCase();
     const byKeyword = !k
-      ? byFilter
-      : byFilter.filter(
+      ? data
+      : data.filter(
           (x) =>
             x.plate.toLowerCase().includes(k) ||
             x.driver.toLowerCase().includes(k) ||
@@ -161,7 +170,7 @@ export default function VehiclePage({ keyword, companyId }) {
         sorted.sort((a, b) => a.depart.localeCompare(b.depart)); // depart-asc
     }
     return sorted;
-  }, [data, filter, sort, keyword]);
+  }, [data, sort, keyword]);
 
   if (loading) {
     return (
@@ -196,7 +205,6 @@ export default function VehiclePage({ keyword, companyId }) {
   return (
     <>
       <Hero title={companyName} description={`Danh sách đội xe của công ty ${companyName}`} />
-      <FilterBar active={filter} onChange={setFilter} sort={sort} onSort={setSort} />
 
       <section className="w-full px-4 md:px-6 py-8 md:py-10">
         {filtered.length === 0 ? (
@@ -206,15 +214,27 @@ export default function VehiclePage({ keyword, companyId }) {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-7">
-              {filtered.map((item) => (
-                <VehicleCard
-                  key={item.id}
-                  company={companyName}
-                  route=""
-                  item={item}
-                  onSelect={() => navigate(`/nhap-in4?companyId=${companyId || ''}&vehicleId=${item.id}`)}
-                />
-              ))}
+              {filtered.map((item) => {
+                // Tạo route display từ vị trí hiện tại và điểm đến
+                const routeDisplay = item.vehicle_region && destinationRegion 
+                  ? `${item.vehicle_region} → ${destinationRegion}`
+                  : item.route_name || (originRegion && destinationRegion ? `${originRegion} → ${destinationRegion}` : "");
+                
+                return (
+                  <VehicleCard
+                    key={item.id}
+                    company={companyName}
+                    route={routeDisplay}
+                    item={item}
+                    onSelect={() => {
+                      const params = new URLSearchParams({ companyId: companyId || '', vehicleId: item.id });
+                      if (originRegion) params.append('origin_region', originRegion);
+                      if (destinationRegion) params.append('destination_region', destinationRegion);
+                      navigate(`/nhap-in4?${params.toString()}`);
+                    }}
+                  />
+                );
+              })}
             </div>
 
             <div className="mt-12 text-center">

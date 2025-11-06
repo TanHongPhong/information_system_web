@@ -149,8 +149,8 @@ export default function OrderSearchPanel({ onSelectOrder, selectedOrderId, initi
 
   return (
     <section className="h-full flex flex-col min-h-0">
-      <div className="flex-1 min-h-0 overflow-auto pr-1">
-        <div className="bg-white border border-slate-200 rounded-2xl p-3 relative">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl p-3 relative h-full flex flex-col">
           {/* sticky header trong card */}
           <div className="sticky top-0 z-10 -m-3 p-3 bg-white/95 backdrop-blur rounded-t-2xl border-b border-slate-200">
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -240,7 +240,7 @@ export default function OrderSearchPanel({ onSelectOrder, selectedOrderId, initi
           {/* Scrollable orders list */}
           <div
             ref={scrollContainerRef}
-            className="mt-3 space-y-3 overflow-auto max-h-[calc(100vh-200px)] pr-1"
+            className="mt-3 space-y-3 overflow-y-auto flex-1 min-h-0 pr-1"
             style={{
               scrollbarWidth: "thin",
               scrollBehavior: "smooth",

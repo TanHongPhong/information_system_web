@@ -78,9 +78,19 @@ export const sepayWebhook = async (req, res) => {
     }
     const signature = req.headers["x-sepay-signature"] || req.headers["sepay-signature"] || "";
     const timestamp = req.headers["x-sepay-timestamp"] || req.headers["timestamp"] || "";
+    const authHeader = req.headers["authorization"] || req.headers["Authorization"] || "";
     
-    // Verify webhook signature (nếu có)
-    if (signature) {
+    // Verify webhook signature/API key (nếu có)
+    // Ưu tiên kiểm tra Authorization header với format "Apikey <KEY>"
+    if (authHeader) {
+      const isValid = verifyWebhookSignature(payload, signature, timestamp, authHeader);
+      if (!isValid) {
+        console.error("⚠️  Invalid webhook API key in Authorization header!");
+        return res.status(401).json({ error: "Invalid API key" });
+      }
+      console.log("✅ Webhook API key verified via Authorization header");
+    } else if (signature) {
+      // Fallback: Verify signature nếu không có Authorization header
       const isValid = verifyWebhookSignature(payload, signature, timestamp);
       if (!isValid) {
         console.error("⚠️  Invalid webhook signature!");
@@ -88,7 +98,7 @@ export const sepayWebhook = async (req, res) => {
       }
       console.log("✅ Webhook signature verified");
     } else {
-      console.log("⚠️  No signature provided, skipping verification");
+      console.log("⚠️  No signature/API key provided, skipping verification");
     }
     
     // Sepay có thể gửi payload với format khác, thử parse nhiều format

@@ -158,42 +158,25 @@ const Topbar = React.forwardRef(function Topbar(_, ref) {
               />
             </button>
 
-            {/* Panel dính sát topbar (không mt, không viền trên) */}
-            {/* Dropdown ở dưới và nằm sau nút */}
+            {/* Dropdown menu - Compact design, only logout */}
             <div
               ref={menuRef}
               role="menu"
               aria-label="User menu"
-              className={`
-              absolute right-0 top-full -mt-5 pt-5 z-0 w-[182px] 
-              overflow-hidden bg-white border border-slate-200 border-t-0 rounded-b-xl
-              shadow-md ring-1 ring-black/5
-              origin-top transition-all duration-200 ease-out
-              ${
-                open
-                  ? "opacity-100 scale-y-100"
-                  : "opacity-0 scale-y-95 pointer-events-none"
-              }
-            `}
+              className={`absolute right-0 top-full mt-2 z-30 w-40 overflow-hidden bg-white border border-slate-200 rounded-full shadow-lg ring-1 ring-black/5 origin-top transition-all duration-200 ease-out ${
+                open ? "opacity-100 scale-y-100 translate-y-0" : "opacity-0 scale-y-95 -translate-y-2 pointer-events-none"
+              }`}
               style={{ transformOrigin: "top" }}
               onKeyDown={(e) => e.key === "Tab" && setOpen(false)}
             >
+              {/* Logout button */}
               <button
                 role="menuitem"
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                onClick={() => setOpen(false)}
-              >
-                <i data-feather="user" className="w-4 h-4" />
-                Trang cá nhân
-              </button>
-              <div className="h-px bg-slate-100" />
-              <button
-                role="menuitem"
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
                 onClick={handleLogout}
               >
                 <i data-feather="log-out" className="w-4 h-4" />
-                Đăng xuất
+                <span>Đăng xuất</span>
               </button>
             </div>
           </div>

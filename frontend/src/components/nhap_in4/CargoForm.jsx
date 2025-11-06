@@ -7,15 +7,66 @@ import api from "../../lib/axios";
 
 const cur = (v) => (v || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-export default function CargoForm({ onCalc, companyId, vehicleId }) {
+export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, destinationRegion }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [warehouse, setWarehouse] = useState({ warehouse_name: "", address: "", full_address: "", region: "" });
   
   const [form, setForm] = useState({
-    origin: "", destination: "", recipient_name: "", recipient_phone: "",
+    origin_detail: "", // Điểm đi (vị trí chính xác của hàng) - text input
+    destination_detail: "", // Điểm đến (kho theo destination_region) - không cho chọn
+    recipient_name: "", recipient_phone: "",
     category: "", weight: "", len: "", wid: "", hei: "", note: "",
   });
+  
+  // Load warehouse info theo destination_region
+  useEffect(() => {
+    const loadWarehouse = async () => {
+      // Nếu không có destination_region, mặc định là HCM
+      const region = destinationRegion || 'HCM';
+      
+      console.log("🏭 CargoForm: Loading warehouse for region", region);
+      
+      try {
+        const response = await api.get(`/warehouse/by-region?region=${encodeURIComponent(region)}`);
+        if (response.data) {
+          const warehouseData = {
+            warehouse_name: response.data.warehouse_name || `Kho ${region}`,
+            address: response.data.address || "",
+            full_address: response.data.full_address || response.data.warehouse_name || `Kho ${region}`,
+            region: response.data.region || region
+          };
+          
+          console.log("✅ CargoForm: Loaded warehouse", warehouseData);
+          
+          setWarehouse(warehouseData);
+          // Set destination_detail mặc định là địa chỉ kho
+          setForm(prev => ({
+            ...prev,
+            destination_detail: warehouseData.full_address || warehouseData.warehouse_name || `Kho ${region}`
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading warehouse info:", err);
+        // Sử dụng giá trị mặc định theo region
+        const defaultWarehouse = {
+          warehouse_name: `Kho ${region}`,
+          address: `Địa chỉ kho tại ${region}`,
+          full_address: `Kho ${region} - Địa chỉ kho tại ${region}`,
+          region: region
+        };
+        setWarehouse(defaultWarehouse);
+        setForm(prev => ({
+          ...prev,
+          destination_detail: defaultWarehouse.full_address
+        }));
+      }
+    };
+    
+    loadWarehouse();
+  }, [destinationRegion]); // Reload khi destinationRegion thay đổi
+  
 
   const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
 
@@ -112,8 +163,8 @@ export default function CargoForm({ onCalc, companyId, vehicleId }) {
         require_danger: false,
         require_loading: form.category === "oversize",
         require_insurance: false,
-        pickup_address: form.origin,
-        dropoff_address: form.destination,
+        pickup_address: form.origin_detail || (originRegion ? `${originRegion}` : ""),
+        dropoff_address: form.destination_detail || warehouse.full_address || (destinationRegion ? `Kho ${destinationRegion}` : "Kho HCM"),
         pickup_time: null, // Có thể thêm datetime picker sau
         note: form.note || null,
       };
@@ -136,16 +187,34 @@ export default function CargoForm({ onCalc, companyId, vehicleId }) {
 
   return (
     <form onSubmit={submit} className="bg-white rounded-2xl shadow-[0_12px_40px_rgba(2,6,23,.08)] border border-slate-200 p-6 space-y-8">
-      {/* Địa điểm */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <Lbl required>Nơi gửi hàng</Lbl>
-          <Input icon={<MapPin className="w-4 h-4" />} placeholder="VD: Kho Thủ Đức" required value={form.origin} onChange={set("origin")} />
-        </div>
-        <div>
-          <Lbl required>Nơi nhận</Lbl>
-          <Input icon={<Crosshair className="w-4 h-4" />} placeholder="VD: Coopmart Q1" required value={form.destination} onChange={set("destination")} />
-        </div>
+      {/* Điểm đi - Text input để nhập vị trí chính xác của hàng */}
+      <div>
+        <Lbl required>Điểm lấy hàng (Vị trí chính xác)</Lbl>
+        <Input 
+          icon={<MapPin className="w-4 h-4" />} 
+          placeholder="VD: 123 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh" 
+          required
+          value={form.origin_detail || ""} 
+          onChange={set("origin_detail")} 
+        />
+        <p className="text-xs text-slate-500 mt-1">Nhập địa chỉ chính xác nơi lấy hàng</p>
+      </div>
+      
+      {/* Điểm đến - Kho theo destination_region (không cho chọn) */}
+      <div>
+        <Lbl required>Điểm giao hàng ({warehouse.warehouse_name || (destinationRegion ? `Kho ${destinationRegion}` : "Kho HCM")})</Lbl>
+        <Input 
+          icon={<Crosshair className="w-4 h-4" />} 
+          value={warehouse.full_address || form.destination_detail || (destinationRegion ? `Kho ${destinationRegion}` : "Kho HCM")} 
+          disabled
+          readOnly
+          className="bg-slate-100 cursor-not-allowed"
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          {destinationRegion 
+            ? `Điểm đến: Kho ${destinationRegion}`
+            : "Điểm đến mặc định là Kho HCM"}
+        </p>
       </div>
 
       {/* Người nhận */}

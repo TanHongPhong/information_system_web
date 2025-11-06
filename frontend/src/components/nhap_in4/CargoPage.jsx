@@ -5,7 +5,7 @@ import CargoForm from "./CargoForm";
 import CostSummary from "./CostSummary";
 import TipsCard from "./TipsCard";
 
-export default function CargoPage({ companyId, vehicleId }) {
+export default function CargoPage({ companyId, vehicleId, originRegion, destinationRegion }) {
   const [calc, setCalc] = useState({
     wReal: 0, wVol: 0, wCharge: 0, base: 20000, perKg: 0, srv: 0,
   });
@@ -17,7 +17,13 @@ export default function CargoPage({ companyId, vehicleId }) {
       <div className="grid lg:grid-cols-3 gap-6 mt-6">
         {/* Form */}
         <section className="lg:col-span-2">
-          <CargoForm onCalc={setCalc} companyId={companyId} vehicleId={vehicleId} />
+          <CargoForm 
+            onCalc={setCalc} 
+            companyId={companyId} 
+            vehicleId={vehicleId}
+            originRegion={originRegion}
+            destinationRegion={destinationRegion}
+          />
         </section>
 
         {/* Summary */}

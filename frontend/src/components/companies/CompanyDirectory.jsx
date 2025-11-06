@@ -12,27 +12,54 @@ export default function CompanyDirectory({ keyword }) {
   const [to, setTo] = useState("");
   const [size, setSize] = useState("");
   const [sortKey, setSortKey] = useState("recommended");
-  const [showAdv, setShowAdv] = useState(false);
-  const [svcCold, setSvcCold] = useState(false);
-  const [svcDanger, setSvcDanger] = useState(false);
-  const [svcLoading, setSvcLoading] = useState(false);
-  const [svcInsurance, setSvcInsurance] = useState(false);
-  const [cargoType, setCargoType] = useState("");
-  const [pickupTime, setPickupTime] = useState("");
 
   const [recent, setRecent] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [availableRegions, setAvailableRegions] = useState([]);
+  const [loadingRegions, setLoadingRegions] = useState(false);
 
-  // Load companies from API
+  // Load available regions
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        setLoadingRegions(true);
+        const response = await api.get("/transport-companies/available-regions");
+        setAvailableRegions(response.data.regions || []);
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+        // Không block nếu lỗi, chỉ log
+      } finally {
+        setLoadingRegions(false);
+      }
+    };
+
+    fetchRegions();
+  }, []);
+
+  // Load companies from API với filter theo route
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get("/transport-companies");
+        
+        // Build query params
+        // QUAN TRỌNG: from = điểm đi (origin_region), to = điểm đến (destination_region)
+        const params = new URLSearchParams();
+        if (keyword) params.append("q", keyword);
+        if (from) params.append("origin_region", from);      // Điểm đi
+        if (to) params.append("destination_region", to);       // Điểm đến
+        
+        console.log("🔍 CompanyDirectory: Fetching companies", {
+          from,      // Điểm đi
+          to,        // Điểm đến
+          params: params.toString()
+        });
+        
+        const response = await api.get(`/transport-companies?${params.toString()}`);
         
         // Transform API data to match UI format
         const transformedData = response.data.map((company) => ({
@@ -58,6 +85,7 @@ export default function CompanyDirectory({ keyword }) {
         }));
         
         setCompanies(transformedData);
+        console.log(`✅ CompanyDirectory: Found ${transformedData.length} companies`);
       } catch (err) {
         console.error("Error fetching companies:", err);
         setError("Không thể tải danh sách công ty. Vui lòng kiểm tra backend server.");
@@ -67,7 +95,7 @@ export default function CompanyDirectory({ keyword }) {
     };
 
     fetchCompanies();
-  }, []);
+  }, [from, to, keyword]); // Tự động fetch lại khi from hoặc to thay đổi
 
   // Load recent from localStorage
   useEffect(() => {
@@ -89,15 +117,6 @@ export default function CompanyDirectory({ keyword }) {
 
   // filtering helpers
   const strip = (s) => (s || "").toString().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-  const matchesAdvanced = (c) => {
-    if (svcCold && !c.services.cold) return false;
-    if (svcDanger && !c.services.danger) return false;
-    if (svcLoading && !c.services.loading) return false;
-    if (svcInsurance && !c.services.insurance) return false;
-    if (cargoType === "Lạnh" && !c.services.cold) return false;
-    if (cargoType === "Nguy hiểm" && !c.services.danger) return false;
-    return true;
-  };
 
   const filtered = useMemo(() => {
     const f = strip(from), t = strip(to), s = strip(size), k = strip(keyword);
@@ -121,7 +140,7 @@ export default function CompanyDirectory({ keyword }) {
           strip(c.name).includes(k) ||
           strip(c.area).includes(k) ||
           c.sizes.some((x) => strip(x).includes(k));
-        return areaOK && sizeOK && kwOK && matchesAdvanced(c);
+        return areaOK && sizeOK && kwOK;
       })
       .sort((a, b) => {
         switch (sortKey) {
@@ -135,14 +154,43 @@ export default function CompanyDirectory({ keyword }) {
             return b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost);
         }
       });
-  }, [companies, from, to, size, sortKey, keyword, svcCold, svcDanger, svcLoading, svcInsurance, cargoType]);
+  }, [companies, from, to, size, sortKey, keyword]);
 
   const handleSwap = () => {
     setFrom(to);
     setTo(from);
   };
-  const handleSearch = () => saveRecent();
-  const useRecent = (r) => { setFrom(r.from || ""); setTo(r.to || ""); };
+  const handleSearch = () => {
+    saveRecent();
+    // Lưu vào localStorage để truyền qua các trang
+    // QUAN TRỌNG: from = điểm đi (origin_region) = nơi xe phải ở
+    //             to = điểm đến (destination_region) = nơi xe sẽ đến
+    try {
+      localStorage.setItem('selected_route', JSON.stringify({
+        origin_region: from,      // Điểm đi = nơi xe phải ở
+        destination_region: to    // Điểm đến = nơi xe sẽ đến
+      }));
+      console.log("💾 CompanyDirectory: Saved route to localStorage", {
+        origin_region: from,      // Điểm đi
+        destination_region: to    // Điểm đến
+      });
+    } catch (e) {
+      console.error("Error saving route to localStorage:", e);
+    }
+  };
+  const useRecent = (r) => { 
+    setFrom(r.from || ""); 
+    setTo(r.to || ""); 
+    // Lưu vào localStorage khi dùng recent
+    try {
+      localStorage.setItem('selected_route', JSON.stringify({
+        origin_region: r.from || "",
+        destination_region: r.to || ""
+      }));
+    } catch (e) {
+      console.error("Error saving route to localStorage:", e);
+    }
+  };
 
   return (
     <section className="p-6 space-y-8">
@@ -172,13 +220,23 @@ export default function CompanyDirectory({ keyword }) {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 p-5 pt-2">
-          <input
+          <select
             value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onChange={(e) => {
+              const value = e.target.value;
+              console.log("📍 CompanyDirectory: Chọn điểm đi", value);
+              setFrom(value);
+              if (value === to) setTo(""); // Reset destination nếu trùng
+            }}
             className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
-            placeholder="Chọn điểm lấy hàng"
-          />
+          >
+            <option value="">Chọn điểm lấy hàng</option>
+            {availableRegions.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </select>
           <button
             onClick={handleSwap}
             className="size-10 rounded-xl border border-slate-200 grid place-items-center"
@@ -187,13 +245,25 @@ export default function CompanyDirectory({ keyword }) {
           >
             <ArrowLeftRight className="w-4 h-4" />
           </button>
-          <input
+          <select
             value={to}
-            onChange={(e) => setTo(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onChange={(e) => {
+              const value = e.target.value;
+              console.log("📍 CompanyDirectory: Chọn điểm đến", value);
+              setTo(value);
+            }}
             className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200"
-            placeholder="Chọn điểm đến"
-          />
+            disabled={!from}
+          >
+            <option value="">{!from ? "Chọn điểm đi trước" : "Chọn điểm đến"}</option>
+            {availableRegions
+              .filter((region) => region !== from)
+              .map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+          </select>
           <select
             value={size}
             onChange={(e) => setSize(e.target.value)}
@@ -212,62 +282,7 @@ export default function CompanyDirectory({ keyword }) {
           >
             Tìm kiếm
           </button>
-          <button
-            onClick={() => setShowAdv((s) => !s)}
-            className="h-10 px-3 rounded-xl border border-slate-200"
-            type="button"
-          >
-            Bộ lọc nâng cao
-          </button>
         </div>
-
-        {/* Advanced */}
-        {showAdv && (
-          <div className="px-5 pb-4">
-            <div className="grid md:grid-cols-3 gap-3">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="size-4" checked={svcCold} onChange={(e) => setSvcCold(e.target.checked)} />
-                Xe lạnh
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="size-4" checked={svcDanger} onChange={(e) => setSvcDanger(e.target.checked)} />
-                Hàng nguy hiểm
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="size-4" checked={svcLoading} onChange={(e) => setSvcLoading(e.target.checked)} />
-                Bốc xếp
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="size-4" checked={svcInsurance} onChange={(e) => setSvcInsurance(e.target.checked)} />
-                Bảo hiểm
-              </label>
-
-              <div>
-                <label className="block text-sm text-slate-500 mb-1">Thời gian lấy hàng</label>
-                <input
-                  type="datetime-local"
-                  value={pickupTime}
-                  onChange={(e) => setPickupTime(e.target.value)}
-                  className="h-10 w-full px-3 rounded-xl border border-slate-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-500 mb-1">Loại hàng</label>
-                <select
-                  value={cargoType}
-                  onChange={(e) => setCargoType(e.target.value)}
-                  className="h-10 w-full px-3 rounded-xl border border-slate-200"
-                >
-                  <option value="">— Chọn —</option>
-                  <option>Khô</option>
-                  <option>Lạnh</option>
-                  <option>Nguy hiểm</option>
-                  <option>Hàng cồng kềnh</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Recent */}
         <div className="px-5 pb-2">

@@ -12,9 +12,7 @@ export default function Header() {
           onClick={() => navigate("/home-page")}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-extrabold shadow-blueglow">
-            6A
-          </div>
+          <img src="/web_logo.png" alt="6A Logistics" className="h-10 w-10 rounded-2xl object-contain" />
           <div className="leading-tight">
             <div className="font-extrabold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
             <div className="subtitle-soft text-sm md:text-[13px] leading-none">Đặt xe chở hàng nhanh</div>

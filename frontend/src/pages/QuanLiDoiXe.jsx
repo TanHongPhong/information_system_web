@@ -8,7 +8,6 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import VehiclesPanel from "../components/quan li doi xe/VehiclesPanel";
 import TruckPanel from "../components/quan li doi xe/TruckPanel";
 import LoadManagement from "../components/quan li doi xe/LoadManagement";
-import OrdersGrid from "../components/quan li doi xe/OrdersGrid";
 
 export default function DashboardLogistics() {
   const navigate = useNavigate();
@@ -130,18 +129,9 @@ export default function DashboardLogistics() {
       plate: vehicle.license_plate,
       driver: vehicle.driver_name || "Chưa phân công",
       status: vehicle.status?.toLowerCase() || "available",
-      route: vehicle.current_location || "Chưa có thông tin",
+      location: vehicle.current_location || vehicle.vehicle_region || "Chưa có thông tin",
       capacity: vehicle.capacity_ton || 15,
       vehicle_type: vehicle.vehicle_type,
-      // Mock data cho timeline (có thể fetch từ API sau)
-      start: [10.8231, 106.6297],
-      end: [16.0544, 108.2022],
-      times: [
-        new Date().toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-        new Date(Date.now() + 4 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-        new Date(Date.now() + 12 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-        new Date(Date.now() + 16 * 60 * 60 * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-      ],
       active: vehicle.status === "IN_USE" ? 1 : vehicle.status === "MAINTENANCE" ? 2 : 0,
     };
   }, [selectedId, vehicles]);
@@ -175,8 +165,8 @@ export default function DashboardLogistics() {
       return;
     }
 
-    // Filter chỉ các status hợp lệ (từ ACCEPTED trở đi) và đảm bảo vehicle_id khớp
-    const VALID_STATUSES = ['ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
+    // Filter chỉ các status hợp lệ (từ ACCEPTED trở đi, không bao gồm WAREHOUSE_RECEIVED vì đã nhận kho) và đảm bảo vehicle_id khớp
+    const VALID_STATUSES = ['ACCEPTED', 'LOADING', 'IN_TRANSIT', 'COMPLETED'];
     const validOrders = fetchedOrders.filter(order => {
       // Đảm bảo order thuộc về xe được chọn
       const orderVehicleId = order.vehicle_id;
@@ -223,8 +213,12 @@ export default function DashboardLogistics() {
                 loadPercent={LOAD_PERCENT}
                 maxTon={MAX_TON}
               />
-              <LoadManagement loadPercent={LOAD_PERCENT} maxTon={MAX_TON} />
-              <OrdersGrid orders={orders} loading={ordersLoading} />
+              <LoadManagement 
+                loadPercent={LOAD_PERCENT} 
+                maxTon={MAX_TON}
+                orders={orders}
+                loading={ordersLoading}
+              />
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full text-slate-500">

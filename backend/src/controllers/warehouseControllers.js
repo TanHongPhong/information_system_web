@@ -21,7 +21,6 @@ export const getWarehouseOperations = async (req, res) => {
     let finalWarehouseId = warehouse_id;
     if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
       finalWarehouseId = req.user.warehouse_id;
-      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
     }
 
     let query = `
@@ -144,7 +143,6 @@ export const getWarehouseKPIs = async (req, res) => {
     let finalWarehouseId = warehouse_id;
     if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
       finalWarehouseId = req.user.warehouse_id;
-      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
     }
 
     let whereClause = '';
@@ -587,7 +585,6 @@ export const getWarehouseInventory = async (req, res) => {
     let finalWarehouseId = warehouse_id;
     if (!finalWarehouseId && req.user && req.user.role === 'warehouse' && req.user.warehouse_id) {
       finalWarehouseId = req.user.warehouse_id;
-      console.log(`🔒 Warehouse user ${req.user.email} - Auto filter by warehouse_id: ${finalWarehouseId}`);
     }
 
     let query = `

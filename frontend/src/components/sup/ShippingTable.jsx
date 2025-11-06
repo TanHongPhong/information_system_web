@@ -30,9 +30,10 @@ const ShippingTable = forwardRef((props, ref) => {
       }
       
       const companyId = getCompanyId();
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
       // Fetch orders với các status đã được chấp nhận
       const response = await fetch(
-        `http://localhost:5001/api/cargo-orders?company_id=${companyId}`
+        `${apiUrl}/cargo-orders?company_id=${companyId}`
       );
 
       if (response.ok) {

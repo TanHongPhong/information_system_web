@@ -250,7 +250,39 @@ export default function CompanyModal({ company, onClose }) {
                 className="h-10 px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => {
                   if (c?.id) {
-                    navigate(`/vehicle-list?companyId=${c.id}`);
+                    // Lấy origin và destination từ URL, localStorage, hoặc state
+                    // QUAN TRỌNG: origin_region = điểm đi (nơi xe phải ở)
+                    //           destination_region = điểm đến (nơi xe sẽ đến)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    let origin = urlParams.get('origin_region') || '';
+                    let destination = urlParams.get('destination_region') || '';
+                    
+                    // Nếu không có trong URL, lấy từ localStorage
+                    if (!origin || !destination) {
+                      try {
+                        const savedRoute = localStorage.getItem('selected_route');
+                        if (savedRoute) {
+                          const route = JSON.parse(savedRoute);
+                          origin = origin || route.origin_region || '';
+                          destination = destination || route.destination_region || '';
+                        }
+                      } catch (e) {
+                        console.error("Error reading route from localStorage:", e);
+                      }
+                    }
+                    
+                    console.log("🚀 CompanyModal: Navigating to vehicle-list", {
+                      companyId: c.id,
+                      origin_region: origin,      // Điểm đi = nơi xe phải ở
+                      destination_region: destination  // Điểm đến = nơi xe sẽ đến
+                    });
+                    
+                    const params = new URLSearchParams({ companyId: c.id });
+                    if (origin) params.append('origin_region', origin);      // Điểm đi
+                    if (destination) params.append('destination_region', destination);  // Điểm đến
+                    
+                    console.log("🚀 CompanyModal: Final URL params", params.toString());
+                    navigate(`/vehicle-list?${params.toString()}`);
                     onClose();
                   }
                 }}

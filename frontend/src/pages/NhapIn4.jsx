@@ -9,6 +9,8 @@ export default function App() {
   const navigate = useNavigate();
   const companyId = searchParams.get("companyId");
   const vehicleId = searchParams.get("vehicleId");
+  const originRegion = searchParams.get("origin_region");
+  const destinationRegion = searchParams.get("destination_region");
 
   // Kiểm tra role và logout nếu không đúng
   useEffect(() => {
@@ -31,7 +33,12 @@ export default function App() {
 
   return (
     <AppLayout>
-      <CargoPage companyId={companyId} vehicleId={vehicleId} />
+      <CargoPage 
+        companyId={companyId} 
+        vehicleId={vehicleId}
+        originRegion={originRegion}
+        destinationRegion={destinationRegion}
+      />
     </AppLayout>
   );
 }

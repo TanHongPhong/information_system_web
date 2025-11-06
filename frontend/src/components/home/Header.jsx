@@ -39,6 +39,7 @@ export default function Header() {
       <div id="progressBar" ref={progressRef} />
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <img src="/web_logo.png" alt="6A Logistics" className="h-10 w-auto" />
           <div className="hidden sm:block leading-tight">
             <div className="font-extrabold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
             <div className="subtitle-soft text-sm md:text-[13px] leading-none">Đặt xe chở hàng nhanh</div>

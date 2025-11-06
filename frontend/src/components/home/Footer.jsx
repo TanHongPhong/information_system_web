@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-6">
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center text-white font-extrabold shadow-[0_10px_24px_rgba(37,99,235,.32)]">6A</div>
+              <img src="/web_logo.png" alt="6A Logistics" className="h-10 w-10 rounded-2xl object-contain" />
               <div className="font-semibold text-blue-700 text-xl md:text-2xl">6A Logistics</div>
             </div>
             <p className="mt-3 subtitle-soft text-sm">Nền tảng đặt xe chở hàng nhanh, minh bạch và an toàn.</p>

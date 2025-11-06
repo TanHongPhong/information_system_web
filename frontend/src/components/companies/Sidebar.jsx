@@ -30,10 +30,10 @@ export default function Sidebar() {
       <div className="mt-1 mb-1 text-center">
         <button
           onClick={() => navigate("/dashboard")}
-          className="inline-grid place-items-center w-14 h-14 rounded-xl bg-gradient-to-br from-sky-50 to-white text-sky-600 ring-1 ring-sky-200/60 shadow-sm hover:shadow-md transition-shadow"
+          className="inline-grid place-items-center w-14 h-14 rounded-xl bg-white ring-1 ring-sky-200/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
           title="Dashboard"
         >
-          <Shield className="w-6 h-6" />
+          <img src="/web_logo.png" alt="6A Logistics" className="h-full w-full object-contain p-1" />
         </button>
         <div className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700">6A logistics</div>
       </div>

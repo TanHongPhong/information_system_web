@@ -3,7 +3,7 @@ import React from "react";
 import { Calendar, Hash, User as UserIcon } from "lucide-react";
 
 export default function VehicleCard({ company, route, item, onSelect }) {
-  const { percent, depart, plate, driver, status } = item;
+  const { percent, depart, plate, driver, status, location, vehicle_region, availability } = item;
 
   const colors = percent < 40
     ? { bg: "bg-emerald-50 ring-emerald-100 text-emerald-700", grad: "linear-gradient(90deg,#22c55e 0%,#86efac 100%)" }
@@ -83,7 +83,31 @@ export default function VehicleCard({ company, route, item, onSelect }) {
           <UserIcon className="w-4 h-4" />
           <span>Tài xế: <b>{driver}</b></span>
         </li>
+        {location && (
+          <li className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Vị trí: <b>{vehicle_region || location}</b></span>
+          </li>
+        )}
       </ul>
+      
+      {/* Availability status */}
+      {availability && (
+        <div className={`mt-3 px-3 py-2 rounded-lg text-xs ${
+          availability.available 
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+            : 'bg-amber-50 text-amber-700 border border-amber-200'
+        }`}>
+          {availability.available ? (
+            <span className="font-semibold">✓ Khả dụng</span>
+          ) : (
+            <span className="font-semibold">⚠ {availability.reason || 'Không khả dụng'}</span>
+          )}
+        </div>
+      )}
 
       <button onClick={onSelect} className="mt-5 self-center rounded-xl bg-[#1E66FF] hover:brightness-95 text-white text-sm font-medium px-5 py-2">
         Chọn xe

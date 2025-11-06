@@ -15,10 +15,10 @@ export default function SidebarNav() {
       {/* Logo 6A logistics */}
       <button
         onClick={() => navigate("/dashboard")}
-        className="w-11 h-11 rounded-[12px] bg-[#4A90E2] text-white grid place-items-center tracking-[.5px] shadow-[0_8px_20px_rgba(74,144,226,.25)] hover:shadow-[0_10px_26px_rgba(74,144,226,.35)] transition-shadow text-[8px] font-bold leading-tight"
+        className="w-11 h-11 rounded-[12px] bg-white border border-slate-200 grid place-items-center shadow-[0_8px_20px_rgba(74,144,226,.25)] hover:shadow-[0_10px_26px_rgba(74,144,226,.35)] transition-shadow overflow-hidden"
         title="Dashboard"
       >
-        6A
+        <img src="/web_logo.png" alt="6A Logistics" className="h-full w-full object-contain p-1" />
       </button>
 
       <ul className="flex flex-col gap-[18px] mt-1">

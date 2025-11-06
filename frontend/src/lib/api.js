@@ -1,5 +1,5 @@
 // API Helper để gọi backend
-const API_URL = "http://localhost:5001/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export const authAPI = {
   signup: async (name, phone, email, password, role) => {
@@ -93,6 +93,24 @@ export const driverAPI = {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.message || errorData.error || response.statusText;
       throw new Error(`Failed to accept warehouse entry: ${errorMessage}`);
+    }
+    return response.json();
+  },
+
+  // Bốc hàng lên xe bằng cách scan mã đơn hàng
+  loadOrder: async (vehicle_id, order_code) => {
+    const response = await fetch(`${API_URL}/driver/load-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vehicle_id,
+        order_code,
+      }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`Failed to load order: ${errorMessage}`);
     }
     return response.json();
   },

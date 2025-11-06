@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "migrate": "node scripts/run_all_migrations.js",
+    "deploy": "bash scripts/deploy_backend.sh",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop logistics-api",
+    "pm2:restart": "pm2 restart logistics-api",
+    "pm2:logs": "pm2 logs logistics-api",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

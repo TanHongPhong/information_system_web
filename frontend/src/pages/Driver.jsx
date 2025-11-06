@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DriverHeader from "../components/driver/DriverHeader";
 import VehicleRouteCard from "../components/driver/VehicleRouteCard";
-import PreTripChecklist from "../components/driver/PreTripChecklist";
+import LoadOrderInput from "../components/driver/LoadOrderInput";
 import OrdersOnTruck from "../components/driver/OrdersOnTruck";
 import { driverAPI } from "../lib/api";
 
@@ -86,7 +86,9 @@ export default function DriverPage() {
       try {
         const response = await driverAPI.getVehicleInfo(user.email, user.phone);
         setVehicleInfo(response.vehicle);
-        setOrders(response.orders || []);
+        // Filter bỏ các đơn hàng đã nhận kho (WAREHOUSE_RECEIVED) - không hiển thị trong giao diện xe nữa
+        const filteredOrders = (response.orders || []).filter(order => order.status !== 'WAREHOUSE_RECEIVED');
+        setOrders(filteredOrders);
       } catch (apiErr) {
         // Nếu lỗi 404, hiển thị thông báo hướng dẫn
         if ((apiErr.message && apiErr.message.includes("404")) || (apiErr.message && apiErr.message.includes("Not Found"))) {
@@ -112,6 +114,14 @@ export default function DriverPage() {
   const handleDeparture = async () => {
     if (!vehicleInfo) return;
 
+    // Kiểm tra tất cả đơn hàng đã được bốc chưa
+    const unloadedOrders = orders.filter(order => !order.is_loaded);
+    if (unloadedOrders.length > 0) {
+      const unloadedCodes = unloadedOrders.map(o => o.order_code || o.order_id).join(", ");
+      alert(`Vui lòng bốc hàng cho các đơn hàng sau trước khi xuất phát:\n${unloadedCodes}`);
+      return;
+    }
+
     try {
       // Optimistic update: cập nhật UI ngay (render ngầm)
       const previousOrders = [...orders];
@@ -131,6 +141,9 @@ export default function DriverPage() {
         "Xuất phát từ kho"
       );
       
+      // Reload để cập nhật từ server
+      await loadVehicleInfo();
+      
       // Thành công - giữ state đã update
       alert("Đã ghi nhận xuất phát thành công!");
     } catch (err) {
@@ -139,6 +152,17 @@ export default function DriverPage() {
       setOrders(previousOrders);
       alert("Lỗi khi ghi nhận xuất phát: " + err.message);
     }
+  };
+
+  const handleOrderLoaded = async (loadedOrder) => {
+    // Cập nhật order trong state
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        (order.order_id === loadedOrder.order_id || order.id === loadedOrder.order_id)
+          ? { ...order, is_loaded: true, loaded_at: loadedOrder.loaded_at, status: loadedOrder.status }
+          : order
+      )
+    );
   };
 
   const handleWarehouseArrival = async () => {
@@ -218,9 +242,14 @@ export default function DriverPage() {
                 onDeparture={handleDeparture}
                 onWarehouseArrival={handleWarehouseArrival}
                 vehicleId={vehicleInfo.vehicle_id}
+                allOrdersLoaded={orders.length > 0 && orders.every(o => o.is_loaded)}
+                hasInTransitOrders={orders.some(o => o.status === 'IN_TRANSIT')}
               />
 
-              <PreTripChecklist />
+              <LoadOrderInput
+                vehicleId={vehicleInfo.vehicle_id}
+                onOrderLoaded={handleOrderLoaded}
+              />
 
               <OrdersOnTruck 
                 orders={orders} 
@@ -229,16 +258,14 @@ export default function DriverPage() {
                 updatingOrderId={updatingOrderId}
                 onAcceptWarehouseEntry={async (orderId) => {
                   try {
-                    // Optimistic update: cập nhật UI ngay lập tức
+                    // Optimistic update: xóa đơn hàng khỏi danh sách ngay vì đã nhận kho
                     setUpdatingOrderId(orderId);
                     const previousOrders = [...orders];
                     
-                    // Cập nhật state local ngay (render ngầm)
+                    // Xóa đơn hàng khỏi danh sách vì đã nhận kho, không còn trên xe nữa
                     setOrders(prevOrders => 
-                      prevOrders.map(order => 
-                        order.order_id === orderId || order.id === orderId
-                          ? { ...order, status: 'WAREHOUSE_RECEIVED' }
-                          : order
+                      prevOrders.filter(order => 
+                        order.order_id !== orderId && order.id !== orderId
                       )
                     );
 
@@ -251,7 +278,7 @@ export default function DriverPage() {
                       "Đã nhập kho"
                     );
                     
-                    // Thành công - giữ state đã update
+                    // Thành công - đơn hàng đã được xóa khỏi danh sách
                     alert("Đã nhập kho thành công!");
                   } catch (err) {
                     console.error("Error accepting warehouse entry:", err);

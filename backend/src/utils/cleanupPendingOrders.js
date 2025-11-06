@@ -22,9 +22,9 @@ export const cleanupPendingPaymentOrders = async () => {
 
     const deletedCount = result.rowCount;
     
-    if (deletedCount > 0) {
-      console.log(`🧹 Đã xóa ${deletedCount} đơn hàng chờ thanh toán quá 15 phút`);
-      console.log(`   Đơn hàng đã xóa:`, result.rows.map(r => r.order_id).join(', '));
+    // Only log if deleted count > 0 (useful for monitoring)
+    if (deletedCount > 0 && process.env.NODE_ENV === 'development') {
+      console.log(`🧹 Cleaned up ${deletedCount} pending payment orders older than 15 minutes`);
     }
 
     return deletedCount;

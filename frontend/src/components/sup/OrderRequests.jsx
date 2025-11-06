@@ -47,8 +47,9 @@ const OrderRequests = forwardRef(({ onViewDetail, onRefreshShipping }, ref) => {
       }
       
       const companyId = getCompanyId();
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
       const response = await fetch(
-        `http://localhost:5001/api/cargo-orders?company_id=${companyId}&status=PAID`
+        `${apiUrl}/cargo-orders?company_id=${companyId}&status=PAID`
       );
 
       if (response.ok) {
@@ -96,7 +97,8 @@ const OrderRequests = forwardRef(({ onViewDetail, onRefreshShipping }, ref) => {
   // Handle accept order - sử dụng useCallback để tránh re-render
   const handleAcceptOrder = useCallback(async (orderId, closePanel) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/cargo-orders/${orderId}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+      const response = await fetch(`${apiUrl}/cargo-orders/${orderId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -169,8 +171,9 @@ const OrderRequests = forwardRef(({ onViewDetail, onRefreshShipping }, ref) => {
     }
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
       const promises = filteredOrders.map((order) =>
-        fetch(`http://localhost:5001/api/cargo-orders/${order.order_id}`, {
+        fetch(`${apiUrl}/cargo-orders/${order.order_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
