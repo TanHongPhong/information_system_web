@@ -101,8 +101,35 @@ const __dirname = path.resolve();
 const app = express();
 
 // Middlewares
-// Sử dụng express.json() cho tất cả routes (bao gồm webhook)
-// Express sẽ tự động parse JSON body
+// Lưu raw body cho webhook để verify signature (nếu cần)
+// Middleware này phải được đặt trước express.json() để có thể lấy raw body
+app.use('/api/sepay/webhook', express.raw({ type: '*/*', limit: '10mb' }), (req, res, next) => {
+  // Lưu raw body vào req.rawBody để verify signature
+  if (Buffer.isBuffer(req.body)) {
+    req.rawBody = req.body.toString('utf8');
+    // Parse JSON từ raw body
+    try {
+      req.body = JSON.parse(req.rawBody);
+    } catch (e) {
+      // Nếu không parse được JSON, thử parse như form data hoặc giữ nguyên
+      console.warn("⚠️  Could not parse webhook body as JSON:", e.message);
+      req.body = {};
+    }
+  } else if (typeof req.body === 'string') {
+    req.rawBody = req.body;
+    try {
+      req.body = JSON.parse(req.rawBody);
+    } catch (e) {
+      req.body = {};
+    }
+  }
+  // Đánh dấu body đã được parse để express.json() không parse lại
+  req._bodyParsed = true;
+  next();
+});
+
+// Sử dụng express.json() cho các routes khác
+// Express sẽ tự động skip nếu body đã được parse (req._bodyParsed = true)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -113,8 +140,14 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow requests with no origin (mobile apps, Postman, webhooks, etc.)
+    // Webhooks từ Sepay thường không có origin hoặc có origin từ sepay.vn
     if (!origin) return callback(null, true);
+    
+    // Cho phép Sepay webhook origins
+    if (origin.includes('sepay.vn') || origin.includes('ngrok')) {
+      return callback(null, true);
+    }
     
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -124,7 +157,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Sepay-Signature', 'X-Sepay-Timestamp', 'x-sepay-signature', 'x-sepay-timestamp']
 }));
 
 // ====== ROUTES ======

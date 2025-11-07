@@ -3,16 +3,27 @@ import pool from "../config/db.js";
 
 /** POST /api/sepay/webhook */
 export const sepayWebhook = async (req, res) => {
+  const requestId = `webhook-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  const startTime = Date.now();
+  
+  // Khai báo biến ở scope ngoài để dùng trong catch block
+  let payload = {};
+  let order_id, company_id, amount, transaction_code, payment_method;
+  
   try {
-    console.log("=== WEBHOOK RECEIVED FROM SEPAY ===");
+    console.log(`\n=== WEBHOOK RECEIVED FROM SEPAY [${requestId}] ===`);
     console.log("Time:", new Date().toISOString());
+    console.log("IP:", req.ip || req.connection.remoteAddress);
+    console.log("User-Agent:", req.headers['user-agent'] || 'N/A');
     console.log("Headers:", JSON.stringify(req.headers, null, 2));
     
     // Log raw body trước khi parse
-    let rawBody = req.body;
+    let rawBody = req.rawBody || req.body;
     if (Buffer.isBuffer(rawBody)) {
       rawBody = rawBody.toString('utf8');
       console.log("Raw Body (Buffer):", rawBody);
+    } else if (typeof rawBody === 'string') {
+      console.log("Raw Body (String):", rawBody);
     }
     console.log("Parsed Body:", JSON.stringify(req.body, null, 2));
     console.log("Body Type:", typeof req.body);
@@ -23,7 +34,6 @@ export const sepayWebhook = async (req, res) => {
     const { verifyWebhookSignature } = await import("../config/sepay.js");
     
     // Parse payload - thử nhiều cách
-    let payload = {};
     
     // Cách 1: Body là object
     if (typeof req.body === 'object' && req.body !== null && !Buffer.isBuffer(req.body)) {
@@ -102,7 +112,12 @@ export const sepayWebhook = async (req, res) => {
     }
     
     // Sepay có thể gửi payload với format khác, thử parse nhiều format
-    let order_id, company_id, amount, transaction_code, payment_method = "vietqr";
+    // Khởi tạo giá trị mặc định
+    order_id = undefined;
+    company_id = undefined;
+    amount = undefined;
+    transaction_code = undefined;
+    payment_method = "vietqr";
     
     // Format 1: Direct fields
     if (payload.order_id) {
@@ -467,15 +482,21 @@ export const sepayWebhook = async (req, res) => {
       console.log("⚠️  Không tìm thấy đơn hàng hoặc đơn hàng đã có status khác");
     }
 
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Webhook processed successfully in ${processingTime}ms [${requestId}]`);
+    
     // Response với 200 OK để Sepay biết đã nhận được
     res.status(200).json({ 
       ok: true, 
       success: true,
       transaction_id: result.rows[0]?.transaction_id,
-      message: "Webhook processed successfully"
+      message: "Webhook processed successfully",
+      request_id: requestId
     });
   } catch (err) {
-    console.error("❌ === POST /api/sepay/webhook ERROR ===");
+    const processingTime = Date.now() - startTime;
+    console.error(`\n❌ === POST /api/sepay/webhook ERROR [${requestId}] ===`);
+    console.error("Processing time:", processingTime, "ms");
     console.error("Error message:", err.message);
     console.error("Error stack:", err.stack);
     console.error("Error code:", err.code);
@@ -488,18 +509,30 @@ export const sepayWebhook = async (req, res) => {
       company_id: typeof company_id !== 'undefined' ? company_id : 'NOT_SET',
       amount: typeof amount !== 'undefined' ? amount : 'NOT_SET',
       transaction_code: typeof transaction_code !== 'undefined' ? transaction_code : 'NOT_SET',
-      payload_keys: payload ? Object.keys(payload) : 'NO_PAYLOAD'
+      payload_keys: payload ? Object.keys(payload) : 'NO_PAYLOAD',
+      request_id: requestId
     });
     
-    // Trả về 500 để Sepay có thể retry (hoặc 200 nếu không muốn retry)
-    // Nếu muốn Sepay retry, dùng 500
-    // Nếu không muốn retry, dùng 200
-    res.status(500).json({ 
-      error: "Server error", 
+    // Phân loại lỗi để quyết định có retry hay không
+    // Lỗi validation (400) -> không retry
+    // Lỗi database/network (500) -> có thể retry
+    const isValidationError = err.code === '23505' || // Unique constraint violation
+                              err.code === '23503' || // Foreign key violation
+                              err.message.includes('Missing required fields') ||
+                              err.message.includes('Invalid');
+    
+    const statusCode = isValidationError ? 400 : 500;
+    
+    // Trả về response phù hợp
+    // 400: Lỗi validation, không cần retry
+    // 500: Lỗi server, Sepay có thể retry
+    res.status(statusCode).json({ 
+      ok: false,
+      error: isValidationError ? "Validation error" : "Server error", 
       message: err.message,
       detail: err.detail,
       hint: err.hint,
-      ok: false
+      request_id: requestId
     });
   }
 };
