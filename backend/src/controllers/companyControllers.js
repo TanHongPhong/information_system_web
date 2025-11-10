@@ -511,22 +511,74 @@ export const getAvailableRegionsByCompany = async (req, res) => {
 /** GET /api/transport-companies/available-regions */
 export const getAllAvailableRegions = async (req, res) => {
   try {
-    // Lấy tất cả regions có sẵn từ tất cả routes
-    const { rows } = await pool.query(
-      `SELECT * FROM get_available_regions()`
-    );
+    // 4 điểm chính mặc định
+    const mainRegions = ['Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'HCM'];
+    let regions = [...mainRegions];
+    
+    try {
+      // Thử lấy từ Routes trước
+      const routesQuery = await pool.query(`
+        SELECT DISTINCT origin_region as region
+        FROM "Routes"
+        WHERE is_active = TRUE AND origin_region IS NOT NULL
+        UNION
+        SELECT DISTINCT destination_region as region
+        FROM "Routes"
+        WHERE is_active = TRUE AND destination_region IS NOT NULL
+      `);
+      
+      if (routesQuery.rows && routesQuery.rows.length > 0) {
+        const routeRegions = routesQuery.rows
+          .map(r => r.region)
+          .filter(r => r && r.trim() !== '');
+        if (routeRegions.length > 0) {
+          regions = [...new Set([...mainRegions, ...routeRegions])];
+        }
+      }
+    } catch (routesErr) {
+      console.warn("⚠️ Error querying Routes, trying CompanyAreas:", routesErr.message);
+      
+      // Nếu lỗi Routes, thử lấy từ CompanyAreas
+      try {
+        const areasQuery = await pool.query(`
+          SELECT DISTINCT area as region
+          FROM "CompanyAreas"
+          WHERE area IS NOT NULL
+        `);
+        
+        if (areasQuery.rows && areasQuery.rows.length > 0) {
+          const areaRegions = areasQuery.rows
+            .map(r => r.region)
+            .filter(r => r && r.trim() !== '');
+          if (areaRegions.length > 0) {
+            regions = [...new Set([...mainRegions, ...areaRegions])];
+          }
+        }
+      } catch (areasErr) {
+        console.warn("⚠️ Error querying CompanyAreas, using default regions:", areasErr.message);
+        // Dùng 4 điểm chính
+        regions = mainRegions;
+      }
+    }
 
-    const regions = [...new Set(rows.map(r => r.region))].sort();
+    // Sort và loại bỏ null/empty
+    const allRegions = [...new Set(regions)]
+      .filter(r => r && r.trim() !== '')
+      .sort();
+
+    console.log(`✅ GET /api/transport-companies/available-regions: Returning ${allRegions.length} regions`);
 
     res.json({
-      regions,
+      regions: allRegions.length > 0 ? allRegions : mainRegions,
     });
   } catch (err) {
     console.error("=== GET /api/transport-companies/available-regions ERROR ===");
     console.error("Error message:", err.message);
-    res.status(500).json({
-      error: "Server error",
-      message: err.message,
+    console.error("Error stack:", err.stack);
+    
+    // Fallback: luôn trả về 4 điểm chính
+    res.status(200).json({
+      regions: ['Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'HCM'],
     });
   }
 };
