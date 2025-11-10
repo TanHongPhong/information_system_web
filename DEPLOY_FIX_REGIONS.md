@@ -21,7 +21,20 @@ git pull origin main
 
 ---
 
-## Bước 2: Deploy Backend
+## Bước 2: Kiểm tra và tạo Routes (nếu cần)
+
+```bash
+cd backend
+
+# Kiểm tra routes hiện có
+node scripts/check_and_create_routes.js
+```
+
+Script này sẽ:
+- Kiểm tra routes cho tất cả công ty
+- Tạo routes mới nếu thiếu (giữa 4 điểm: Hà Nội, Đà Nẵng, Cần Thơ, HCM)
+
+## Bước 3: Deploy Backend
 
 ```bash
 cd backend
@@ -48,7 +61,7 @@ Kết quả phải có:
 
 ---
 
-## Bước 3: Deploy Frontend
+## Bước 4: Deploy Frontend
 
 ```bash
 cd ../frontend
@@ -66,7 +79,7 @@ sudo chown -R www-data:www-data /var/www/html/logistics
 
 ---
 
-## Bước 4: Reload Nginx
+## Bước 5: Reload Nginx
 
 ```bash
 sudo nginx -t
@@ -75,7 +88,7 @@ sudo systemctl reload nginx
 
 ---
 
-## Bước 5: Kiểm tra
+## Bước 6: Kiểm tra
 
 1. **Test API:**
    ```bash

@@ -67,6 +67,16 @@ export const getCompanies = async (req, res) => {
       destination_region = "",
     } = req.query;
 
+    // Log để debug
+    if (origin_region || destination_region) {
+      console.log("🔍 GET /api/transport-companies - Filter by route:", {
+        origin_region,
+        destination_region,
+        q,
+        area
+      });
+    }
+
     // Full query with proper joins for areas and rates
     const { rows } = await pool.query(
       `
@@ -101,22 +111,55 @@ export const getCompanies = async (req, res) => {
         AND ($1 = '' OR lc.company_name ILIKE '%'||$1||'%' OR lc.address ILIKE '%'||$1||'%')
         AND ($4::numeric IS NULL OR COALESCE(lc.rating, 0) >= $4::numeric)
         AND (
+          -- Nếu không có origin_region hoặc destination_region, hiển thị tất cả
           $6 = '' OR $7 = '' OR
+          -- Ưu tiên: Tìm companies có route chính xác
           EXISTS (
             SELECT 1 FROM "Routes" r
             WHERE r.company_id = lc.company_id
               AND r.is_active = TRUE
               AND (
-                (r.origin_region = $6 AND r.destination_region = $7)
-                OR (r.origin_region = $7 AND r.destination_region = $6)
+                (TRIM(r.origin_region) = TRIM($6) AND TRIM(r.destination_region) = TRIM($7))
+                OR (TRIM(r.origin_region) = TRIM($7) AND TRIM(r.destination_region) = TRIM($6))
               )
           )
+          -- Fallback: Nếu không có route chính xác, tìm companies có CompanyAreas phù hợp
+          -- Company phải có cả origin_region VÀ destination_region trong CompanyAreas
+          OR (
+            EXISTS (
+              SELECT 1 FROM "CompanyAreas" ca1
+              WHERE ca1.company_id = lc.company_id
+                AND ca1.area = $6
+            )
+            AND EXISTS (
+              SELECT 1 FROM "CompanyAreas" ca2
+              WHERE ca2.company_id = lc.company_id
+                AND ca2.area = $7
+            )
+          )
         )
-      ORDER BY lc.rating DESC NULLS LAST, lc.company_name ASC
+      ORDER BY 
+        -- Ưu tiên companies có route chính xác trước
+        CASE WHEN $6 != '' AND $7 != '' AND EXISTS (
+          SELECT 1 FROM "Routes" r
+          WHERE r.company_id = lc.company_id
+            AND r.is_active = TRUE
+            AND (
+              (TRIM(r.origin_region) = TRIM($6) AND TRIM(r.destination_region) = TRIM($7))
+              OR (TRIM(r.origin_region) = TRIM($7) AND TRIM(r.destination_region) = TRIM($6))
+            )
+        ) THEN 0 ELSE 1 END,
+        lc.rating DESC NULLS LAST, 
+        lc.company_name ASC
       LIMIT 50;
       `,
       [q, area, vehicle_type, min_rating, max_cost_per_km, origin_region, destination_region]
     );
+
+    // Log kết quả
+    if (origin_region || destination_region) {
+      console.log(`✅ GET /api/transport-companies: Found ${rows.length} companies for route ${origin_region} → ${destination_region}`);
+    }
 
     res.json(rows || []);
   } catch (err) {
