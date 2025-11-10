@@ -114,6 +114,78 @@ export const driverAPI = {
     }
     return response.json();
   },
+
+  // Bắt đầu bốc hàng: Chuyển tất cả đơn ACCEPTED → LOADING
+  startLoading: async (vehicle_id) => {
+    const response = await fetch(`${API_URL}/driver/start-loading`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vehicle_id }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`Failed to start loading: ${errorMessage}`);
+    }
+    return response.json();
+  },
+
+  // Đánh dấu đơn hàng đã bốc
+  markOrderLoaded: async (order_id, vehicle_id) => {
+    const response = await fetch(`${API_URL}/driver/mark-order-loaded`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id, vehicle_id }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`Failed to mark order loaded: ${errorMessage}`);
+    }
+    return response.json();
+  },
+
+  // Lưu kho: Chuyển WAREHOUSE_RECEIVED → WAREHOUSE_STORED
+  warehouseStored: async (order_id, vehicle_id, warehouse_location, warehouse_id, notes) => {
+    const response = await fetch(`${API_URL}/driver/warehouse-stored`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_id,
+        vehicle_id,
+        warehouse_location,
+        warehouse_id,
+        notes,
+      }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`Failed to mark warehouse stored: ${errorMessage}`);
+    }
+    return response.json();
+  },
+
+  // Xuất kho: Chuyển WAREHOUSE_STORED → WAREHOUSE_OUTBOUND
+  warehouseOutbound: async (order_id, vehicle_id, warehouse_location, warehouse_id, notes) => {
+    const response = await fetch(`${API_URL}/driver/warehouse-outbound`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_id,
+        vehicle_id,
+        warehouse_location,
+        warehouse_id,
+        notes,
+      }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`Failed to mark warehouse outbound: ${errorMessage}`);
+    }
+    return response.json();
+  },
 };
 
 // Warehouse API

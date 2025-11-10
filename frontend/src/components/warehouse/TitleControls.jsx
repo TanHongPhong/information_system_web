@@ -12,7 +12,7 @@ export default function TitleControls({
     <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
       <div>
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Đơn hàng tại kho</h2>
-        <p className="text-xs text-slate-500 mt-1">Theo dõi đơn hàng đã tới kho và đã xuất kho giao cho khách hàng. Dữ liệu xuất ra để WMS quản lý.</p>
+        <p className="text-xs text-slate-500 mt-1">Theo dõi các đơn hàng đã tới kho và đang lưu kho. Dữ liệu xuất ra để WMS quản lý.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -23,8 +23,7 @@ export default function TitleControls({
           className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">Tất cả trạng thái</option>
-          <option value="STORED">Đã tới kho</option>
-          <option value="SHIPPED">Đã xuất kho</option>
+          <option value="STORED">Đang lưu kho</option>
         </select>
 
         {/* Date filter */}

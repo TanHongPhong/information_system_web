@@ -451,10 +451,12 @@ export const getDriverVehicleInfo = async (req, res) => {
     // Debug: Log vehicle_id để kiểm tra
     console.log("🔍 Fetching orders for vehicle_id:", vehicle.vehicle_id, "License plate:", vehicle.license_plate);
     
-    // Trước tiên, tìm đơn hàng với status LOADING, IN_TRANSIT (không bao gồm WAREHOUSE_RECEIVED vì đã nhận kho)
+    // Lấy TẤT CẢ đơn hàng có vehicle_id và status là ACCEPTED, LOADING, IN_TRANSIT
+    // (không bao gồm WAREHOUSE_RECEIVED vì đã nhận kho, không còn trên xe nữa)
     const ordersQuery = `
       SELECT 
         co.order_id,
+        co.order_code,
         co.company_id,
         co.vehicle_id,
         co.customer_id,
@@ -472,7 +474,6 @@ export const getDriverVehicleInfo = async (req, res) => {
         co.pickup_time,
         co.note,
         co.status,
-        co.order_code,
         co.is_loaded,
         co.loaded_at,
         co.created_at,
@@ -482,83 +483,59 @@ export const getDriverVehicleInfo = async (req, res) => {
       FROM "CargoOrders" co
       LEFT JOIN users u ON co.customer_id = u.id
       WHERE co.vehicle_id = $1
-        AND co.status IN ('LOADING', 'IN_TRANSIT')
-      ORDER BY co.created_at DESC;
+        AND co.status IN ('ACCEPTED', 'LOADING', 'IN_TRANSIT')
+      ORDER BY 
+        CASE co.status
+          WHEN 'LOADING' THEN 1
+          WHEN 'IN_TRANSIT' THEN 2
+          WHEN 'ACCEPTED' THEN 3
+          ELSE 4
+        END,
+        co.created_at DESC;
     `;
 
-    let ordersResult = await pool.query(ordersQuery, [vehicle.vehicle_id]);
+    const ordersResult = await pool.query(ordersQuery, [vehicle.vehicle_id]);
     
     // Debug: Log số lượng đơn hàng tìm thấy
-    console.log(`📦 Found ${ordersResult.rows.length} orders with status LOADING/IN_TRANSIT for vehicle ${vehicle.vehicle_id} (${vehicle.license_plate})`);
-    
-    // Nếu không có đơn hàng với status trên, kiểm tra và lấy cả ACCEPTED
-    if (ordersResult.rows.length === 0) {
-      console.log("⚠️ No orders with status LOADING/IN_TRANSIT. Checking for ACCEPTED orders...");
-      
-      const acceptedOrdersQuery = `
-        SELECT 
-          co.order_id,
-          co.order_code,
-          co.company_id,
-          co.vehicle_id,
-          co.customer_id,
-          co.cargo_name,
-          co.cargo_type,
-          co.weight_kg,
-          co.volume_m3,
-          co.value_vnd,
-          co.require_cold,
-          co.require_danger,
-          co.require_loading,
-          co.require_insurance,
-          co.pickup_address,
-          co.dropoff_address,
-          co.pickup_time,
-          co.note,
-          co.status,
-          co.is_loaded,
-          co.loaded_at,
-          co.created_at,
-          co.updated_at,
-          u.name as customer_name,
-          u.phone as customer_phone
-        FROM "CargoOrders" co
-        LEFT JOIN users u ON co.customer_id = u.id
-        WHERE co.vehicle_id = $1
-          AND co.status = 'ACCEPTED'
-        ORDER BY co.created_at DESC
-        LIMIT 5;  -- Giới hạn 5 đơn ACCEPTED để hiển thị
-      `;
-      
-      const acceptedResult = await pool.query(acceptedOrdersQuery, [vehicle.vehicle_id]);
-      console.log(`📋 Found ${acceptedResult.rows.length} ACCEPTED orders for vehicle ${vehicle.vehicle_id}`);
-      
-      if (acceptedResult.rows.length > 0) {
-        ordersResult = acceptedResult;
-        console.log("✅ Using ACCEPTED orders as fallback:", acceptedResult.rows.map(o => ({ id: o.order_id, cargo: o.cargo_name, status: o.status })));
-      } else {
-        // Kiểm tra xem có đơn hàng nào với vehicle_id này không (không phân biệt status)
-        const allOrdersCheck = await pool.query(
-          `SELECT order_id, status, cargo_name, is_loaded, loaded_at, order_code FROM "CargoOrders" WHERE vehicle_id = $1 LIMIT 5`,
-          [vehicle.vehicle_id]
-        );
-        console.log(`⚠️ No orders found. Total orders for this vehicle (any status): ${allOrdersCheck.rows.length}`);
-        if (allOrdersCheck.rows.length > 0) {
-          console.log("Other orders statuses:", allOrdersCheck.rows.map(o => ({ id: o.order_id, status: o.status, cargo: o.cargo_name })));
-        }
-      }
+    console.log(`📦 Found ${ordersResult.rows.length} orders for vehicle ${vehicle.vehicle_id} (${vehicle.license_plate})`);
+    if (ordersResult.rows.length > 0) {
+      const statusCounts = ordersResult.rows.reduce((acc, o) => {
+        acc[o.status] = (acc[o.status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log("📊 Orders by status:", statusCounts);
+      console.log("📋 Orders:", ordersResult.rows.map(o => ({ id: o.order_id, cargo: o.cargo_name, status: o.status })));
     } else {
-      console.log("Orders:", ordersResult.rows.map(o => ({ id: o.order_id, cargo: o.cargo_name, status: o.status })));
+      // Kiểm tra xem có đơn hàng nào với vehicle_id này không (không phân biệt status)
+      const allOrdersCheck = await pool.query(
+        `SELECT order_id, status, cargo_name, is_loaded, loaded_at, order_code FROM "CargoOrders" WHERE vehicle_id = $1 LIMIT 10`,
+        [vehicle.vehicle_id]
+      );
+      console.log(`⚠️ No orders found with status ACCEPTED/LOADING/IN_TRANSIT. Total orders for this vehicle (any status): ${allOrdersCheck.rows.length}`);
+      if (allOrdersCheck.rows.length > 0) {
+        const statusCounts = allOrdersCheck.rows.reduce((acc, o) => {
+          acc[o.status] = (acc[o.status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log("📊 All orders by status:", statusCounts);
+        console.log("📋 Other orders:", allOrdersCheck.rows.map(o => ({ id: o.order_id, status: o.status, cargo: o.cargo_name })));
+      }
     }
 
     // Lấy thông tin tuyến đường từ đơn hàng đầu tiên (nếu có)
+    // Nếu không còn đơn hàng nào, routeFrom = current_location (vị trí hiện tại của xe)
+    // routeTo = null hoặc "Chưa xác định"
     let routeFrom = vehicle.current_location || "Chưa xác định";
     let routeTo = "Chưa xác định";
     
     if (ordersResult.rows.length > 0) {
       const firstOrder = ordersResult.rows[0];
-      routeFrom = firstOrder.pickup_address || routeFrom;
+      routeFrom = firstOrder.pickup_address || vehicle.current_location || routeFrom;
       routeTo = firstOrder.dropoff_address || routeTo;
+    } else {
+      // Không còn đơn hàng nào trên xe, routeFrom = current_location (vị trí hiện tại)
+      routeFrom = vehicle.current_location || "Chưa xác định";
+      routeTo = "Chưa xác định";
     }
 
     res.json({
@@ -1129,6 +1106,308 @@ export const acceptWarehouseEntry = async (req, res) => {
     });
   } catch (err) {
     console.error("=== POST /api/driver/accept-warehouse-entry ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * POST /api/driver/start-loading
+ * Bắt đầu bốc hàng: Chuyển tất cả đơn ACCEPTED → LOADING
+ */
+export const startLoading = async (req, res) => {
+  try {
+    const { vehicle_id } = req.body;
+
+    console.log("=== POST /api/driver/start-loading ===");
+    console.log("Request body:", { vehicle_id });
+
+    if (!vehicle_id) {
+      return res.status(400).json({
+        error: "Missing required field",
+        message: "vehicle_id is required",
+      });
+    }
+
+    // Chuyển tất cả đơn ACCEPTED của xe sang LOADING
+    const updateQuery = `
+      UPDATE "CargoOrders"
+      SET status = 'LOADING',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE vehicle_id = $1
+        AND status = 'ACCEPTED'
+      RETURNING order_id, order_code, status;
+    `;
+
+    const updateResult = await pool.query(updateQuery, [vehicle_id]);
+    console.log(`✅ Updated ${updateResult.rowCount} orders from ACCEPTED to LOADING`);
+
+    // Log status history
+    if (updateResult.rowCount > 0) {
+      try {
+        for (const row of updateResult.rows) {
+          await pool.query(
+            `INSERT INTO "OrderStatusHistory" (order_id, old_status, new_status, changed_by_type, changed_by_id, changed_by_name, reason)
+             VALUES ($1, 'ACCEPTED', 'LOADING', 'DRIVER', $2, 'Driver', 'Bắt đầu bốc hàng')`,
+            [row.order_id, vehicle_id]
+          );
+        }
+      } catch (historyErr) {
+        console.error("⚠️ Error logging status change:", historyErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Đã bắt đầu bốc hàng",
+      updated_orders: updateResult.rowCount,
+      orders: updateResult.rows,
+    });
+  } catch (err) {
+    console.error("=== POST /api/driver/start-loading ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * POST /api/driver/mark-order-loaded
+ * Đánh dấu đơn hàng đã bốc: Cập nhật is_loaded = true
+ */
+export const markOrderLoaded = async (req, res) => {
+  try {
+    const { order_id, vehicle_id } = req.body;
+
+    console.log("=== POST /api/driver/mark-order-loaded ===");
+    console.log("Request body:", { order_id, vehicle_id });
+
+    if (!order_id) {
+      return res.status(400).json({
+        error: "Missing required field",
+        message: "order_id is required",
+      });
+    }
+
+    // Cập nhật is_loaded = true và loaded_at
+    const updateQuery = `
+      UPDATE "CargoOrders"
+      SET is_loaded = true,
+          loaded_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = $1
+        AND (vehicle_id = $2 OR $2 IS NULL)
+        AND status IN ('LOADING', 'ACCEPTED')
+      RETURNING order_id, order_code, is_loaded, loaded_at, status;
+    `;
+
+    const updateResult = await pool.query(updateQuery, [order_id, vehicle_id || null]);
+    
+    if (updateResult.rows.length === 0) {
+      // Kiểm tra status hiện tại
+      const checkQuery = `
+        SELECT order_id, status, is_loaded, vehicle_id 
+        FROM "CargoOrders"
+        WHERE order_id = $1
+      `;
+      const checkResult = await pool.query(checkQuery, [order_id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          error: "Order not found",
+          message: `Order ${order_id} does not exist`,
+        });
+      }
+      
+      const order = checkResult.rows[0];
+      return res.status(400).json({
+        error: "Invalid order status or already loaded",
+        message: `Order ${order_id} has status ${order.status}, expected LOADING or ACCEPTED. is_loaded: ${order.is_loaded}`,
+      });
+    }
+
+    console.log(`✅ Marked order ${order_id} as loaded`);
+
+    res.json({
+      success: true,
+      message: "Đã đánh dấu đơn hàng đã bốc",
+      order: updateResult.rows[0],
+    });
+  } catch (err) {
+    console.error("=== POST /api/driver/mark-order-loaded ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * POST /api/driver/warehouse-stored
+ * Lưu kho: Chuyển WAREHOUSE_RECEIVED → WAREHOUSE_STORED
+ */
+export const warehouseStored = async (req, res) => {
+  try {
+    const { order_id, vehicle_id, warehouse_location, warehouse_id, notes } = req.body;
+
+    console.log("=== POST /api/driver/warehouse-stored ===");
+    console.log("Request body:", { order_id, vehicle_id, warehouse_location, warehouse_id, notes });
+
+    if (!order_id) {
+      return res.status(400).json({
+        error: "Missing required field",
+        message: "order_id is required",
+      });
+    }
+
+    // Cập nhật status từ WAREHOUSE_RECEIVED → WAREHOUSE_STORED
+    const updateQuery = `
+      UPDATE "CargoOrders"
+      SET status = 'WAREHOUSE_STORED',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = $1
+        AND status = 'WAREHOUSE_RECEIVED'
+      RETURNING order_id, status;
+    `;
+    
+    const updateResult = await pool.query(updateQuery, [order_id]);
+    
+    if (updateResult.rows.length === 0) {
+      // Kiểm tra status hiện tại
+      const checkQuery = `
+        SELECT order_id, status 
+        FROM "CargoOrders"
+        WHERE order_id = $1
+      `;
+      const checkResult = await pool.query(checkQuery, [order_id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          error: "Order not found",
+          message: `Order ${order_id} does not exist`,
+        });
+      }
+      
+      const currentStatus = checkResult.rows[0].status;
+      return res.status(400).json({
+        error: "Invalid order status",
+        message: `Order ${order_id} has status ${currentStatus}, expected WAREHOUSE_RECEIVED`,
+      });
+    }
+
+    console.log(`✅ Updated order ${order_id} to WAREHOUSE_STORED`);
+
+    // Log status history
+    try {
+      await pool.query(
+        `INSERT INTO "OrderStatusHistory" (order_id, old_status, new_status, changed_by_type, changed_by_id, changed_by_name, reason)
+         VALUES ($1, 'WAREHOUSE_RECEIVED', 'WAREHOUSE_STORED', 'DRIVER', $2, 'Driver', $3)`,
+        [order_id, vehicle_id || null, notes || 'Đã lưu kho']
+      );
+    } catch (historyErr) {
+      console.error("⚠️ Error logging status change:", historyErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: "Đã lưu kho thành công",
+      order_id,
+      status: 'WAREHOUSE_STORED',
+    });
+  } catch (err) {
+    console.error("=== POST /api/driver/warehouse-stored ERROR ===");
+    console.error("Error message:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * POST /api/driver/warehouse-outbound
+ * Xuất kho: Chuyển WAREHOUSE_STORED → WAREHOUSE_OUTBOUND
+ */
+export const warehouseOutbound = async (req, res) => {
+  try {
+    const { order_id, vehicle_id, warehouse_location, warehouse_id, notes } = req.body;
+
+    console.log("=== POST /api/driver/warehouse-outbound ===");
+    console.log("Request body:", { order_id, vehicle_id, warehouse_location, warehouse_id, notes });
+
+    if (!order_id) {
+      return res.status(400).json({
+        error: "Missing required field",
+        message: "order_id is required",
+      });
+    }
+
+    // Cập nhật status từ WAREHOUSE_STORED → WAREHOUSE_OUTBOUND
+    const updateQuery = `
+      UPDATE "CargoOrders"
+      SET status = 'WAREHOUSE_OUTBOUND',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE order_id = $1
+        AND status = 'WAREHOUSE_STORED'
+      RETURNING order_id, status;
+    `;
+    
+    const updateResult = await pool.query(updateQuery, [order_id]);
+    
+    if (updateResult.rows.length === 0) {
+      // Kiểm tra status hiện tại
+      const checkQuery = `
+        SELECT order_id, status 
+        FROM "CargoOrders"
+        WHERE order_id = $1
+      `;
+      const checkResult = await pool.query(checkQuery, [order_id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          error: "Order not found",
+          message: `Order ${order_id} does not exist`,
+        });
+      }
+      
+      const currentStatus = checkResult.rows[0].status;
+      return res.status(400).json({
+        error: "Invalid order status",
+        message: `Order ${order_id} has status ${currentStatus}, expected WAREHOUSE_STORED`,
+      });
+    }
+
+    console.log(`✅ Updated order ${order_id} to WAREHOUSE_OUTBOUND`);
+
+    // Log status history
+    try {
+      await pool.query(
+        `INSERT INTO "OrderStatusHistory" (order_id, old_status, new_status, changed_by_type, changed_by_id, changed_by_name, reason)
+         VALUES ($1, 'WAREHOUSE_STORED', 'WAREHOUSE_OUTBOUND', 'DRIVER', $2, 'Driver', $3)`,
+        [order_id, vehicle_id || null, notes || 'Đã xuất kho']
+      );
+    } catch (historyErr) {
+      console.error("⚠️ Error logging status change:", historyErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: "Đã xuất kho thành công",
+      order_id,
+      status: 'WAREHOUSE_OUTBOUND',
+    });
+  } catch (err) {
+    console.error("=== POST /api/driver/warehouse-outbound ERROR ===");
     console.error("Error message:", err.message);
     console.error("Error stack:", err.stack);
     res.status(500).json({

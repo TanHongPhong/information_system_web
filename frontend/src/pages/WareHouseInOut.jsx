@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import AppLayout from "../components/layout/AppLayout.jsx";
-import { warehouseAPI } from "../lib/api";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 import KpiStrip from "../components/warehouse/KpiStrip";
 import WarehouseTable from "../components/warehouse/WarehouseTable";
@@ -10,7 +11,6 @@ import OrderDetailModal from "../components/warehouse/OrderDetailModal";
 import Pagination from "../components/warehouse/Pagination";
 
 export default function WareHouseInOut() {
-
   // Tab state
   const [activeTab, setActiveTab] = useState("nhap"); // "nhap" hoặc "xuat"
 
@@ -29,12 +29,10 @@ export default function WareHouseInOut() {
       return true;
     };
 
-    // Kiểm tra ngay khi mount
     if (!checkRole()) {
       return;
     }
 
-    // Listen for storage changes (khi user logout ở tab khác hoặc đổi role)
     const handleStorageChange = () => {
       if (!checkRole()) {
         return;
@@ -43,7 +41,6 @@ export default function WareHouseInOut() {
 
     window.addEventListener("storage", handleStorageChange);
     
-    // Kiểm tra lại định kỳ (mỗi 2 giây) để catch các thay đổi role
     const intervalId = setInterval(() => {
       if (!checkRole()) {
         clearInterval(intervalId);
@@ -57,20 +54,17 @@ export default function WareHouseInOut() {
   }, []);
 
   const logout = () => {
-    // Xóa tất cả dữ liệu authentication
     localStorage.removeItem("gd_user");
     localStorage.removeItem("role");
     localStorage.removeItem("isAdmin");
     localStorage.removeItem("remember");
     localStorage.removeItem("auth_token");
-    
-    // Sử dụng window.location.href để đảm bảo redirect hoàn toàn
     window.location.href = "/sign-in";
   };
 
   // Data state
-  const [incomingOrders, setIncomingOrders] = useState([]); // INCOMING - đang nhập kho
-  const [storedOrders, setStoredOrders] = useState([]); // STORED - cần xuất kho
+  const [incomingOrders, setIncomingOrders] = useState([]); // WAREHOUSE_RECEIVED
+  const [storedOrders, setStoredOrders] = useState([]); // WAREHOUSE_STORED + WAREHOUSE_OUTBOUND
   const [kpis, setKpis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -94,28 +88,134 @@ export default function WareHouseInOut() {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef(null);
 
-  // Load data từ API
+  // Load data từ API - lấy cargo orders theo status
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load inventory
-      const inventoryData = await warehouseAPI.getInventory({
-        limit: 1000,
-      });
-      
-      // Tách ra 2 danh sách: INCOMING và STORED
-      const allInventory = inventoryData.inventory || [];
-      const incoming = allInventory.filter(item => item.inventory_status === 'INCOMING');
-      const stored = allInventory.filter(item => item.inventory_status === 'STORED');
-      
-      setIncomingOrders(incoming);
-      setStoredOrders(stored);
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return '';
+          return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } catch {
+          return '';
+        }
+      };
+
+      // Tab "Nhập kho": Lấy đơn hàng với status WAREHOUSE_RECEIVED
+      try {
+        const incomingResponse = await fetch(`${API_URL}/cargo-orders?status=WAREHOUSE_RECEIVED&limit=1000`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+          }
+        });
+        
+        let incomingData = [];
+        if (incomingResponse.ok) {
+          const data = await incomingResponse.json();
+          const ordersList = Array.isArray(data) ? data : (data.orders || data.data || []);
+          
+          incomingData = ordersList.map(order => ({
+            id: order.order_id || order.order_code,
+            order_id: order.order_id,
+            order_code: order.order_code,
+            status: 'Đã tới kho',
+            inventory_status: 'INCOMING',
+            order_status: order.status,
+            customer: order.customer_name || order.contact_name || 'Khách hàng',
+            cargo_name: order.cargo_name || '—',
+            cargo_type: order.cargo_type || '—',
+            weight: Number(order.weight_kg) || 0,
+            volume_m3: Number(order.volume_m3) || 0,
+            pallets: 0,
+            from: order.pickup_address || 'Chưa xác định',
+            to: order.dropoff_address || 'Chưa xác định',
+            temp: order.require_cold ? 'Lạnh' : 'Thường',
+            entered_at: formatDate(order.updated_at || order.created_at),
+            entered_at_datetime: order.updated_at || order.created_at,
+            entered_at_raw: order.updated_at || order.created_at,
+            location: null,
+            notes: order.note || '',
+            company_name: order.company_name,
+            vehicle_id: order.vehicle_id,
+            license_plate: order.license_plate,
+          }));
+        }
+        setIncomingOrders(incomingData);
+      } catch (err) {
+        console.error("Error loading incoming orders:", err);
+        setIncomingOrders([]);
+      }
+
+      // Tab "Xuất kho": Lấy đơn hàng với status WAREHOUSE_STORED (đã tới kho)
+      try {
+        const storedResponse = await fetch(`${API_URL}/cargo-orders?status=WAREHOUSE_STORED&limit=1000`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+          }
+        });
+
+        let storedData = [];
+
+        if (storedResponse.ok) {
+          const data = await storedResponse.json();
+          const ordersList = Array.isArray(data) ? data : (data.orders || data.data || []);
+          storedData = ordersList.map(order => ({
+            id: order.order_id || order.order_code,
+            order_id: order.order_id,
+            order_code: order.order_code,
+            status: 'Đang lưu kho',
+            inventory_status: 'STORED',
+            order_status: order.status,
+            customer: order.customer_name || order.contact_name || 'Khách hàng',
+            cargo_name: order.cargo_name || '—',
+            cargo_type: order.cargo_type || '—',
+            weight: Number(order.weight_kg) || 0,
+            volume_m3: Number(order.volume_m3) || 0,
+            pallets: 0,
+            from: order.pickup_address || 'Chưa xác định',
+            to: order.dropoff_address || 'Chưa xác định',
+            temp: order.require_cold ? 'Lạnh' : 'Thường',
+            stored_at: formatDate(order.updated_at || order.created_at),
+            stored_at_datetime: order.updated_at || order.created_at,
+            stored_at_raw: order.updated_at || order.created_at,
+            entered_at: formatDate(order.updated_at || order.created_at),
+            entered_at_datetime: order.updated_at || order.created_at,
+            location: null,
+            notes: order.note || '',
+            company_name: order.company_name,
+            vehicle_id: order.vehicle_id,
+            license_plate: order.license_plate,
+          }));
+        }
+
+        setStoredOrders(storedData);
+      } catch (err) {
+        console.error("Error loading stored/outbound orders:", err);
+        setStoredOrders([]);
+      }
 
       // Load KPIs
-      const kpisData = await warehouseAPI.getKPIs();
-      setKpis(kpisData);
+      try {
+        const kpisResponse = await fetch(`${API_URL}/warehouse/kpis`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+          }
+        });
+        if (kpisResponse.ok) {
+          const kpisData = await kpisResponse.json();
+          setKpis(kpisData);
+        }
+      } catch (err) {
+        console.error("Error loading KPIs:", err);
+      }
     } catch (err) {
       console.error("Error loading warehouse data:", err);
       setError(err.message || "Không thể tải dữ liệu kho");
@@ -144,6 +244,7 @@ export default function WareHouseInOut() {
       const search = searchValue.toLowerCase();
       filtered = filtered.filter(item =>
         item.id?.toLowerCase().includes(search) ||
+        item.order_code?.toLowerCase().includes(search) ||
         item.customer?.toLowerCase().includes(search) ||
         item.cargo_name?.toLowerCase().includes(search)
       );
@@ -155,7 +256,7 @@ export default function WareHouseInOut() {
       today.setHours(0, 0, 0, 0);
       
       filtered = filtered.filter(item => {
-        let entryDate = item.stored_at || item.entered_at;
+        let entryDate = activeTab === "nhap" ? item.entered_at : (item.stored_at || item.entered_at);
         if (!entryDate) return false;
         
         let date;
@@ -171,7 +272,6 @@ export default function WareHouseInOut() {
         }
         
         if (isNaN(date.getTime())) return false;
-        
         date.setHours(0, 0, 0, 0);
         
         if (dateFilter === "today") {
@@ -219,7 +319,7 @@ export default function WareHouseInOut() {
     }
 
     return filtered;
-  }, [currentTabData, searchValue, dateFilter, sortConfig]);
+  }, [currentTabData, searchValue, dateFilter, sortConfig, activeTab]);
 
   // Pagination
   const totalPages = Math.ceil(rows.length / itemsPerPage);
@@ -260,7 +360,7 @@ export default function WareHouseInOut() {
     setSelectedOrder(null);
   };
 
-  // Handler nhập kho - chuyển từ INCOMING -> STORED
+  // Handler nhập kho - chuyển từ WAREHOUSE_RECEIVED -> WAREHOUSE_STORED
   const handleOrderIdSubmit = async () => {
     if (!orderIdInput.trim()) {
       alert("Vui lòng nhập mã đơn hàng");
@@ -271,13 +371,12 @@ export default function WareHouseInOut() {
       setLoadingAction(true);
       const orderId = orderIdInput.trim().toUpperCase();
 
-      // Tìm inventory item với status INCOMING
-      const inventoryData = await warehouseAPI.getInventory({ limit: 1000 });
-      const inventoryItem = inventoryData.inventory?.find(
-        inv => inv.id === orderId && inv.inventory_status === 'INCOMING'
+      // Tìm đơn hàng trong danh sách incomingOrders
+      const orderItem = incomingOrders.find(
+        item => (item.id === orderId || item.order_id === orderId || item.order_code === orderId)
       );
 
-      if (!inventoryItem) {
+      if (!orderItem) {
         alert(`Không tìm thấy đơn hàng ${orderId} đang chờ nhập kho hoặc đơn hàng đã được nhập kho rồi.`);
         setOrderIdInput("");
         setLoadingAction(false);
@@ -290,32 +389,35 @@ export default function WareHouseInOut() {
         return;
       }
 
-      const userData = JSON.parse(localStorage.getItem("gd_user") || "{}");
-      const storedBy = userData.name || userData.email || "Unknown";
+      // Cập nhật status từ WAREHOUSE_RECEIVED sang WAREHOUSE_STORED
+      const response = await fetch(`${API_URL}/cargo-orders/${orderItem.order_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+        },
+        body: JSON.stringify({
+          status: 'WAREHOUSE_STORED'
+        })
+      });
 
-      // Cập nhật status từ INCOMING sang STORED
-      await warehouseAPI.updateInventoryStatus(
-        inventoryItem.inventory_id,
-        orderId,
-        'STORED',
-        inventoryItem.location || null,
-        storedBy,
-        null, // shipped_by
-        `Nhập kho bởi ${storedBy}`
-      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Không thể cập nhật trạng thái đơn hàng');
+      }
 
       alert(`✅ Đã nhập kho đơn hàng ${orderId} thành công!`);
       setOrderIdInput("");
       await loadData(); // Reload data
     } catch (err) {
-      console.error("Error storing inventory:", err);
+      console.error("Error storing order:", err);
       alert("Lỗi khi nhập kho: " + err.message);
     } finally {
       setLoadingAction(false);
     }
   };
 
-  // Handler xuất kho - chuyển từ STORED -> SHIPPED
+  // Handler xuất kho - chuyển từ WAREHOUSE_STORED -> COMPLETED
   const handleOrderIdExport = async () => {
     if (!orderIdInput.trim()) {
       alert("Vui lòng nhập mã đơn hàng");
@@ -326,14 +428,13 @@ export default function WareHouseInOut() {
       setLoadingAction(true);
       const orderId = orderIdInput.trim().toUpperCase();
 
-      // Tìm inventory item với status STORED
-      const inventoryData = await warehouseAPI.getInventory({ limit: 1000 });
-      const inventoryItem = inventoryData.inventory?.find(
-        inv => inv.id === orderId && inv.inventory_status === 'STORED'
+      // Tìm đơn hàng trong danh sách storedOrders (đã tới kho)
+      const orderItem = storedOrders.find(
+        item => (item.id === orderId || item.order_id === orderId || item.order_code === orderId)
       );
 
-      if (!inventoryItem) {
-        alert(`Không tìm thấy đơn hàng ${orderId} đang lưu kho hoặc đơn hàng đã được xuất kho rồi.`);
+      if (!orderItem) {
+        alert(`Không tìm thấy đơn hàng ${orderId} đang lưu kho. Đơn hàng có thể đã được xuất kho rồi hoặc chưa được nhập kho.`);
         setOrderIdInput("");
         setLoadingAction(false);
         return;
@@ -345,25 +446,28 @@ export default function WareHouseInOut() {
         return;
       }
 
-      const userData = JSON.parse(localStorage.getItem("gd_user") || "{}");
-      const shippedBy = userData.name || userData.email || "Unknown";
+      // Cập nhật status sang COMPLETED
+      const response = await fetch(`${API_URL}/cargo-orders/${orderItem.order_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+        },
+        body: JSON.stringify({
+          status: 'COMPLETED'
+        })
+      });
 
-      // Cập nhật status từ STORED sang SHIPPED
-      await warehouseAPI.updateInventoryStatus(
-        inventoryItem.inventory_id,
-        orderId,
-        'SHIPPED',
-        inventoryItem.location || null,
-        null, // stored_by
-        shippedBy,
-        `Xuất kho bởi ${shippedBy}`
-      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Không thể cập nhật trạng thái đơn hàng');
+      }
 
       alert(`✅ Đã xuất kho đơn hàng ${orderId} thành công!`);
       setOrderIdInput("");
       await loadData(); // Reload data
     } catch (err) {
-      console.error("Error shipping inventory:", err);
+      console.error("Error shipping order:", err);
       alert("Lỗi khi xuất kho: " + err.message);
     } finally {
       setLoadingAction(false);
@@ -381,28 +485,59 @@ export default function WareHouseInOut() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handler xuất Excel - xuất cả 2 sheet (Nhập kho và Xuất kho)
+  // Handler xuất Excel
   const handleExportExcel = async (type, value) => {
     try {
       let incomingData = [];
       let storedData = [];
       
       if (type === "date" || type === "month") {
-        // Export theo ngày/tháng từ API
-        const filters = { limit: 10000 };
-        if (type === "date") {
-          filters.date = value; // YYYY-MM-DD
-        } else if (type === "month") {
-          filters.month = value; // YYYY-MM
+        // Export theo ngày/tháng: Lấy từ cargo orders
+        const statuses = activeTab === "nhap" 
+          ? ['WAREHOUSE_RECEIVED'] 
+          : ['WAREHOUSE_STORED'];
+        
+        for (const status of statuses) {
+          const response = await fetch(`${API_URL}/cargo-orders?status=${status}&limit=10000`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const ordersList = Array.isArray(data) ? data : (data.orders || data.data || []);
+            
+            // Filter theo ngày/tháng
+            let filteredOrders = ordersList;
+            if (type === "date" && value) {
+              const targetDate = new Date(value);
+              targetDate.setHours(0, 0, 0, 0);
+              filteredOrders = ordersList.filter(order => {
+                const orderDate = new Date(order.updated_at || order.created_at);
+                orderDate.setHours(0, 0, 0, 0);
+                return orderDate.getTime() === targetDate.getTime();
+              });
+            } else if (type === "month" && value) {
+              const [year, month] = value.split('-');
+              filteredOrders = ordersList.filter(order => {
+                const orderDate = new Date(order.updated_at || order.created_at);
+                return orderDate.getFullYear() === parseInt(year) && 
+                       (orderDate.getMonth() + 1) === parseInt(month);
+              });
+            }
+            
+            if (status === 'WAREHOUSE_RECEIVED') {
+              incomingData = filteredOrders;
+            } else {
+              storedData.push(...filteredOrders);
+            }
+          }
         }
-        const inventoryData = await warehouseAPI.getInventory(filters);
-        const allInventory = inventoryData.inventory || [];
-        incomingData = allInventory.filter(item => item.inventory_status === 'INCOMING');
-        storedData = allInventory.filter(item => item.inventory_status === 'STORED' || item.inventory_status === 'OUTGOING');
       } else {
-        // Export dữ liệu hiện tại (dữ liệu đang hiển thị trên màn hình)
-        incomingData = [...incomingOrders];
-        storedData = [...storedOrders];
+        // Export dữ liệu hiện tại
+        incomingData = activeTab === "nhap" ? incomingOrders : [];
+        storedData = activeTab === "xuat" ? storedOrders : [];
       }
 
       if (incomingData.length === 0 && storedData.length === 0) {
@@ -410,7 +545,6 @@ export default function WareHouseInOut() {
         return;
       }
 
-      // Helper function để format datetime
       const formatDateTime = (dateStr) => {
         if (!dateStr) return "";
         try {
@@ -429,134 +563,69 @@ export default function WareHouseInOut() {
         }
       };
 
-      // Helper function để tính thời gian lưu kho (giờ)
-      const calculateStorageTime = (enteredAt, storedAt) => {
-        if (!enteredAt || !storedAt) return "";
-        try {
-          const entered = new Date(enteredAt);
-          const stored = new Date(storedAt);
-          if (isNaN(entered.getTime()) || isNaN(stored.getTime())) return "";
-          const diffMs = stored.getTime() - entered.getTime();
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-          return `${diffHours}h ${diffMinutes}m`;
-        } catch {
-          return "";
-        }
-      };
-
       // Chuẩn bị dữ liệu cho sheet "Nhập kho"
-      const incomingSheetData = incomingData.map(item => {
-        const enteredAt = item.entered_at_raw || item.entered_at || "";
-        return {
-          "Mã đơn hàng": item.id || item.order_id || "",
-          "Khách hàng": item.customer || "Khách hàng",
-          "Tên hàng": item.cargo_name || "",
-          "Loại hàng": item.cargo_type || "",
-          "Khối lượng (KG)": item.weight || 0,
-          "Số pallets": item.pallets || 0,
-          "Thể tích (m³)": item.volume_m3 || 0,
-          "Nhiệt độ": item.temp || "Thường",
-          "Trạng thái": item.status || "Đang chờ nhập",
-          "Ngày nhập kho": item.entered_at || "",
-          "Giờ nhập kho": item.entered_at_datetime || formatDateTime(enteredAt),
-          "Người nhập": item.entered_by || "",
-          "Địa chỉ lấy hàng": item.from || item.pickup_address || "",
-          "Địa chỉ giao hàng": item.to || item.dropoff_address || "",
-          "Ghi chú": item.notes || ""
-        };
-      });
+      const incomingSheetData = incomingData.map(item => ({
+        "Mã đơn hàng": item.id || item.order_id || "",
+        "Khách hàng": item.customer || "Khách hàng",
+        "Tên hàng": item.cargo_name || "",
+        "Loại hàng": item.cargo_type || "",
+        "Khối lượng (KG)": item.weight || 0,
+        "Số pallets": item.pallets || 0,
+        "Thể tích (m³)": item.volume_m3 || 0,
+        "Nhiệt độ": item.temp || "Thường",
+        "Trạng thái": item.status || "Đang chờ nhập",
+        "Ngày nhập kho": item.entered_at || "",
+        "Giờ nhập kho": formatDateTime(item.entered_at_datetime),
+        "Địa chỉ lấy hàng": item.from || "",
+        "Địa chỉ giao hàng": item.to || "",
+        "Ghi chú": item.notes || ""
+      }));
 
       // Chuẩn bị dữ liệu cho sheet "Xuất kho"
-      const storedSheetData = storedData.map(item => {
-        const enteredAt = item.entered_at_raw || item.entered_at || "";
-        const storedAt = item.stored_at_raw || item.stored_at || "";
-        const shippedAt = item.shipped_at_raw || item.shipped_at || "";
-        const storageTime = calculateStorageTime(enteredAt, storedAt);
-        
-        return {
-          "Mã đơn hàng": item.id || item.order_id || "",
-          "Khách hàng": item.customer || "Khách hàng",
-          "Tên hàng": item.cargo_name || "",
-          "Loại hàng": item.cargo_type || "",
-          "Khối lượng (KG)": item.weight || 0,
-          "Số pallets": item.pallets || 0,
-          "Thể tích (m³)": item.volume_m3 || 0,
-          "Nhiệt độ": item.temp || "Thường",
-          "Trạng thái": item.status || "Đang lưu kho",
-          "Ngày tới kho": item.stored_at || item.entered_at || "",
-          "Giờ tới kho": item.stored_at_datetime || formatDateTime(storedAt) || item.entered_at_datetime || formatDateTime(enteredAt),
-          "Ngày xuất kho": item.shipped_at || "",
-          "Giờ xuất kho": item.shipped_at_datetime || formatDateTime(shippedAt),
-          "Thời gian lưu kho": storageTime || calculateStorageTime(storedAt, shippedAt) || "",
-          "Người nhập": item.entered_by || "",
-          "Người xuất": item.shipped_by || "",
-          "Địa chỉ lấy hàng": item.from || item.pickup_address || "",
-          "Địa chỉ giao hàng": item.to || item.dropoff_address || "",
-          "Vị trí trong kho": item.location || item.location_in_warehouse || "",
-          "Ghi chú": item.notes || ""
-        };
-      });
+      const storedSheetData = storedData.map(item => ({
+        "Mã đơn hàng": item.id || item.order_id || "",
+        "Khách hàng": item.customer || "Khách hàng",
+        "Tên hàng": item.cargo_name || "",
+        "Loại hàng": item.cargo_type || "",
+        "Khối lượng (KG)": item.weight || 0,
+        "Số pallets": item.pallets || 0,
+        "Thể tích (m³)": item.volume_m3 || 0,
+        "Nhiệt độ": item.temp || "Thường",
+        "Trạng thái": item.status || "Đang lưu kho",
+        "Ngày tới kho": item.stored_at || item.entered_at || "",
+        "Giờ tới kho": formatDateTime(item.stored_at_datetime || item.entered_at_datetime),
+        "Ngày xuất kho": item.shipped_at || "",
+        "Giờ xuất kho": formatDateTime(item.shipped_at_datetime),
+        "Địa chỉ lấy hàng": item.from || "",
+        "Địa chỉ giao hàng": item.to || "",
+        "Ghi chú": item.notes || ""
+      }));
 
-      // Tạo worksheet cho mỗi sheet
+      // Tạo worksheet
       const wsNhap = XLSX.utils.json_to_sheet(incomingSheetData);
       const wsXuat = XLSX.utils.json_to_sheet(storedSheetData);
 
-      // Điều chỉnh độ rộng cột tự động
+      // Điều chỉnh độ rộng cột
       const columnWidthsNhap = [
-        { wch: 12 }, // Mã đơn hàng
-        { wch: 20 }, // Khách hàng
-        { wch: 25 }, // Tên hàng
-        { wch: 15 }, // Loại hàng
-        { wch: 15 }, // Khối lượng
-        { wch: 12 }, // Số pallets
-        { wch: 12 }, // Thể tích
-        { wch: 12 }, // Nhiệt độ
-        { wch: 18 }, // Trạng thái
-        { wch: 18 }, // Ngày nhập kho
-        { wch: 20 }, // Giờ nhập kho
-        { wch: 20 }, // Người nhập
-        { wch: 30 }, // Địa chỉ lấy hàng
-        { wch: 30 }, // Địa chỉ giao hàng
-        { wch: 30 }  // Ghi chú
+        { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
+        { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 30 }
       ];
-
       const columnWidthsXuat = [
-        { wch: 12 }, // Mã đơn hàng
-        { wch: 20 }, // Khách hàng
-        { wch: 25 }, // Tên hàng
-        { wch: 15 }, // Loại hàng
-        { wch: 15 }, // Khối lượng
-        { wch: 12 }, // Số pallets
-        { wch: 12 }, // Thể tích
-        { wch: 12 }, // Nhiệt độ
-        { wch: 18 }, // Trạng thái
-        { wch: 18 }, // Ngày tới kho
-        { wch: 20 }, // Giờ tới kho
-        { wch: 18 }, // Ngày xuất kho
-        { wch: 20 }, // Giờ xuất kho
-        { wch: 18 }, // Thời gian lưu kho
-        { wch: 20 }, // Người nhập
-        { wch: 20 }, // Người xuất
-        { wch: 30 }, // Địa chỉ lấy hàng
-        { wch: 30 }, // Địa chỉ giao hàng
-        { wch: 20 }, // Vị trí trong kho
-        { wch: 30 }  // Ghi chú
+        { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
+        { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 30 }
       ];
 
       wsNhap['!cols'] = columnWidthsNhap;
       wsXuat['!cols'] = columnWidthsXuat;
 
-      // Freeze first row (header) để dễ xem khi scroll
-      wsNhap['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
-      wsXuat['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
-
-      // Tạo workbook và thêm các worksheet
+      // Tạo workbook
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, wsNhap, 'Nhập kho');
       XLSX.utils.book_append_sheet(wb, wsXuat, 'Xuất kho');
 
-      // Tạo tên file với ngày tháng
+      // Tên file
       let fileName;
       if (type === "date") {
         fileName = `Warehouse_NhapXuat_${value}.xlsx`;
@@ -568,7 +637,7 @@ export default function WareHouseInOut() {
         fileName = `Warehouse_NhapXuat_${dateStr}.xlsx`;
       }
 
-      // Xuất file Excel
+      // Xuất file
       const wbout = XLSX.write(wb, { 
         bookType: 'xlsx', 
         type: 'array',
@@ -587,152 +656,152 @@ export default function WareHouseInOut() {
   return (
     <AppLayout>
       <section className="px-6 md:px-8 py-6 md:py-8 space-y-6">
-      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Nhập kho & Xuất kho</h2>
-          <p className="text-xs text-slate-500 mt-1">Quản lý đơn hàng đang nhập kho và đang xuất kho. Nhập mã đơn hàng để thực hiện nhập/xuất kho.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Date filter */}
-          <select
-            value={dateFilter || "all"}
-            onChange={(e) => handleDateFilter(e.target.value)}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Tất cả thời gian</option>
-            <option value="today">Hôm nay</option>
-            <option value="week">Tuần này</option>
-            <option value="month">Tháng này</option>
-          </select>
-
-          {/* Export Excel Dropdown */}
-          <div className="relative" ref={exportDropdownRef}>
-            <button
-              onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-              className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2 font-medium"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Xuất Excel</span>
-              <svg className={`w-4 h-4 transition-transform ${exportDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {exportDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black/5 py-1 z-50">
-                <button
-                  onClick={() => {
-                    handleExportExcel("current", null);
-                    setExportDropdownOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>Xuất dữ liệu hiện tại</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const date = prompt("Nhập ngày xuất (định dạng: YYYY-MM-DD)\nVí dụ: 2024-01-15");
-                    if (date && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                      handleExportExcel("date", date);
-                      setExportDropdownOpen(false);
-                    } else if (date) {
-                      alert("Định dạng ngày không đúng. Vui lòng nhập theo định dạng YYYY-MM-DD");
-                    }
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Xuất theo ngày</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const month = prompt("Nhập tháng xuất (định dạng: YYYY-MM)\nVí dụ: 2024-01");
-                    if (month && month.match(/^\d{4}-\d{2}$/)) {
-                      handleExportExcel("month", month);
-                      setExportDropdownOpen(false);
-                    } else if (month) {
-                      alert("Định dạng tháng không đúng. Vui lòng nhập theo định dạng YYYY-MM");
-                    }
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 2v6M6 18v6M12 2v6M12 18v6M18 2v6M18 18v6M3 6h18M3 12h18M3 18h18" />
-                  </svg>
-                  <span>Xuất theo tháng</span>
-                </button>
-              </div>
-            )}
+        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Nhập kho & Xuất kho</h2>
+            <p className="text-xs text-slate-500 mt-1">Quản lý đơn hàng đang nhập kho và đang xuất kho. Nhập mã đơn hàng để thực hiện nhập/xuất kho.</p>
           </div>
 
-          <button
-            onClick={handleReload}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2"
-          >
-            ↻ <span>Tải lại</span>
-          </button>
-        </div>
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Date filter */}
+            <select
+              value={dateFilter || "all"}
+              onChange={(e) => handleDateFilter(e.target.value)}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Tất cả thời gian</option>
+              <option value="today">Hôm nay</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+            </select>
 
-      {/* KPI Stats - Đưa ra ngoài */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        {(() => {
-          const currentData = activeTab === "nhap" ? incomingOrders : storedOrders;
-          const totalWeight = currentData.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
-          const totalPallets = currentData.reduce((sum, item) => sum + (Number(item.pallets) || 0), 0);
-          
-          const stats = activeTab === "nhap" ? [
-            { icon: "📥", label: "Đang chờ nhập", value: incomingOrders.length, subtitle: `${totalPallets} pallets`, bg: "bg-blue-50" },
-            { icon: "📦", label: "Tổng khối lượng", value: `${(totalWeight / 1000).toFixed(1)}T`, subtitle: `${totalWeight.toLocaleString()} KG`, bg: "bg-emerald-50" },
-            { icon: "⏱️", label: "Đã chờ", value: incomingOrders.length, subtitle: "Sẵn sàng nhập kho", bg: "bg-orange-50" },
-            { icon: "📊", label: "Tổng đơn", value: incomingOrders.length, subtitle: "Đơn hàng mới", bg: "bg-slate-50" }
-          ] : [
-            { icon: "📤", label: "Đang chờ xuất", value: storedOrders.length, subtitle: `${totalPallets} pallets`, bg: "bg-orange-50" },
-            { icon: "📦", label: "Tổng khối lượng", value: `${(totalWeight / 1000).toFixed(1)}T`, subtitle: `${totalWeight.toLocaleString()} KG`, bg: "bg-emerald-50" },
-            { icon: "⏱️", label: "Đã lưu", value: storedOrders.length, subtitle: "Sẵn sàng xuất kho", bg: "bg-blue-50" },
-            { icon: "📊", label: "Tổng đơn", value: storedOrders.length, subtitle: "Đơn hàng lưu kho", bg: "bg-slate-50" }
-          ];
+            {/* Export Excel Dropdown */}
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+                className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2 font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Xuất Excel</span>
+                <svg className={`w-4 h-4 transition-transform ${exportDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-          return stats.map((stat, idx) => (
-            <div key={idx} className={`rounded-xl p-4 border border-slate-200 ${stat.bg}`}>
-              <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                <span>{stat.icon}</span>
-                <span>{stat.label}</span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-              {stat.subtitle && (
-                <div className="text-xs text-slate-500 mt-1">{stat.subtitle}</div>
+              {exportDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black/5 py-1 z-50">
+                  <button
+                    onClick={() => {
+                      handleExportExcel("current", null);
+                      setExportDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Xuất dữ liệu hiện tại</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const date = prompt("Nhập ngày xuất (định dạng: YYYY-MM-DD)\nVí dụ: 2024-01-15");
+                      if (date && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        handleExportExcel("date", date);
+                        setExportDropdownOpen(false);
+                      } else if (date) {
+                        alert("Định dạng ngày không đúng. Vui lòng nhập theo định dạng YYYY-MM-DD");
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Xuất theo ngày</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const month = prompt("Nhập tháng xuất (định dạng: YYYY-MM)\nVí dụ: 2024-01");
+                      if (month && month.match(/^\d{4}-\d{2}$/)) {
+                        handleExportExcel("month", month);
+                        setExportDropdownOpen(false);
+                      } else if (month) {
+                        alert("Định dạng tháng không đúng. Vui lòng nhập theo định dạng YYYY-MM");
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 2v6M6 18v6M12 2v6M12 18v6M18 2v6M18 18v6M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                    <span>Xuất theo tháng</span>
+                  </button>
+                </div>
               )}
             </div>
-          ));
-        })()}
-      </div>
 
-      {/* Bảng dữ liệu */}
-      <section className="space-y-4">
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-slate-600">Đang tải dữ liệu...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{error}</p>
             <button
               onClick={handleReload}
-              className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 active:scale-[.98]"
+              className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm flex items-center gap-2"
             >
-              Thử lại
+              ↻ <span>Tải lại</span>
             </button>
           </div>
-        ) : (
+        </div>
+
+        {/* KPI Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {(() => {
+            const currentData = activeTab === "nhap" ? incomingOrders : storedOrders;
+            const totalWeight = currentData.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+            const totalPallets = currentData.reduce((sum, item) => sum + (Number(item.pallets) || 0), 0);
+            
+            const stats = activeTab === "nhap" ? [
+              { icon: "📥", label: "Đang chờ nhập", value: incomingOrders.length, subtitle: `${totalPallets} pallets`, bg: "bg-blue-50" },
+              { icon: "📦", label: "Tổng khối lượng", value: `${(totalWeight / 1000).toFixed(1)}T`, subtitle: `${totalWeight.toLocaleString()} KG`, bg: "bg-emerald-50" },
+              { icon: "⏱️", label: "Đã chờ", value: incomingOrders.length, subtitle: "Sẵn sàng nhập kho", bg: "bg-orange-50" },
+              { icon: "📊", label: "Tổng đơn", value: incomingOrders.length, subtitle: "Đơn hàng mới", bg: "bg-slate-50" }
+            ] : [
+              { icon: "📤", label: "Đang chờ xuất", value: storedOrders.length, subtitle: `${totalPallets} pallets`, bg: "bg-orange-50" },
+              { icon: "📦", label: "Tổng khối lượng", value: `${(totalWeight / 1000).toFixed(1)}T`, subtitle: `${totalWeight.toLocaleString()} KG`, bg: "bg-emerald-50" },
+              { icon: "⏱️", label: "Đã lưu", value: storedOrders.length, subtitle: "Sẵn sàng xuất kho", bg: "bg-blue-50" },
+              { icon: "📊", label: "Tổng đơn", value: storedOrders.length, subtitle: "Đơn hàng lưu kho", bg: "bg-slate-50" }
+            ];
+
+            return stats.map((stat, idx) => (
+              <div key={idx} className={`rounded-xl p-4 border border-slate-200 ${stat.bg}`}>
+                <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
+                  <span>{stat.icon}</span>
+                  <span>{stat.label}</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                {stat.subtitle && (
+                  <div className="text-xs text-slate-500 mt-1">{stat.subtitle}</div>
+                )}
+              </div>
+            ));
+          })()}
+        </div>
+
+        {/* Bảng dữ liệu */}
+        <section className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-slate-600">Đang tải dữ liệu...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-700 text-sm">{error}</p>
+              <button
+                onClick={handleReload}
+                className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 active:scale-[.98]"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : (
             <>
               <WarehouseTable 
                 rows={paginatedRows} 
@@ -766,9 +835,8 @@ export default function WareHouseInOut() {
                 Hiển thị {paginatedRows.length} / {rows.length} đơn hàng
               </div>
             </>
-        )}
+          )}
         </section>
-
       </section>
 
       {/* Order Detail Modal */}

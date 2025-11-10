@@ -13,9 +13,11 @@ export default function VehicleRouteCard({
   toLabel = "Hà Nội",
   onDeparture,
   onWarehouseArrival,
+  onStartLoading,
   vehicleId,
   allOrdersLoaded = false,
   hasInTransitOrders = false,
+  hasAcceptedOrders = false,
 }) {
   return (
     <section className="bg-white rounded-[1rem] shadow-[0_12px_40px_rgba(2,6,23,.08)] p-4">
@@ -68,10 +70,25 @@ export default function VehicleRouteCard({
             </div>
           </div>
 
-          {/* Hai nút */}
-          <div className={`mt-3 grid gap-2 ${hasInTransitOrders ? 'grid-cols-1' : 'grid-cols-1'}`}>
-            {/* Chỉ hiển thị nút "Xuất phát" khi chưa có đơn hàng IN_TRANSIT (chưa xuất phát) */}
-            {!hasInTransitOrders && (
+          {/* Các nút hành động */}
+          <div className="mt-3 grid gap-2">
+            {/* Nút "Bắt đầu bốc hàng" - chỉ hiển thị khi có đơn ACCEPTED và chưa xuất phát */}
+            {!hasInTransitOrders && hasAcceptedOrders && onStartLoading && (
+              <button
+                onClick={onStartLoading}
+                className="inline-flex items-center justify-center gap-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-blue-600 active:scale-[.98]"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+                <span>Bắt đầu bốc hàng</span>
+              </button>
+            )}
+
+            {/* Nút "Xuất phát" - chỉ hiển thị khi chưa có đơn hàng IN_TRANSIT và đã bốc hàng */}
+            {!hasInTransitOrders && !hasAcceptedOrders && (
               <button
                 onClick={onDeparture}
                 disabled={!onDeparture || !allOrdersLoaded}
@@ -83,7 +100,7 @@ export default function VehicleRouteCard({
               </button>
             )}
 
-            {/* Chỉ hiển thị nút "Đã tới kho" khi đã có đơn hàng IN_TRANSIT (đã xuất phát) */}
+            {/* Nút "Đã tới kho" - chỉ hiển thị khi đã có đơn hàng IN_TRANSIT (đã xuất phát) */}
             {hasInTransitOrders && (
               <button
                 onClick={onWarehouseArrival}

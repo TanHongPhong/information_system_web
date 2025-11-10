@@ -1,52 +1,47 @@
 export default function KpiStrip({ kpis, operations, loading }) {
   // Tính toán 3 trạng thái: Đang chờ nhập, Đang lưu kho, Chuẩn bị xuất kho
+  // Dựa trên inventory_status từ cargo orders
   const incoming = operations?.filter(d => 
-    d.inventory_status === 'INCOMING' || 
-    d.status === 'Đang chờ nhập kho' || 
-    d.status === 'Nhập kho'
+    d.inventory_status === 'INCOMING'
   ).length || 0;
   
   const stored = operations?.filter(d => 
-    d.inventory_status === 'STORED' || 
-    d.status === 'Đang lưu kho' || 
-    d.status === 'Lưu kho'
+    d.inventory_status === 'STORED'
   ).length || 0;
   
   const outgoing = operations?.filter(d => 
-    d.inventory_status === 'OUTGOING' || 
-    d.status === 'Chuẩn bị xuất kho' || 
-    d.status === 'Xuất kho'
+    d.inventory_status === 'OUTGOING'
   ).length || 0;
   
   // Tính tổng khối lượng và pallets cho từng trạng thái
   const incomingWeight = operations?.filter(d => 
-    d.inventory_status === 'INCOMING' || d.status === 'Đang chờ nhập kho' || d.status === 'Nhập kho'
+    d.inventory_status === 'INCOMING'
   ).reduce((sum, item) => sum + (Number(item.weight) || 0), 0) || 0;
   
   const incomingPallets = operations?.filter(d => 
-    d.inventory_status === 'INCOMING' || d.status === 'Đang chờ nhập kho' || d.status === 'Nhập kho'
+    d.inventory_status === 'INCOMING'
   ).reduce((sum, item) => sum + (Number(item.pallets) || 0), 0) || 0;
   
   const storedWeight = operations?.filter(d => 
-    d.inventory_status === 'STORED' || d.status === 'Đang lưu kho' || d.status === 'Lưu kho'
+    d.inventory_status === 'STORED'
   ).reduce((sum, item) => sum + (Number(item.weight) || 0), 0) || 0;
   
   const storedPallets = operations?.filter(d => 
-    d.inventory_status === 'STORED' || d.status === 'Đang lưu kho' || d.status === 'Lưu kho'
+    d.inventory_status === 'STORED'
   ).reduce((sum, item) => sum + (Number(item.pallets) || 0), 0) || 0;
   
   const outgoingWeight = operations?.filter(d => 
-    d.inventory_status === 'OUTGOING' || d.status === 'Chuẩn bị xuất kho' || d.status === 'Xuất kho'
+    d.inventory_status === 'OUTGOING'
   ).reduce((sum, item) => sum + (Number(item.weight) || 0), 0) || 0;
   
   const outgoingPallets = operations?.filter(d => 
-    d.inventory_status === 'OUTGOING' || d.status === 'Chuẩn bị xuất kho' || d.status === 'Xuất kho'
+    d.inventory_status === 'OUTGOING'
   ).reduce((sum, item) => sum + (Number(item.pallets) || 0), 0) || 0;
   
   // Đơn hàng cần chú ý (đang lưu kho > 7 ngày)
   const today = new Date();
   const needsAttention = operations?.filter(item => {
-    if (item.inventory_status !== 'STORED' && item.status !== 'Đang lưu kho') return false;
+    if (item.inventory_status !== 'STORED') return false;
     if (!item.entered_at && !item.stored_at) return false;
     try {
       let entryDate;

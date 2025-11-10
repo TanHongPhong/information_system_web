@@ -29,7 +29,13 @@ export const getCargoOrders = async (req, res) => {
     if (customer_id) { query += ` AND co.customer_id = $${paramCount}::uuid`; params.push(String(customer_id).trim()); paramCount++; }
     if (vehicle_id) { query += ` AND co.vehicle_id = $${paramCount}`; params.push(Number(vehicle_id)); paramCount++; }
 
-    query += ` ORDER BY co.created_at DESC LIMIT 100`;
+    // Hỗ trợ limit parameter
+    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+    const limitValue = Math.min(limit, 10000); // Max 10000 để tránh quá tải
+    
+    query += ` ORDER BY co.created_at DESC LIMIT $${paramCount}`;
+    params.push(limitValue);
+    
     const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
@@ -197,7 +203,7 @@ export const updateCargoOrder = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields", required: ["status"] });
     }
 
-    const validStatuses = ['PENDING_PAYMENT', 'PAID', 'ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
+    const validStatuses = ['PENDING_PAYMENT', 'PAID', 'ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'WAREHOUSE_STORED', 'WAREHOUSE_OUTBOUND', 'COMPLETED'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status", valid_statuses: validStatuses });
     }
@@ -277,6 +283,19 @@ export const updateCargoOrder = async (req, res) => {
     res.json({ success: true, message: "Đơn hàng đã được cập nhật thành công", data: rows[0] });
   } catch (err) {
     console.error("PUT /api/cargo-orders/:id ERROR:", err.message);
+    console.error("Error details:", err.detail);
+    console.error("Error hint:", err.hint);
+    
+    // Kiểm tra nếu là lỗi constraint
+    if (err.message && err.message.includes('check constraint')) {
+      return res.status(400).json({ 
+        error: "Invalid status", 
+        message: "Status không hợp lệ. Vui lòng chạy migration để cập nhật constraint trong database.",
+        hint: "Chạy file backend/fix_warehouse_constraint_now.sql trong database SQL editor",
+        valid_statuses: ['PENDING_PAYMENT', 'PAID', 'ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'WAREHOUSE_STORED', 'WAREHOUSE_OUTBOUND', 'COMPLETED']
+      });
+    }
+    
     res.status(500).json({ error: "Server error", message: err.message, details: err.detail, hint: err.hint });
   }
 };

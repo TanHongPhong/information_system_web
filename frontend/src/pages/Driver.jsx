@@ -165,14 +165,88 @@ export default function DriverPage() {
     );
   };
 
-  const handleWarehouseArrival = async () => {
+  const handleStartLoading = async () => {
     if (!vehicleInfo) return;
 
     try {
-      // Hiện loading vì cần cập nhật location từ server
-      setLoading(true);
+      const response = await driverAPI.startLoading(vehicleInfo.vehicle_id);
       
-      const orderIds = orders.map((o) => o.order_id);
+      // Reload để cập nhật từ server
+      await loadVehicleInfo();
+      
+      alert(`Đã bắt đầu bốc hàng! ${response.updated_orders} đơn hàng đã chuyển sang trạng thái "Đang bốc hàng".`);
+    } catch (err) {
+      console.error("Error starting loading:", err);
+      alert("Lỗi khi bắt đầu bốc hàng: " + err.message);
+    }
+  };
+
+  const handleMarkOrderLoaded = async (orderId) => {
+    if (!vehicleInfo) return;
+
+    try {
+      await driverAPI.markOrderLoaded(orderId, vehicleInfo.vehicle_id);
+      
+      // Cập nhật state
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          (order.order_id === orderId || order.id === orderId)
+            ? { ...order, is_loaded: true, loaded_at: new Date().toISOString() }
+            : order
+        )
+      );
+      
+      alert("Đã đánh dấu đơn hàng đã bốc!");
+    } catch (err) {
+      console.error("Error marking order loaded:", err);
+      alert("Lỗi khi đánh dấu đơn hàng đã bốc: " + err.message);
+    }
+  };
+
+
+  const handleWarehouseArrival = async () => {
+    if (!vehicleInfo) return;
+
+    // Lấy danh sách đơn hàng có status IN_TRANSIT
+    const inTransitOrders = orders.filter(o => o.status === 'IN_TRANSIT');
+    
+    if (inTransitOrders.length === 0) {
+      alert("Không có đơn hàng nào đang vận chuyển để nhập kho.");
+      return;
+    }
+
+    if (!window.confirm(`Xác nhận đã tới kho cho ${inTransitOrders.length} đơn hàng? Tất cả đơn hàng sẽ được xóa khỏi xe và xe sẽ trở về trạng thái ban đầu.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setUpdatingOrderId('all');
+      const previousOrders = [...orders];
+      const previousVehicleInfo = { ...vehicleInfo };
+      
+      // Xóa tất cả đơn IN_TRANSIT khỏi danh sách
+      setOrders(prevOrders => 
+        prevOrders.filter(order => order.status !== 'IN_TRANSIT')
+      );
+
+      // Gọi API cho từng đơn hàng để cập nhật status và vị trí xe
+      const orderIds = inTransitOrders.map((o) => o.order_id);
+      for (const orderId of orderIds) {
+        try {
+          await driverAPI.acceptWarehouseEntry(
+            orderId,
+            vehicleInfo.vehicle_id,
+            vehicleInfo.routeTo,
+            null,
+            "Đã tới kho"
+          );
+        } catch (err) {
+          console.error(`Error accepting warehouse entry for order ${orderId}:`, err);
+        }
+      }
+      
+      // Ghi nhận vị trí đến kho (cập nhật current_location của xe)
       await driverAPI.recordWarehouseArrival(
         vehicleInfo.vehicle_id,
         orderIds,
@@ -181,13 +255,18 @@ export default function DriverPage() {
         "Đã tới kho đích"
       );
       
-      // Reload để cập nhật location từ server
+      // Reload để cập nhật từ server (vị trí xe, danh sách đơn hàng mới)
       await loadVehicleInfo();
       
-      alert("Đã ghi nhận vị trí đến kho! Vui lòng nhấn 'Nhập kho' cho từng đơn hàng để hoàn tất.");
+      alert(`Đã tới kho thành công! ${orderIds.length} đơn hàng đã được xóa khỏi xe. Xe đã được cập nhật vị trí tại kho.`);
     } catch (err) {
       console.error("Error recording warehouse arrival:", err);
+      // Rollback: khôi phục state trước đó
+      setOrders(previousOrders);
+      setVehicleInfo(previousVehicleInfo);
       alert("Lỗi khi ghi nhận đến kho: " + err.message);
+    } finally {
+      setUpdatingOrderId(null);
       setLoading(false);
     }
   };
@@ -241,9 +320,11 @@ export default function DriverPage() {
                 toLabel={vehicleInfo.routeTo || "Chưa xác định"}
                 onDeparture={handleDeparture}
                 onWarehouseArrival={handleWarehouseArrival}
+                onStartLoading={handleStartLoading}
                 vehicleId={vehicleInfo.vehicle_id}
                 allOrdersLoaded={orders.length > 0 && orders.every(o => o.is_loaded)}
                 hasInTransitOrders={orders.some(o => o.status === 'IN_TRANSIT')}
+                hasAcceptedOrders={orders.some(o => o.status === 'ACCEPTED')}
               />
 
               <LoadOrderInput
@@ -256,39 +337,7 @@ export default function DriverPage() {
                 vehicleId={vehicleInfo.vehicle_id}
                 warehouseLocation={vehicleInfo.routeTo}
                 updatingOrderId={updatingOrderId}
-                onAcceptWarehouseEntry={async (orderId) => {
-                  try {
-                    // Optimistic update: xóa đơn hàng khỏi danh sách ngay vì đã nhận kho
-                    setUpdatingOrderId(orderId);
-                    const previousOrders = [...orders];
-                    
-                    // Xóa đơn hàng khỏi danh sách vì đã nhận kho, không còn trên xe nữa
-                    setOrders(prevOrders => 
-                      prevOrders.filter(order => 
-                        order.order_id !== orderId && order.id !== orderId
-                      )
-                    );
-
-                    // Gọi API
-                    await driverAPI.acceptWarehouseEntry(
-                      orderId,
-                      vehicleInfo.vehicle_id,
-                      vehicleInfo.routeTo,
-                      null,
-                      "Đã nhập kho"
-                    );
-                    
-                    // Thành công - đơn hàng đã được xóa khỏi danh sách
-                    alert("Đã nhập kho thành công!");
-                  } catch (err) {
-                    console.error("Error accepting warehouse entry:", err);
-                    // Rollback: khôi phục state trước đó
-                    setOrders(previousOrders);
-                    alert("Lỗi khi nhập kho: " + err.message);
-                  } finally {
-                    setUpdatingOrderId(null);
-                  }
-                }}
+                onMarkOrderLoaded={handleMarkOrderLoaded}
               />
             </>
           ) : (

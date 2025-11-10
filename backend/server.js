@@ -43,6 +43,10 @@ import {
   loadOrder,
   recordMovementEvent,
   getMovementEvents,
+  startLoading,
+  markOrderLoaded,
+  warehouseStored,
+  warehouseOutbound,
 } from "./src/controllers/driverControllers.js";
 import {
   getWarehouseOperations,
@@ -218,6 +222,10 @@ app.post("/api/driver/accept-warehouse-entry", acceptWarehouseEntry);
 app.post("/api/driver/load-order", loadOrder);
 app.post("/api/driver/movement-event", recordMovementEvent);
 app.get("/api/driver/movement-events", getMovementEvents);
+app.post("/api/driver/start-loading", startLoading);
+app.post("/api/driver/mark-order-loaded", markOrderLoaded);
+app.post("/api/driver/warehouse-stored", warehouseStored);
+app.post("/api/driver/warehouse-outbound", warehouseOutbound);
 
 // Warehouse API
 app.get("/api/warehouse/operations", getWarehouseOperations);

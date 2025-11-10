@@ -1,11 +1,9 @@
 function StatusBadge({ status }) {
-  // Trạng thái cho cả 2 trang warehouse
+  // Trạng thái cho cả 2 trang warehouse - dựa trên cargo order status
   const map = {
-    // Trang warehouse-in-out
-    "Nhập kho": "bg-blue-50 text-blue-600 ring-blue-200",
-    "Xuất kho": "bg-green-50 text-green-600 ring-green-200",
-    // Trang warehouse
+    // Trạng thái từ cargo orders
     "Đang chờ nhập kho": "bg-yellow-50 text-yellow-600 ring-yellow-200",
+    "Đã tới kho": "bg-blue-50 text-blue-600 ring-blue-200",
     "Đang lưu kho": "bg-emerald-50 text-emerald-600 ring-emerald-200",
     "Chuẩn bị xuất kho": "bg-orange-50 text-orange-600 ring-orange-200",
     "Đã xuất kho": "bg-red-50 text-red-600 ring-red-200",

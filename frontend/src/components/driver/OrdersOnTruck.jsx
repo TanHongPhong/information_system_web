@@ -49,14 +49,16 @@ const COLOR_STYLES = {
   },
 };
 
-function OrderCard({ order, index, onAcceptWarehouseEntry, vehicleId, warehouseLocation, updatingOrderId }) {
+function OrderCard({ order, index, vehicleId, warehouseLocation, updatingOrderId, onMarkOrderLoaded }) {
   // Sử dụng màu theo index nếu không có color
   const colorKeys = Object.keys(COLOR_STYLES);
   const colorKey = order.color || colorKeys[index % colorKeys.length];
   const style = COLOR_STYLES[colorKey] || COLOR_STYLES.sky;
   
-  // Kiểm tra xem có thể nhập kho không (chỉ đơn hàng có status IN_TRANSIT)
-  const canAcceptWarehouse = order.status === 'IN_TRANSIT' && onAcceptWarehouseEntry;
+  // Kiểm tra các trạng thái và hành động có thể thực hiện
+  // KHÔNG hiển thị nút "Tới kho" trong quá trình vận chuyển (IN_TRANSIT)
+  // Chỉ hiển thị khi driver nhấn nút "Đã tới kho" ở VehicleRouteCard
+  const canMarkLoaded = (order.status === 'LOADING' || order.status === 'ACCEPTED') && !order.is_loaded && onMarkOrderLoaded;
   const isUpdating = updatingOrderId === (order.order_id || order.id);
   
   // Check if order is loaded
@@ -147,44 +149,45 @@ function OrderCard({ order, index, onAcceptWarehouseEntry, vehicleId, warehouseL
         </div>
       </div>
 
-      {/* Status badge và button nhập kho */}
+      {/* Status badge và các button hành động */}
       <div className="mt-2 pt-2 border-t border-white/40">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           {order.status && (
             <span className={`text-[10px] px-2 py-0.5 rounded-full ${getStatusStyle(order.status)}`}>
               {getStatusText(order.status)}
             </span>
           )}
           
-          {/* Button nhập kho - chỉ hiển thị khi đơn hàng có status IN_TRANSIT */}
-          {canAcceptWarehouse && (
-            <button
-              onClick={() => {
-                if (window.confirm(`Xác nhận nhập kho cho đơn hàng ${order.order_id || order.id}?`)) {
-                  onAcceptWarehouseEntry(order.order_id || order.id);
-                }
-              }}
-              disabled={isUpdating}
-              className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[.95] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isUpdating ? (
-                <>
-                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex items-center gap-1">
+            {/* Button đánh dấu đã bốc - chỉ hiển thị khi đơn hàng LOADING/ACCEPTED và chưa bốc */}
+            {canMarkLoaded && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Xác nhận đã bốc hàng cho đơn hàng ${order.order_id || order.id}?`)) {
+                    onMarkOrderLoaded(order.order_id || order.id);
+                  }
+                }}
+                disabled={isUpdating}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 active:scale-[.95] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpdating ? (
+                  <>
+                    <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" opacity="0.25"/>
                     <path d="M12 2 A10 10 0 0 1 22 12" strokeDasharray="8" strokeDashoffset="8"/>
                   </svg>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  Nhập kho
-                </>
-              )}
-            </button>
-          )}
+                  Đã bốc
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </article>
@@ -196,7 +199,6 @@ function getStatusStyle(status) {
   const statusMap = {
     LOADING: "bg-blue-100 text-blue-700",
     IN_TRANSIT: "bg-yellow-100 text-yellow-700",
-    WAREHOUSE_RECEIVED: "bg-green-100 text-green-700",
     COMPLETED: "bg-emerald-100 text-emerald-700",
     ACCEPTED: "bg-purple-100 text-purple-700",
   };
@@ -208,14 +210,13 @@ function getStatusText(status) {
   const statusMap = {
     LOADING: "Đang bốc hàng",
     IN_TRANSIT: "Đang vận chuyển",
-    WAREHOUSE_RECEIVED: "Đã tới kho",
     COMPLETED: "Hoàn thành",
     ACCEPTED: "Đã chấp nhận",
   };
   return statusMap[status] || status;
 }
 
-export default function OrdersOnTruck({ orders = [], onAcceptWarehouseEntry, vehicleId, warehouseLocation, updatingOrderId }) {
+export default function OrdersOnTruck({ orders = [], vehicleId, warehouseLocation, updatingOrderId, onMarkOrderLoaded }) {
   return (
     <section className="bg-white rounded-[1rem] shadow-[0_12px_40px_rgba(2,6,23,.08)] p-4">
       <div className="flex items-center justify-between">
@@ -238,10 +239,10 @@ export default function OrdersOnTruck({ orders = [], onAcceptWarehouseEntry, veh
               key={o.order_id || o.id || index} 
               order={o} 
               index={index}
-              onAcceptWarehouseEntry={onAcceptWarehouseEntry}
               vehicleId={vehicleId}
               warehouseLocation={warehouseLocation}
               updatingOrderId={updatingOrderId}
+              onMarkOrderLoaded={onMarkOrderLoaded}
             />
           ))
         )}
