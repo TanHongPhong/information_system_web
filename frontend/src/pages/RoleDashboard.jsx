@@ -48,7 +48,7 @@ const DASHBOARD_DATA = {
       { name: "Đăng nhập/ đăng kí", path: "/sign-in", icon: "User" },
       { name: "Danh sách công ty", path: "/transport-companies", icon: "Building2" },
       { name: "Chọn xe", path: "/vehicle-list", icon: "Truck" },
-      { name: "Nhập thông tin", path: "/nhap-in4", icon: "ClipboardList" },
+      { name: "Nhập thông tin", path: "/cargo-info", icon: "ClipboardList" },
       { name: "Quét mã QR", path: "/payment-qr", icon: "Package" },
       { name: "Lịch sử thanh toán", path: "/payment-history", icon: "Package" },
       {

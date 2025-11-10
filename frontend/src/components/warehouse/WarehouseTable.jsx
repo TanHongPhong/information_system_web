@@ -1,11 +1,14 @@
 function StatusBadge({ status }) {
+  // Trạng thái cho cả 2 trang warehouse
   const map = {
-    "Đang nhập kho": "bg-yellow-50 text-yellow-600 ring-yellow-200",
-    "Lưu kho": "bg-emerald-50 text-emerald-600 ring-emerald-200",
-    "Đang xuất kho": "bg-orange-50 text-orange-600 ring-orange-200",
+    // Trang warehouse-in-out
+    "Nhập kho": "bg-blue-50 text-blue-600 ring-blue-200",
+    "Xuất kho": "bg-green-50 text-green-600 ring-green-200",
+    // Trang warehouse
+    "Đang chờ nhập kho": "bg-yellow-50 text-yellow-600 ring-yellow-200",
+    "Đang lưu kho": "bg-emerald-50 text-emerald-600 ring-emerald-200",
+    "Chuẩn bị xuất kho": "bg-orange-50 text-orange-600 ring-orange-200",
     "Đã xuất kho": "bg-red-50 text-red-600 ring-red-200",
-    "Đang vận chuyển": "bg-blue-50 text-blue-600 ring-blue-200",
-    "Đã xuất kho hoàn tất": "bg-purple-50 text-purple-600 ring-purple-200",
   };
   const cls = map[status] || "bg-slate-50 text-slate-700 ring-slate-200";
   return (
@@ -215,7 +218,7 @@ export default function WarehouseTable({
             {rows.length === 0 && (
               <tr><td colSpan={8} className="px-5 py-6 text-center text-slate-500">Không có đơn hàng nào.</td></tr>
             )}
-            {rows.map(o => {
+            {rows.map((o, index) => {
               // Check if order needs attention (> 7 days in warehouse)
               const today = new Date();
               let entryDate = o.stored_at || o.entered_at;
@@ -239,9 +242,12 @@ export default function WarehouseTable({
               
               const needsAttention = o.inventory_status === 'STORED' && daysInWarehouse > 7;
               
+              // Tạo unique key: dùng operation_id nếu có, nếu không thì dùng order_id + index
+              const uniqueKey = o.operation_id || `${o.id || o.order_id || 'unknown'}-${index}`;
+              
               return (
               <tr 
-                key={o.id} 
+                key={uniqueKey} 
                 className={`hover:bg-slate-50/70 cursor-pointer transition-colors ${
                   needsAttention ? 'bg-orange-50/50 border-l-4 border-orange-500' : ''
                 }`}
@@ -254,14 +260,14 @@ export default function WarehouseTable({
                 <td className="px-5 py-3">{o.pallets || 0}</td>
                 <td className="px-5 py-3"><StatusBadge status={o.status} /></td>
                 <td className="px-5 py-3 text-slate-600">
-                  {o.entered_at || '—'}
-                  {needsAttention && (
+                  {o.entered_at || ''}
+                  {needsAttention && o.entered_at && (
                     <span className="ml-2 text-xs text-orange-600 font-medium">
                       ({daysInWarehouse} ngày)
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-3 text-slate-600">{o.shipped_at || '—'}</td>
+                <td className="px-5 py-3 text-slate-600">{o.shipped_at || ''}</td>
               </tr>
             );
             })}

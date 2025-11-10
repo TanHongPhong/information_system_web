@@ -5,9 +5,16 @@ import CargoForm from "./CargoForm";
 import CostSummary from "./CostSummary";
 import TipsCard from "./TipsCard";
 
-export default function CargoPage({ companyId, vehicleId, originRegion, destinationRegion }) {
+export default function CargoPage({ companyId, vehicleId, originRegion, destinationRegion, userId }) {
   const [calc, setCalc] = useState({
-    wReal: 0, wVol: 0, wCharge: 0, base: 20000, perKg: 0, srv: 0,
+    wReal: 0,
+    wVol: 0,
+    wCharge: 0,
+    base: 20000,
+    perKg: 0,
+    srv: 0,
+    total: 20000,
+    declaredValue: 0,
   });
 
   return (
@@ -23,6 +30,7 @@ export default function CargoPage({ companyId, vehicleId, originRegion, destinat
             vehicleId={vehicleId}
             originRegion={originRegion}
             destinationRegion={destinationRegion}
+            userId={userId}
           />
         </section>
 
@@ -36,6 +44,7 @@ export default function CargoPage({ companyId, vehicleId, originRegion, destinat
               base={calc.base}
               perKg={calc.perKg}
               srv={calc.srv}
+              declaredValue={calc.declaredValue}
             />
             <TipsCard />
           </div>

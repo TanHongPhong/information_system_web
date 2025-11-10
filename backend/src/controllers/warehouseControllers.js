@@ -98,8 +98,11 @@ export const getWarehouseOperations = async (req, res) => {
 
     // Format dữ liệu để match với frontend
     const formattedRows = result.rows.map(row => ({
+      operation_id: row.operation_id,  // Thêm operation_id để dùng làm unique key
       id: row.order_id,
+      order_id: row.order_id,  // Thêm order_id để tương thích
       type: row.operation_type === 'IN' ? 'in' : 'out',
+      operation_type: row.operation_type,  // Thêm operation_type để frontend xác định
       status: getStatusText(row.status, row.order_status),
       customer: row.customer || 'Khách hàng',
       from: row.from || 'Chưa xác định',
@@ -110,6 +113,8 @@ export const getWarehouseOperations = async (req, res) => {
       docks: row.docks || 'D1',
       carrier: row.carrier || 'N/A',
       eta: formatDate(row.eta || row.created_at),
+      actual_time: row.eta ? new Date(row.eta).toISOString() : null,  // Trả về actual_time dạng ISO string
+      created_at: row.created_at ? new Date(row.created_at).toISOString() : null,  // Trả về created_at dạng ISO string
       temp: row.temp || 'Thường',
       cargo_name: row.cargo_name,
       cargo_type: row.cargo_type,

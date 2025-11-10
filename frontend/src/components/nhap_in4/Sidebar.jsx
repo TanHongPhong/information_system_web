@@ -38,7 +38,7 @@ export default function Sidebar() {
       </div>
 
       <div className="flex flex-col items-center gap-4">
-        <IconBtn title="Trang chủ" active={isActive("/nhap-in4")} onClick={() => navigate("/nhap-in4")}><Home className="w-6 h-6" /></IconBtn>
+        <IconBtn title="Trang chủ" active={isActive("/cargo-info")} onClick={() => navigate("/cargo-info")}><Home className="w-6 h-6" /></IconBtn>
         <IconBtn title="Theo dõi vị trí" active={isActive("/order-tracking")} onClick={() => navigate("/order-tracking")}><Map className="w-6 h-6" /></IconBtn>
         <IconBtn title="Lịch sử giao dịch" active={isActive("/payment-history")} onClick={() => navigate("/payment-history")}><FileText className="w-6 h-6" /></IconBtn>
       </div>

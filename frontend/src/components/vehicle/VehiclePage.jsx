@@ -6,13 +6,23 @@ import VehicleCard from "./VehicleCard";
 import { XCircle } from "lucide-react";
 import api from "../../lib/axios";
 
-export default function VehiclePage({ keyword, companyId, originRegion, destinationRegion }) {
+const normalize = (value) =>
+  (value || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+
+export default function VehiclePage({ keyword, companyId, originRegion, destinationRegion, userId }) {
   const [sort, setSort] = useState("depart-asc");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [companyName, setCompanyName] = useState("Danh sách phương tiện");
   const navigate = useNavigate();
+
+  const normalizedOrigin = normalize(originRegion);
 
   // Fetch vehicles from API if companyId is provided
   useEffect(() => {
@@ -37,12 +47,18 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
         setLoading(true);
         setError(null);
         
-        // Fetch vehicles for this company với filter theo route nếu có
+        // Fetch vehicles for this company
+        // Khi đặt đơn ban đầu: chỉ gửi origin_region (xe ở vị trí pickup)
+        // KHÔNG gửi destination_region để hiển thị TẤT CẢ xe khả dụng ở vị trí đó
         const params = new URLSearchParams();
         if (originRegion) params.append('origin_region', originRegion);
-        if (destinationRegion) params.append('destination_region', destinationRegion);
+        // Không gửi destination_region khi đặt đơn ban đầu để hiển thị tất cả xe
+        // if (destinationRegion) params.append('destination_region', destinationRegion);
         
-        const vehiclesRes = await api.get(`/transport-companies/${companyId}/vehicles?${params.toString()}`);
+        const queryString = params.toString();
+        const vehiclesRes = await api.get(
+          `/transport-companies/${companyId}/vehicles${queryString ? `?${queryString}` : ""}`
+        );
         const vehicles = vehiclesRes.data || [];
         
         // Fetch orders cho tất cả vehicles để tính load percent
@@ -56,6 +72,25 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
         // Transform API data to match UI format với load percent thực tế
         // Filter bỏ các xe đã di chuyển, đang sử dụng có orders, và đầy hàng
         const transformed = (await Promise.all(vehicles.map(async (v) => {
+          // Lọc các xe không ở đúng điểm đi (origin_region)
+          // CHỈ filter nếu có originRegion và xe có vehicle_region
+          // Nếu không có vehicle_region, vẫn hiển thị để tránh filter quá strict
+          if (normalizedOrigin && v.vehicle_region) {
+            const vehicleLocations = [
+              v.current_location,
+              v.vehicle_region,
+              v.origin_region,
+              v.route_name,
+            ]
+              .filter(Boolean)
+              .map(normalize);
+
+            const isMatch = vehicleLocations.some((loc) => loc.includes(normalizedOrigin));
+            if (!isMatch) {
+              return null;
+            }
+          }
+
           // Tìm tất cả orders thuộc về xe này
           const vehicleOrders = activeOrders.filter(order => 
             order.vehicle_id === v.vehicle_id || order.vehicle_id === Number(v.vehicle_id)
@@ -116,6 +151,7 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
             vehicle_region: v.vehicle_region,
             availability: v.availability,
             route_name: v.route_name,
+            company_name: v.company_name,
             status: v.status === 'AVAILABLE' ? 'Sẵn sàng' : 
                    v.status === 'IN_USE' ? 'Đang sử dụng' :
                    v.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động',
@@ -127,7 +163,8 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
         
         if (!aborted) {
           setData(transformed);
-          setCompanyName(vehicles[0]?.company_name || "Danh sách phương tiện");
+          const firstName = transformed.find(Boolean)?.company_name || vehicles[0]?.company_name;
+          setCompanyName(firstName || "Danh sách phương tiện");
         }
       } catch (err) {
         console.error("Error fetching vehicles:", err);
@@ -216,9 +253,14 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-7">
               {filtered.map((item) => {
                 // Tạo route display từ vị trí hiện tại và điểm đến
-                const routeDisplay = item.vehicle_region && destinationRegion 
-                  ? `${item.vehicle_region} → ${destinationRegion}`
-                  : item.route_name || (originRegion && destinationRegion ? `${originRegion} → ${destinationRegion}` : "");
+                const originDisplay =
+                  item.vehicle_region || item.location || originRegion || "Điểm đi chưa xác định";
+
+                const routeDisplay =
+                  destinationRegion
+                    ? `${originDisplay} → ${destinationRegion}`
+                    : item.route_name ||
+                      (originRegion ? `${originRegion} → ${destinationRegion || "—"}` : originDisplay);
                 
                 return (
                   <VehicleCard
@@ -227,10 +269,11 @@ export default function VehiclePage({ keyword, companyId, originRegion, destinat
                     route={routeDisplay}
                     item={item}
                     onSelect={() => {
-                      const params = new URLSearchParams({ companyId: companyId || '', vehicleId: item.id });
+                      const params = new URLSearchParams({ companyId: companyId || "", vehicleId: item.id });
                       if (originRegion) params.append('origin_region', originRegion);
                       if (destinationRegion) params.append('destination_region', destinationRegion);
-                      navigate(`/nhap-in4?${params.toString()}`);
+                      if (userId) params.append('userId', userId);
+                      navigate(`/cargo-info?${params.toString()}`);
                     }}
                   />
                 );

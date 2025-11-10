@@ -1,6 +1,7 @@
 import { createUser, findUserByEmail, verifyPassword as verifyUserPassword } from "../models/User.js";
 import { findAdminByEmail, verifyPassword as verifyAdminPassword } from "../models/TransportCompanyAdmin.js";
 import jwt from "jsonwebtoken";
+import pool from "../config/db.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d"; // 7 days
@@ -36,6 +37,9 @@ export const signup = async (req, res) => {
     });
   } catch (error) {
     console.error("Signup error:", error);
+    if (error.code === "INVALID_PHONE") {
+      return res.status(error.statusCode || 400).json({ error: error.message });
+    }
     res.status(500).json({ error: "Lỗi server" });
   }
 };
@@ -128,6 +132,35 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+};
+
+/**
+ * GET /api/auth/drivers
+ * Lấy danh sách tất cả tài khoản driver
+ */
+export const getDrivers = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        id,
+        name,
+        email,
+        phone,
+        role,
+        created_at
+      FROM users
+      WHERE role = 'driver'
+      ORDER BY created_at DESC`
+    );
+
+    res.json({
+      message: "Lấy danh sách driver thành công",
+      drivers: result.rows
+    });
+  } catch (error) {
+    console.error("Get drivers error:", error);
     res.status(500).json({ error: "Lỗi server" });
   }
 };

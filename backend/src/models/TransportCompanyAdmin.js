@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
+import { validateAndNormalizePhone } from "../utils/phone.js";
 
 /**
  * Tìm admin theo email
@@ -22,6 +23,14 @@ export const findAdminByEmail = async (email) => {
  * Tạo admin mới
  */
 export const createAdmin = async (company_id, name, phone, email, password) => {
+  const { valid, normalized } = validateAndNormalizePhone(phone);
+  if (!valid) {
+    const error = new Error("Số điện thoại không hợp lệ");
+    error.code = "INVALID_PHONE";
+    error.statusCode = 400;
+    throw error;
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   
   const query = `
@@ -33,7 +42,7 @@ export const createAdmin = async (company_id, name, phone, email, password) => {
   const result = await pool.query(query, [
     company_id,
     name,
-    phone,
+    normalized,
     email,
     hashedPassword,
   ]);

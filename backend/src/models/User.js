@@ -1,7 +1,16 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
+import { validateAndNormalizePhone } from "../utils/phone.js";
 
 export const createUser = async (name, phone, email, password, role = 'user') => {
+  const { valid, normalized } = validateAndNormalizePhone(phone);
+  if (!valid) {
+    const error = new Error("Số điện thoại không hợp lệ");
+    error.code = "INVALID_PHONE";
+    error.statusCode = 400;
+    throw error;
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   
   const query = `
@@ -10,7 +19,7 @@ export const createUser = async (name, phone, email, password, role = 'user') =>
     RETURNING id, name, phone, email, role, created_at
   `;
   
-  const result = await pool.query(query, [name, phone, email, hashedPassword, role]);
+  const result = await pool.query(query, [name, normalized, email, hashedPassword, role]);
   return result.rows[0];
 };
 

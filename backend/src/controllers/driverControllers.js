@@ -1,5 +1,6 @@
 // backend/src/controllers/driverControllers.js
 import pool from "../config/db.js";
+import { validateAndNormalizePhone } from "../utils/phone.js";
 
 /**
  * GET /api/driver/vehicle-info
@@ -228,6 +229,17 @@ export const getDriverVehicleInfo = async (req, res) => {
             if (userInfo.rows.length > 0) {
               const user = userInfo.rows[0];
               
+              // Validate và normalize phone trước khi insert/update
+              let validatedPhone = null;
+              if (user.phone) {
+                const { valid, normalized } = validateAndNormalizePhone(user.phone);
+                if (valid) {
+                  validatedPhone = normalized;
+                } else {
+                  console.warn(`⚠️ Invalid phone from user ${user_id}: ${user.phone}, using null`);
+                }
+              }
+              
               // Kiểm tra xem đã có record với user_id này chưa
               const existingDriver = await pool.query(`
                 SELECT driver_id FROM "Drivers" WHERE user_id = $1::uuid LIMIT 1
@@ -248,7 +260,7 @@ export const getDriverVehicleInfo = async (req, res) => {
                   vehicle.vehicle_id,
                   vehicle.company_id,
                   user.name,
-                  user.phone,
+                  validatedPhone,
                   user.email,
                   user_id
                 ]);
@@ -262,7 +274,7 @@ export const getDriverVehicleInfo = async (req, res) => {
                   vehicle.company_id,
                   vehicle.vehicle_id,
                   user.name,
-                  user.phone,
+                  validatedPhone,
                   user.email
                 ]);
               }
@@ -325,6 +337,17 @@ export const getDriverVehicleInfo = async (req, res) => {
             const user = userInfo.rows[0];
             console.log("User info for auto-assignment:", user.email, user.phone);
             
+            // Validate và normalize phone trước khi insert/update
+            let validatedPhone = null;
+            if (user.phone) {
+              const { valid, normalized } = validateAndNormalizePhone(user.phone);
+              if (valid) {
+                validatedPhone = normalized;
+              } else {
+                console.warn(`⚠️ Invalid phone from user ${user_id}: ${user.phone}, using null`);
+              }
+            }
+            
             // Tạo record trong Drivers
             // Kiểm tra xem đã có record với user_id này chưa
             const existingDriver = await pool.query(`
@@ -348,7 +371,7 @@ export const getDriverVehicleInfo = async (req, res) => {
                 vehicle.vehicle_id,
                 vehicle.company_id,
                 user.name,
-                user.phone,
+                validatedPhone,
                 user.email,
                 user_id
               ]);
@@ -363,13 +386,24 @@ export const getDriverVehicleInfo = async (req, res) => {
                 vehicle.company_id,
                 vehicle.vehicle_id,
                 user.name,
-                user.phone,
+                validatedPhone,
                 user.email
               ]);
             }
             console.log("Driver record created/updated:", driverInsertResult.rows[0]?.driver_id);
 
             // Cập nhật Vehicles.driver_phone và driver_name
+            // Validate phone trước khi update
+            let validatedDriverPhone = null;
+            if (user.phone) {
+              const { valid, normalized } = validateAndNormalizePhone(user.phone);
+              if (valid) {
+                validatedDriverPhone = normalized;
+              } else {
+                console.warn(`⚠️ Invalid phone from user ${user_id}: ${user.phone}, skipping driver_phone update`);
+              }
+            }
+            
             const vehicleUpdateResult = await pool.query(`
               UPDATE "Vehicles"
               SET driver_phone = $1,
@@ -377,7 +411,7 @@ export const getDriverVehicleInfo = async (req, res) => {
                   updated_at = CURRENT_TIMESTAMP
               WHERE vehicle_id = $3
               RETURNING vehicle_id, license_plate;
-            `, [user.phone, user.name, vehicle.vehicle_id]);
+            `, [validatedDriverPhone, user.name, vehicle.vehicle_id]);
             console.log("Vehicle updated:", vehicleUpdateResult.rows[0]);
 
             console.log(`✅ Auto-assigned vehicle ${vehicle.vehicle_id} (${vehicle.license_plate}) to driver ${user_id} (${user.email})`);

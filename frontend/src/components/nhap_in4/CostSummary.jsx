@@ -4,7 +4,16 @@ import React from "react";
 const currency = (v) =>
   (v || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-export default function CostSummary({ wReal, wVol, wCharge, base = 20000, perKg = 0, srv = 0, sla = "3–5 ngày" }) {
+export default function CostSummary({
+  wReal,
+  wVol,
+  wCharge,
+  base = 20000,
+  perKg = 0,
+  srv = 0,
+  sla = "3–5 ngày",
+  declaredValue = 0,
+}) {
   const total = Math.round(base + perKg + srv);
 
   return (
@@ -30,6 +39,12 @@ export default function CostSummary({ wReal, wVol, wCharge, base = 20000, perKg 
         <div className="flex justify-between"><span>Phí theo kg</span><span>{currency(Math.round(perKg))}</span></div>
         <div className="flex justify-between"><span>Phụ phí dịch vụ</span><span>{currency(srv)}</span></div>
       </div>
+
+      {declaredValue ? (
+        <div className="mt-3 text-xs text-slate-500">
+          Giá trị khai báo: <span className="font-semibold text-slate-700">{currency(declaredValue)}</span>
+        </div>
+      ) : null}
 
       <div className="h-px bg-slate-200 my-4" />
       <div className="flex items-baseline justify-between">

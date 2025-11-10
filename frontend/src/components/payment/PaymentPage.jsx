@@ -109,6 +109,42 @@ export default function PaymentPage({ orderId }) {
   const orderCode = orderId ? String(orderId).padStart(12, "0") : "000000000000";
   const note = orderId ? `GMD-${orderCode}` : "—";
 
+  const buildCargoInfoQuery = useCallback(() => {
+    const params = new URLSearchParams();
+    const addParam = (key, value) => {
+      if (value === undefined || value === null) return;
+      const str = String(value).trim();
+      if (str) params.set(key, str);
+    };
+
+    try {
+      const storedRaw = localStorage.getItem("last_cargo_params");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        addParam("companyId", stored.companyId ?? stored.company_id);
+        addParam("vehicleId", stored.vehicleId ?? stored.vehicle_id);
+        addParam("origin_region", stored.origin_region);
+        addParam("destination_region", stored.destination_region);
+        addParam("userId", stored.userId ?? stored.customer_id);
+      }
+    } catch (err) {
+      console.warn("PaymentPage: unable to parse last_cargo_params", err);
+    }
+
+    if (orderData) {
+      addParam("companyId", orderData.company_id);
+      addParam("vehicleId", orderData.vehicle_id);
+      addParam("userId", orderData.customer_id);
+    }
+
+    return params.toString();
+  }, [orderData]);
+
+  const navigateToCargoInfo = useCallback(() => {
+    const query = buildCargoInfoQuery();
+    navigate(`/cargo-info${query ? `?${query}` : ""}`);
+  }, [buildCargoInfoQuery, navigate]);
+
   const handleSaveTransaction = useCallback(async () => {
     if (!orderId || !orderData || !payAmount || payAmount <= 0) {
       console.warn("Cannot save transaction: missing data", { orderId, orderData: !!orderData, payAmount });
@@ -405,7 +441,7 @@ export default function PaymentPage({ orderId }) {
           <div className="text-center">
             <p className="text-red-500 mb-4">{error || "Không tìm thấy đơn hàng"}</p>
             <button 
-              onClick={() => navigate("/nhap-in4" + (orderId ? `?orderId=${orderId}` : ""))}
+              onClick={navigateToCargoInfo}
               className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
             >
               Trở lại trang điền thông tin
@@ -426,7 +462,7 @@ export default function PaymentPage({ orderId }) {
         <div className="flex flex-wrap gap-2">
           <button
             className="h-10 px-4 rounded-xl border border-slate-200 hover:bg-slate-50"
-            onClick={() => navigate("/nhap-in4" + (orderId ? `?orderId=${orderId}` : ""))}
+            onClick={navigateToCargoInfo}
           >
             Hủy thanh toán
           </button>

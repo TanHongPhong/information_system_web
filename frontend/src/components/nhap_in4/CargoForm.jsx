@@ -1,25 +1,59 @@
 // components/CargoForm.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Crosshair, User, Phone, Layers, Scale, Move, Edit3, CreditCard } from "lucide-react";
+import { MapPin, Crosshair, User, Phone, Layers, Scale, Move, Edit3, CreditCard, Package, DollarSign } from "lucide-react";
 import { Input, Select, TextArea, Lbl } from "./Fields";
 import api from "../../lib/axios";
 
 const cur = (v) => (v || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, destinationRegion }) {
+export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, destinationRegion, userId }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warehouse, setWarehouse] = useState({ warehouse_name: "", address: "", full_address: "", region: "" });
+  const [customerInfo, setCustomerInfo] = useState({ name: "", phone: "", email: "" });
   
   const [form, setForm] = useState({
     origin_detail: "", // Điểm đi (vị trí chính xác của hàng) - text input
     destination_detail: "", // Điểm đến (kho theo destination_region) - không cho chọn
-    recipient_name: "", recipient_phone: "",
-    category: "", weight: "", len: "", wid: "", hei: "", note: "",
+    sender_name: "",
+    sender_phone: "",
+    recipient_name: "",
+    recipient_phone: "",
+    cargo_name: "",
+    category: "",
+    weight: "",
+    len: "",
+    wid: "",
+    hei: "",
+    declared_value: "",
+    require_cold: false,
+    require_danger: false,
+    require_loading: false,
+    require_insurance: false,
+    note: "",
   });
   
+  useEffect(() => {
+    try {
+      const userDataStr = localStorage.getItem("gd_user");
+      if (!userDataStr) return;
+      const userData = JSON.parse(userDataStr);
+      const name = userData?.name || userData?.full_name || userData?.username || "";
+      const phone = userData?.phone || userData?.phone_number || "";
+      const email = userData?.email || "";
+      setCustomerInfo({ name, phone, email });
+      setForm((prev) => ({
+        ...prev,
+        sender_name: prev.sender_name || name,
+        sender_phone: prev.sender_phone || phone,
+      }));
+    } catch (err) {
+      console.warn("CargoForm: Unable to prefill customer info", err);
+    }
+  }, []);
+
   // Load warehouse info theo destination_region
   useEffect(() => {
     const loadWarehouse = async () => {
@@ -69,6 +103,7 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
   
 
   const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
+  const setBool = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.checked }));
 
   const numbers = {
     weight: parseFloat(form.weight) || 0,
@@ -77,22 +112,71 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
     hei: parseFloat(form.hei) || 0,
   };
 
-  const { wReal, wVol, wCharge, base, perKg, srv } = useMemo(() => {
+  const calc = useMemo(() => {
     const w = numbers.weight;
     const { len, wid, hei } = numbers;
     const vol = len && wid && hei ? (len * wid * hei) / 6000 : 0;
-    // Chỉ tính theo cân nặng thực, không tính theo thể tích
-    const charge = w; // Chỉ dùng weight, bỏ qua volume
+    const charge = w;
     const base = 20000;
     const perKg = 8000 * charge;
-    const srv = 0;
-    return { wReal: w, wVol: vol, wCharge: charge, base, perKg, srv };
-  }, [numbers.weight, numbers.len, numbers.wid, numbers.hei]);
+
+    const autoCold = form.category === "food";
+    const autoDanger = form.category === "dangerous";
+    const autoLoading = form.category === "oversize";
+
+    const requireCold = form.require_cold || autoCold;
+    const requireDanger = form.require_danger || autoDanger;
+    const requireLoading = form.require_loading || autoLoading;
+    const requireInsurance = form.require_insurance;
+
+    const declaredValue = parseFloat(form.declared_value) || 0;
+
+    let srv = 0;
+    if (requireCold) srv += 50000;
+    if (requireDanger) srv += 120000;
+    if (requireLoading) srv += 40000;
+    if (requireInsurance) {
+      const insuranceFee = declaredValue > 0 ? Math.max(declaredValue * 0.01, 80000) : 80000;
+      srv += Math.round(insuranceFee);
+    }
+
+    const total = Math.round(base + perKg + srv);
+
+    return {
+      wReal: w,
+      wVol: vol,
+      wCharge: charge,
+      base,
+      perKg,
+      srv,
+      total,
+      declaredValue,
+      flags: { requireCold, requireDanger, requireLoading, requireInsurance },
+    };
+  }, [
+    numbers.weight,
+    numbers.len,
+    numbers.wid,
+    numbers.hei,
+    form.category,
+    form.require_cold,
+    form.require_danger,
+    form.require_loading,
+    form.require_insurance,
+    form.declared_value,
+  ]);
+
+  const { wReal, wVol, wCharge, base, perKg, srv, total, declaredValue, flags } = calc;
+  const autoServices = {
+    cold: form.category === "food",
+    danger: form.category === "dangerous",
+    loading: form.category === "oversize",
+  };
 
   // Update parent state via useEffect (không được gọi trong render)
   useEffect(() => {
-    onCalc?.({ wReal, wVol, wCharge, base, perKg, srv });
-  }, [wReal, wVol, wCharge, base, perKg, srv, onCalc]);
+    onCalc?.({ wReal, wVol, wCharge, base, perKg, srv, total, declaredValue });
+  }, [wReal, wVol, wCharge, base, perKg, srv, total, declaredValue, onCalc]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -114,65 +198,119 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
 
       // Map category to cargo_type mapping
       const categoryMap = {
-        "general": "Hàng tổng hợp",
-        "fragile": "Dễ vỡ",
-        "food": "Thực phẩm",
-        "electronics": "Điện tử",
-        "oversize": "Cồng kềnh",
+        general: "Hàng tổng hợp",
+        fragile: "Dễ vỡ",
+        food: "Thực phẩm",
+        electronics: "Điện tử",
+        oversize: "Cồng kềnh",
+        dangerous: "Hàng nguy hiểm",
       };
 
       // Calculate total amount: base + perKg + srv
-      const totalAmount = Math.round(base + perKg + srv);
+      const totalAmount = total;
 
       // Lấy customer_id từ localStorage nếu user đang đăng nhập
       // Sử dụng key 'gd_user' (giống như các component khác trong app)
-      let customerId = null;
-      try {
-        const userDataStr = localStorage.getItem('gd_user'); // Sửa từ 'user' thành 'gd_user'
-        const role = localStorage.getItem('role');
-        if (userDataStr && role === 'user') {
-          const userData = JSON.parse(userDataStr);
-          if (userData.id) {
-            customerId = userData.id;
-            console.log("📦 CargoForm - Found customer_id from localStorage:", customerId);
-            console.log("📦 CargoForm - User data:", { id: userData.id, email: userData.email, role: userData.role });
+      let customerId = userId ? Number(userId) || userId : null;
+
+      if (!customerId) {
+        try {
+          const userDataStr = localStorage.getItem('gd_user'); // Sửa từ 'user' thành 'gd_user'
+          const role = localStorage.getItem('role');
+          if (userDataStr && role === 'user') {
+            const userData = JSON.parse(userDataStr);
+            if (userData.id) {
+              customerId = userData.id;
+              console.log("📦 CargoForm - Found customer_id from localStorage:", customerId);
+              console.log("📦 CargoForm - User data:", { id: userData.id, email: userData.email, role: userData.role });
+            } else {
+              console.warn("📦 CargoForm - User data exists but no id found:", userData);
+            }
           } else {
-            console.warn("📦 CargoForm - User data exists but no id found:", userData);
+            console.warn("📦 CargoForm - No user data or wrong role:", { hasUserData: !!userDataStr, role });
           }
-        } else {
-          console.warn("📦 CargoForm - No user data or wrong role:", { hasUserData: !!userDataStr, role });
+        } catch (e) {
+          console.error("📦 CargoForm - Error getting customer_id from localStorage:", e);
         }
-      } catch (e) {
-        console.error("📦 CargoForm - Error getting customer_id from localStorage:", e);
       }
       
       if (!customerId) {
         console.warn("📦 CargoForm - ⚠️ customer_id is NULL! Order will be created without customer_id.");
       }
 
+      const contactName = (form.sender_name || customerInfo.name || "").trim();
+      const contactPhone = (form.sender_phone || customerInfo.phone || "").trim();
+
+      const finalCargoName =
+        (form.cargo_name || "").trim() ||
+        (form.category ? categoryMap[form.category] || form.category : "Hàng tổng hợp");
+
+      const extraNoteSections = [];
+      if (form.note?.trim()) extraNoteSections.push(form.note.trim());
+      if (form.recipient_name || form.recipient_phone) {
+        const recipientLine = `Người nhận: ${form.recipient_name || "—"}${
+          form.recipient_phone ? ` (${form.recipient_phone})` : ""
+        }`;
+        extraNoteSections.push(recipientLine);
+      }
+      if (form.len || form.wid || form.hei) {
+        const dimsLine = `Kích thước (cm): ${form.len || "—"} x ${form.wid || "—"} x ${form.hei || "—"}`;
+        extraNoteSections.push(dimsLine);
+      }
+      if (declaredValue > 0) {
+        extraNoteSections.push(`Giá trị khai báo: ${Number(declaredValue).toLocaleString("vi-VN")} VND`);
+      }
+      const finalNote = extraNoteSections.length > 0 ? extraNoteSections.join(" | ") : null;
+
+      const declaredValueRounded = declaredValue > 0 ? Math.round(declaredValue) : null;
+
       const payload = {
         company_id: Number(companyId),
         vehicle_id: vehicleId ? Number(vehicleId) : null,
-        customer_id: customerId, // Truyền customer_id để đảm bảo được lưu đúng
-        cargo_name: form.category ? categoryMap[form.category] || form.category : "Hàng tổng hợp",
+        customer_id: customerId ? Number(customerId) || customerId : null, // Truyền customer_id để đảm bảo được lưu đúng
+        cargo_name: finalCargoName,
         cargo_type: form.category || null,
         weight_kg: numbers.weight || null,
         volume_m3: volumeM3,
-        value_vnd: totalAmount, // Lưu tổng tiền đã tính từ form
-        require_cold: form.category === "food",
-        require_danger: false,
-        require_loading: form.category === "oversize",
-        require_insurance: false,
+        value_vnd: totalAmount, // Lưu tổng tạm tính (phí cần thanh toán)
+        declared_value_vnd: declaredValueRounded,
+        require_cold: flags.requireCold,
+        require_danger: flags.requireDanger,
+        require_loading: flags.requireLoading,
+        require_insurance: flags.requireInsurance,
         pickup_address: form.origin_detail || (originRegion ? `${originRegion}` : ""),
-        dropoff_address: form.destination_detail || warehouse.full_address || (destinationRegion ? `Kho ${destinationRegion}` : "Kho HCM"),
+        dropoff_address:
+          form.destination_detail ||
+          warehouse.full_address ||
+          (destinationRegion ? `Kho ${destinationRegion}` : "Kho HCM"),
         pickup_time: null, // Có thể thêm datetime picker sau
-        note: form.note || null,
+        note: finalNote,
+        contact_name: contactName || null,
+        contact_phone: contactPhone || null,
+        recipient_name: form.recipient_name || null,
+        recipient_phone: form.recipient_phone || null,
       };
 
       console.log("📦 CargoForm - Creating order with payload:", JSON.stringify(payload, null, 2));
       const response = await api.post("/cargo-orders", payload);
       
       if (response.data.success) {
+        try {
+          localStorage.setItem(
+            "last_cargo_params",
+            JSON.stringify({
+              companyId: companyId || null,
+              vehicleId: vehicleId || null,
+              origin_region: originRegion || null,
+              destination_region: destinationRegion || null,
+              userId: customerId || userId || null,
+              orderId: response.data.data?.order_id || null,
+            })
+          );
+        } catch (storageErr) {
+          console.warn("📦 CargoForm - Unable to persist last_cargo_params", storageErr);
+        }
+
         // Navigate to payment page with order ID
         navigate(`/payment-qr?orderId=${response.data.data.order_id}`);
       }
@@ -217,6 +355,32 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
         </p>
       </div>
 
+      {/* Người đặt hàng */}
+      <div>
+        <Lbl required>Thông tin người đặt</Lbl>
+        <div className="grid sm:grid-cols-2 gap-4 mt-2">
+          <Input
+            icon={<User className="w-4 h-4" />}
+            placeholder="Tên người đặt"
+            required
+            value={form.sender_name}
+            onChange={set("sender_name")}
+          />
+          <Input
+            icon={<Phone className="w-4 h-4" />}
+            inputMode="tel"
+            placeholder="Số điện thoại liên hệ"
+            value={form.sender_phone}
+            onChange={set("sender_phone")}
+          />
+        </div>
+        {customerInfo.email ? (
+          <p className="text-xs text-slate-500 mt-1">
+            Email liên hệ: <span className="font-medium text-slate-700">{customerInfo.email}</span>
+          </p>
+        ) : null}
+      </div>
+
       {/* Người nhận */}
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
@@ -227,6 +391,18 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
           <Lbl>Số điện thoại</Lbl>
           <Input icon={<Phone className="w-4 h-4" />} inputMode="tel" placeholder="VD: 09xx xxx xxx" value={form.recipient_phone} onChange={set("recipient_phone")} />
         </div>
+      </div>
+
+      {/* Thông tin hàng hóa */}
+      <div>
+        <Lbl required>Tên hàng hóa</Lbl>
+        <Input
+          icon={<Package className="w-4 h-4" />}
+          placeholder="VD: Sữa tiệt trùng thùng 12 hộp"
+          required
+          value={form.cargo_name}
+          onChange={set("cargo_name")}
+        />
       </div>
 
       {/* Loại hàng + Cân nặng */}
@@ -240,6 +416,7 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
             <option value="food">Thực phẩm</option>
             <option value="electronics">Điện tử</option>
             <option value="oversize">Cồng kềnh</option>
+            <option value="dangerous">Hàng nguy hiểm</option>
           </Select>
         </div>
         <div>
@@ -259,6 +436,91 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
         <p className="text-[12px] text-slate-500 mt-1">Dùng để tính <b>khối lượng quy đổi</b> = D×R×C / 6000.</p>
       </div>
 
+      {/* Giá trị khai báo */}
+      <div>
+        <Lbl>Giá trị khai báo (VNĐ)</Lbl>
+        <Input
+          icon={<DollarSign className="w-4 h-4" />}
+          type="number"
+          min="0"
+          step="1000"
+          placeholder="VD: 12.000.000"
+          value={form.declared_value}
+          onChange={set("declared_value")}
+        />
+        <p className="text-[12px] text-slate-500 mt-1">
+          Giá trị này giúp tính phí bảo hiểm và trách nhiệm bồi thường nếu phát sinh sự cố.
+        </p>
+      </div>
+
+      {/* Dịch vụ bổ sung */}
+      <div>
+        <Lbl>Dịch vụ bổ sung</Lbl>
+        <div className="grid sm:grid-cols-2 gap-3 mt-2 text-sm">
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 hover:border-blue-300 transition">
+            <input
+              type="checkbox"
+              className="mt-1 accent-blue-600"
+              checked={flags.requireCold}
+              onChange={setBool("require_cold")}
+              disabled={autoServices.cold}
+            />
+            <span>
+              <span className="font-semibold text-slate-700">Bảo quản lạnh</span>
+              <span className="block text-xs text-slate-500">
+                Duy trì nhiệt độ ổn định cho hàng dễ hỏng. {autoServices.cold ? "Bắt buộc với loại hàng đã chọn." : ""}
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 hover:border-blue-300 transition">
+            <input
+              type="checkbox"
+              className="mt-1 accent-blue-600"
+              checked={flags.requireDanger}
+              onChange={setBool("require_danger")}
+            />
+            <span>
+              <span className="font-semibold text-slate-700">Hàng nguy hiểm</span>
+              <span className="block text-xs text-slate-500">
+                Áp dụng các biện pháp an toàn theo quy chuẩn ADR/IMDG.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 hover:border-blue-300 transition">
+            <input
+              type="checkbox"
+              className="mt-1 accent-blue-600"
+              checked={flags.requireLoading}
+              onChange={setBool("require_loading")}
+              disabled={autoServices.loading}
+            />
+            <span>
+              <span className="font-semibold text-slate-700">Hỗ trợ bốc xếp</span>
+              <span className="block text-xs text-slate-500">
+                Cần xe nâng/khoang bốc xếp tại kho. {autoServices.loading ? "Bắt buộc với hàng quá khổ." : ""}
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-3 hover:border-blue-300 transition">
+            <input
+              type="checkbox"
+              className="mt-1 accent-blue-600"
+              checked={flags.requireInsurance}
+              onChange={setBool("require_insurance")}
+            />
+            <span>
+              <span className="font-semibold text-slate-700">Mua bảo hiểm</span>
+              <span className="block text-xs text-slate-500">
+                Bồi thường lên tới 100% giá trị khai báo. Phụ phí tạm tính đã cộng vào phần chi phí.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+
       {/* Ghi chú */}
       <div>
         <Lbl>Ghi chú</Lbl>
@@ -276,7 +538,16 @@ export default function CargoForm({ onCalc, companyId, vehicleId, originRegion, 
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => navigate("/vehicle-list" + (companyId ? `?companyId=${companyId}` : ""))}
+          onClick={() => {
+            const params = new URLSearchParams();
+            if (companyId) params.append("companyId", companyId);
+            if (vehicleId) params.append("vehicleId", vehicleId);
+            if (originRegion) params.append("origin_region", originRegion);
+            if (destinationRegion) params.append("destination_region", destinationRegion);
+            if (userId) params.append("userId", userId);
+            const query = params.toString();
+            navigate(`/vehicle-list${query ? `?${query}` : ""}`);
+          }}
           className="text-blue-700 underline underline-offset-2 hover:text-blue-800"
         >
           Trở lại

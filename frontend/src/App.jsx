@@ -47,7 +47,7 @@ export default function App() {
           }
         />
         <Route
-          path="/nhap-in4"
+          path="/cargo-info"
           element={
             <ProtectedRoute allowedRoles="user">
               <NhapIn4 />
@@ -172,6 +172,10 @@ export default function App() {
         <Route
           path="/payment_qr"
           element={<Navigate to="/payment-qr" replace />}
+        />
+        <Route
+          path="/nhap-in4"
+          element={<Navigate to="/cargo-info" replace />}
         />
 
         {/* 404 cuối cùng */}

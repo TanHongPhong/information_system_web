@@ -1,9 +1,9 @@
 // components/VehicleCard.jsx
 import React from "react";
-import { Calendar, Hash, User as UserIcon } from "lucide-react";
+import { Calendar, Hash, User as UserIcon, Ruler } from "lucide-react";
 
 export default function VehicleCard({ company, route, item, onSelect }) {
-  const { percent, depart, plate, driver, status, location, vehicle_region, availability } = item;
+  const { percent, depart, plate, driver, status, location, vehicle_region, availability, vehicleType, capacity } = item;
 
   const colors = percent < 40
     ? { bg: "bg-emerald-50 ring-emerald-100 text-emerald-700", grad: "linear-gradient(90deg,#22c55e 0%,#86efac 100%)" }
@@ -83,6 +83,12 @@ export default function VehicleCard({ company, route, item, onSelect }) {
           <UserIcon className="w-4 h-4" />
           <span>Tài xế: <b>{driver}</b></span>
         </li>
+        {vehicleType && (
+          <li className="flex items-center gap-2">
+            <Ruler className="w-4 h-4" />
+            <span>Loại xe: <b>{vehicleType}</b>{capacity ? ` • Tải trọng: ${capacity}T` : ""}</span>
+          </li>
+        )}
         {location && (
           <li className="flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

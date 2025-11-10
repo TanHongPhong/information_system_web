@@ -10,8 +10,8 @@ export default function CompanyDirectory({ keyword }) {
   // Filters
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [size, setSize] = useState("");
   const [sortKey, setSortKey] = useState("recommended");
+  const [activeRoute, setActiveRoute] = useState(null);
 
   const [recent, setRecent] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -21,16 +21,26 @@ export default function CompanyDirectory({ keyword }) {
   const [availableRegions, setAvailableRegions] = useState([]);
   const [loadingRegions, setLoadingRegions] = useState(false);
 
-  // Load available regions
+  // Load available regions - chỉ 4 điểm chính
   useEffect(() => {
+    // Chỉ sử dụng 4 điểm chính: Hà Nội, Đà Nẵng, Cần Thơ, HCM
+    const mainRegions = ['Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'HCM'];
+    
+    // Set ngay lập tức để hiển thị
+    setAvailableRegions(mainRegions);
+    
+    // Vẫn fetch từ API để kiểm tra, nhưng luôn dùng 4 điểm chính
     const fetchRegions = async () => {
       try {
         setLoadingRegions(true);
         const response = await api.get("/transport-companies/available-regions");
-        setAvailableRegions(response.data.regions || []);
+        const apiRegions = response.data.regions || [];
+        // Luôn dùng 4 điểm chính, không phụ thuộc vào API
+        setAvailableRegions(mainRegions);
       } catch (err) {
         console.error("Error fetching regions:", err);
-        // Không block nếu lỗi, chỉ log
+        // Nếu lỗi, vẫn dùng 4 điểm mặc định
+        setAvailableRegions(mainRegions);
       } finally {
         setLoadingRegions(false);
       }
@@ -47,30 +57,33 @@ export default function CompanyDirectory({ keyword }) {
         setError(null);
         
         // Build query params
-        // QUAN TRỌNG: from = điểm đi (origin_region), to = điểm đến (destination_region)
+        // QUAN TRỌNG: only apply filter khi đã nhấn tìm kiếm (activeRoute có giá trị)
         const params = new URLSearchParams();
         if (keyword) params.append("q", keyword);
-        if (from) params.append("origin_region", from);      // Điểm đi
-        if (to) params.append("destination_region", to);       // Điểm đến
+        if (activeRoute?.from && activeRoute?.to) {
+          params.append("origin_region", activeRoute.from);      // Điểm đi
+          params.append("destination_region", activeRoute.to);   // Điểm đến
+        }
         
+        const query = params.toString();
         console.log("🔍 CompanyDirectory: Fetching companies", {
-          from,      // Điểm đi
-          to,        // Điểm đến
-          params: params.toString()
+          activeRoute,
+          params: query
         });
         
-        const response = await api.get(`/transport-companies?${params.toString()}`);
+        const response = await api.get(`/transport-companies${query ? `?${query}` : ""}`);
         
         // Transform API data to match UI format
-        const transformedData = response.data.map((company) => ({
+        let transformedData = response.data.map((company) => ({
           id: company.company_id,
           name: company.name,
           area: Array.isArray(company.areas) ? company.areas.join(", ") : "Chưa cập nhật",
+          areas: Array.isArray(company.areas) ? company.areas : [], // Giữ lại để filter
           cost: company.rates?.[0]?.cost_per_km || 0,
           rating: parseFloat(company.rating) || 0,
           reviews: 0, // TODO: Có thể thêm từ database sau
           stats: { orders12m: 0, ontimeRate: 0, csat: company.rating || 0 },
-          sizes: company.rates?.map(r => r.vehicle_type) || [],
+          sizes: company.rates?.map((r) => r.vehicle_type) || [],
           services: { 
             cold: company.has_cold || false, 
             danger: company.has_dangerous_goods || false, 
@@ -83,6 +96,13 @@ export default function CompanyDirectory({ keyword }) {
           description: company.description || "",
           status: company.status || "ACTIVE",
         }));
+
+        // Nếu chưa chọn tuyến, hiển thị top 10 công ty rating cao nhất
+        if (!(activeRoute?.from && activeRoute?.to)) {
+          transformedData = transformedData
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, 10);
+        }
         
         setCompanies(transformedData);
         console.log(`✅ CompanyDirectory: Found ${transformedData.length} companies`);
@@ -95,7 +115,7 @@ export default function CompanyDirectory({ keyword }) {
     };
 
     fetchCompanies();
-  }, [from, to, keyword]); // Tự động fetch lại khi from hoặc to thay đổi
+  }, [activeRoute, keyword]);
 
   // Load recent from localStorage
   useEffect(() => {
@@ -105,9 +125,12 @@ export default function CompanyDirectory({ keyword }) {
     } catch {}
   }, []);
 
-  const saveRecent = useCallback(() => {
-    const v = { from: from.trim(), to: to.trim() };
-    if (!(v.from || v.to)) return;
+  const saveRecent = useCallback((route) => {
+    const v = {
+      from: (route?.from ?? from).trim(),
+      to: (route?.to ?? to).trim(),
+    };
+    if (!(v.from && v.to)) return;
     const deduped = [v, ...recent.filter((x) => x.from !== v.from || x.to !== v.to)].slice(0, 6);
     setRecent(deduped);
     try {
@@ -119,28 +142,47 @@ export default function CompanyDirectory({ keyword }) {
   const strip = (s) => (s || "").toString().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
   const filtered = useMemo(() => {
-    const f = strip(from), t = strip(to), s = strip(size), k = strip(keyword);
+    const activeFrom = activeRoute?.from || "";
+    const activeTo = activeRoute?.to || "";
+    const k = strip(keyword);
+    
     return companies
       .filter((c) => {
-        // khu vực
-        const area = strip(c.area);
-        const areaOK =
-          area.includes("toan quoc") ||
-          (!!(f || t) &&
-            (area.includes("mien") ||
-              area.includes("lien tinh") ||
-              (area.includes("noi thanh hcm") &&
-                (f.includes("hcm") || f.includes("ho chi minh") || f.includes("sai gon") ||
-                 t.includes("hcm") || t.includes("ho chi minh") || t.includes("sai gon"))))) ||
-          !(f || t);
+        // Nếu có chọn điểm đi và điểm đến, kiểm tra công ty có CẢ HAI điểm trong khu vực hoạt động
+        let areaOK = true;
+        if (activeFrom && activeTo) {
+          // Công ty phải có CẢ điểm đi VÀ điểm đến trong danh sách areas
+          const companyAreas = Array.isArray(c.areas) ? c.areas.map(a => a.trim()) : [];
+          const hasFrom = companyAreas.some(area => 
+            strip(area) === strip(activeFrom) || 
+            strip(area).includes(strip(activeFrom)) ||
+            strip(activeFrom).includes(strip(area))
+          );
+          const hasTo = companyAreas.some(area => 
+            strip(area) === strip(activeTo) || 
+            strip(area).includes(strip(activeTo)) ||
+            strip(activeTo).includes(strip(area))
+          );
+          // Chỉ hiển thị nếu có CẢ HAI
+          areaOK = hasFrom && hasTo;
+        } else if (activeFrom || activeTo) {
+          // Nếu chỉ có một trong hai, kiểm tra có ít nhất một điểm
+          const companyAreas = Array.isArray(c.areas) ? c.areas.map(a => a.trim()) : [];
+          const checkPoint = activeFrom || activeTo;
+          areaOK = companyAreas.some(area => 
+            strip(area) === strip(checkPoint) || 
+            strip(area).includes(strip(checkPoint)) ||
+            strip(checkPoint).includes(strip(area))
+          );
+        }
 
-        const sizeOK = !s || c.sizes.some((x) => strip(x).includes(s));
+        // Tìm kiếm keyword
         const kwOK =
           !k ||
           strip(c.name).includes(k) ||
           strip(c.area).includes(k) ||
           c.sizes.some((x) => strip(x).includes(k));
-        return areaOK && sizeOK && kwOK;
+        return areaOK && kwOK;
       })
       .sort((a, b) => {
         switch (sortKey) {
@@ -154,38 +196,52 @@ export default function CompanyDirectory({ keyword }) {
             return b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost);
         }
       });
-  }, [companies, from, to, size, sortKey, keyword]);
+  }, [companies, activeRoute, sortKey, keyword]);
 
   const handleSwap = () => {
     setFrom(to);
     setTo(from);
   };
+
   const handleSearch = () => {
-    saveRecent();
+    if (!from || !to) {
+      alert("Vui lòng chọn đầy đủ điểm lấy hàng và điểm đến trước khi tìm kiếm.");
+      return;
+    }
+
+    const route = { from, to };
+    saveRecent(route);
+    setActiveRoute(route);
+
     // Lưu vào localStorage để truyền qua các trang
     // QUAN TRỌNG: from = điểm đi (origin_region) = nơi xe phải ở
     //             to = điểm đến (destination_region) = nơi xe sẽ đến
     try {
       localStorage.setItem('selected_route', JSON.stringify({
-        origin_region: from,      // Điểm đi = nơi xe phải ở
-        destination_region: to    // Điểm đến = nơi xe sẽ đến
+        origin_region: route.from,
+        destination_region: route.to
       }));
       console.log("💾 CompanyDirectory: Saved route to localStorage", {
-        origin_region: from,      // Điểm đi
-        destination_region: to    // Điểm đến
+        origin_region: route.from,
+        destination_region: route.to
       });
     } catch (e) {
       console.error("Error saving route to localStorage:", e);
     }
   };
+
   const useRecent = (r) => { 
-    setFrom(r.from || ""); 
-    setTo(r.to || ""); 
+    const route = { from: r.from || "", to: r.to || "" };
+    setFrom(route.from);
+    setTo(route.to);
+    setActiveRoute(route);
+    saveRecent(route);
+
     // Lưu vào localStorage khi dùng recent
     try {
       localStorage.setItem('selected_route', JSON.stringify({
-        origin_region: r.from || "",
-        destination_region: r.to || ""
+        origin_region: route.from,
+        destination_region: route.to
       }));
     } catch (e) {
       console.error("Error saving route to localStorage:", e);
@@ -263,18 +319,6 @@ export default function CompanyDirectory({ keyword }) {
                   {region}
                 </option>
               ))}
-          </select>
-          <select
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-            className="h-10 min-w-[180px] px-3 rounded-xl border border-slate-200"
-          >
-            <option value="">Chọn kích thước</option>
-            <option>≤ 2 tấn</option>
-            <option>≤ 4 tấn</option>
-            <option>Container 20ft</option>
-            <option>Container 40ft</option>
-            <option>Xe lạnh</option>
           </select>
           <button
             onClick={handleSearch}

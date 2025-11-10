@@ -292,7 +292,13 @@ export const getVehiclesByCompany = async (req, res) => {
         r.route_name,
         r.origin_region,
         r.destination_region,
-        get_region_from_address(v.current_location) as vehicle_region
+        CASE 
+          WHEN v.current_location ILIKE '%hà nội%' OR v.current_location ILIKE '%ha noi%' OR v.current_location ILIKE '%hanoi%' THEN 'Hà Nội'
+          WHEN v.current_location ILIKE '%hcm%' OR v.current_location ILIKE '%tp.hcm%' OR v.current_location ILIKE '%hồ chí minh%' OR v.current_location ILIKE '%ho chi minh%' THEN 'HCM'
+          WHEN v.current_location ILIKE '%đà nẵng%' OR v.current_location ILIKE '%da nang%' THEN 'Đà Nẵng'
+          WHEN v.current_location ILIKE '%cần thơ%' OR v.current_location ILIKE '%can tho%' THEN 'Cần Thơ'
+          ELSE NULL
+        END as vehicle_region
     `;
     
     // Thêm availability nếu có destination_region
@@ -330,38 +336,33 @@ export const getVehiclesByCompany = async (req, res) => {
       paramCount++;
     }
 
-    // Filter theo route: tìm xe có route từ origin_region đến destination_region (hoặc ngược lại)
+    // Filter theo vị trí và route
     if (origin_region && destination_region) {
-      // QUAN TRỌNG: Xe phải ở vị trí = origin_region (điểm đi)
-      // Và có route từ origin_region đến destination_region
+      // Khi có cả origin và destination: 
+      // Ưu tiên hiển thị xe ở origin_region (không cần route)
+      // Nhưng nếu có route phù hợp thì tốt hơn (sẽ được ưu tiên trong ORDER BY sau)
       query += ` AND (
-        -- Xe phải ở vị trí origin_region (điểm đi)
-        get_region_from_address(v.current_location) = $${paramCount}
-        OR (v.current_location IS NULL AND EXISTS(
-          SELECT 1 FROM "VehicleRoutes" vr3
-          INNER JOIN "Routes" r3 ON vr3.route_id = r3.route_id
-          WHERE vr3.vehicle_id = v.vehicle_id
-            AND vr3.is_active = TRUE
-            AND r3.is_active = TRUE
-            AND r3.origin_region = $${paramCount}
-            AND r3.destination_region = $${paramCount + 1}
-        ))
-      ) AND (
-        -- Xe phải có route từ origin_region đến destination_region
-        EXISTS(
-          SELECT 1 FROM "VehicleRoutes" vr2
-          INNER JOIN "Routes" r2 ON vr2.route_id = r2.route_id
-          WHERE vr2.vehicle_id = v.vehicle_id
-            AND vr2.is_active = TRUE
-            AND r2.is_active = TRUE
-            AND (
-              (r2.origin_region = $${paramCount} AND r2.destination_region = $${paramCount + 1})
-              OR (r2.origin_region = $${paramCount + 1} AND r2.destination_region = $${paramCount})
-            )
+        -- Xe phải ở vị trí origin_region (điểm đi) - dùng pattern matching
+        (
+          ($${paramCount} = 'Hà Nội' AND (v.current_location ILIKE '%hà nội%' OR v.current_location ILIKE '%ha noi%' OR v.current_location ILIKE '%hanoi%'))
+          OR ($${paramCount} = 'HCM' AND (v.current_location ILIKE '%hcm%' OR v.current_location ILIKE '%tp.hcm%' OR v.current_location ILIKE '%hồ chí minh%' OR v.current_location ILIKE '%ho chi minh%'))
+          OR ($${paramCount} = 'Đà Nẵng' AND (v.current_location ILIKE '%đà nẵng%' OR v.current_location ILIKE '%da nang%'))
+          OR ($${paramCount} = 'Cần Thơ' AND (v.current_location ILIKE '%cần thơ%' OR v.current_location ILIKE '%can tho%'))
         )
       )`;
       params.push(origin_region, destination_region);
       paramCount += 2;
+    } else if (origin_region) {
+      // CHỈ có origin_region: chỉ filter theo vị trí, KHÔNG cần route
+      // Đây là trường hợp đặt đơn ban đầu - chỉ cần xe ở vị trí pickup
+      query += ` AND (
+        ($${paramCount} = 'Hà Nội' AND (v.current_location ILIKE '%hà nội%' OR v.current_location ILIKE '%ha noi%' OR v.current_location ILIKE '%hanoi%'))
+        OR ($${paramCount} = 'HCM' AND (v.current_location ILIKE '%hcm%' OR v.current_location ILIKE '%tp.hcm%' OR v.current_location ILIKE '%hồ chí minh%' OR v.current_location ILIKE '%ho chi minh%'))
+        OR ($${paramCount} = 'Đà Nẵng' AND (v.current_location ILIKE '%đà nẵng%' OR v.current_location ILIKE '%da nang%'))
+        OR ($${paramCount} = 'Cần Thơ' AND (v.current_location ILIKE '%cần thơ%' OR v.current_location ILIKE '%can tho%'))
+      )`;
+      params.push(origin_region);
+      paramCount++;
     } else if (destination_region) {
       // Nếu chỉ có destination_region, filter xe theo vị trí hiện tại
       // Xe phải ở vị trí có route đến destination_region
@@ -373,8 +374,22 @@ export const getVehiclesByCompany = async (req, res) => {
             AND vr2.is_active = TRUE
             AND r2.is_active = TRUE
             AND (
-              (r2.origin_region = get_region_from_address(v.current_location) AND r2.destination_region = $${paramCount})
-              OR (r2.destination_region = get_region_from_address(v.current_location) AND r2.origin_region = $${paramCount})
+              -- Xe ở Hà Nội có route đến destination_region
+              ((v.current_location ILIKE '%hà nội%' OR v.current_location ILIKE '%ha noi%' OR v.current_location ILIKE '%hanoi%') AND r2.origin_region = 'Hà Nội' AND r2.destination_region = $${paramCount})
+              -- Xe ở HCM có route đến destination_region
+              OR ((v.current_location ILIKE '%hcm%' OR v.current_location ILIKE '%tp.hcm%' OR v.current_location ILIKE '%hồ chí minh%' OR v.current_location ILIKE '%ho chi minh%') AND r2.origin_region = 'HCM' AND r2.destination_region = $${paramCount})
+              -- Xe ở Đà Nẵng có route đến destination_region
+              OR ((v.current_location ILIKE '%đà nẵng%' OR v.current_location ILIKE '%da nang%') AND r2.origin_region = 'Đà Nẵng' AND r2.destination_region = $${paramCount})
+              -- Xe ở Cần Thơ có route đến destination_region
+              OR ((v.current_location ILIKE '%cần thơ%' OR v.current_location ILIKE '%can tho%') AND r2.origin_region = 'Cần Thơ' AND r2.destination_region = $${paramCount})
+              -- Route ngược lại
+              OR (r2.destination_region = $${paramCount} AND (
+                (v.current_location ILIKE '%hà nội%' OR v.current_location ILIKE '%ha noi%' OR v.current_location ILIKE '%hanoi%') AND r2.origin_region = 'Hà Nội'
+                OR (v.current_location ILIKE '%hcm%' OR v.current_location ILIKE '%tp.hcm%' OR v.current_location ILIKE '%hồ chí minh%' OR v.current_location ILIKE '%ho chi minh%') AND r2.origin_region = 'HCM'
+                OR (v.current_location ILIKE '%đà nẵng%' OR v.current_location ILIKE '%da nang%') AND r2.origin_region = 'Đà Nẵng'
+                OR (v.current_location ILIKE '%cần thơ%' OR v.current_location ILIKE '%can tho%') AND r2.origin_region = 'Cần Thơ'
+              ))
+              -- Nếu không có location, chỉ cần có route đến destination_region
               OR (v.current_location IS NULL AND r2.destination_region = $${paramCount})
             )
         )

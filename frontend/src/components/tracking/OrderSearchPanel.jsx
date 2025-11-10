@@ -5,8 +5,8 @@ import { IconSearch, IconTruck, IconEye } from "./IconsFeather";
 
 // Các status hợp lệ cho order-tracking (từ ACCEPTED trở đi) - cho transport company
 const VALID_STATUSES_COMPANY = ['ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
-// Các status hợp lệ cho customer - bao gồm cả đơn đã thanh toán
-const VALID_STATUSES_CUSTOMER = ['PENDING_PAYMENT', 'PAID', 'ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
+// Các status hợp lệ cho customer - chỉ hiển thị đơn đã thanh toán trở đi
+const VALID_STATUSES_CUSTOMER = ['PAID', 'ACCEPTED', 'LOADING', 'IN_TRANSIT', 'WAREHOUSE_RECEIVED', 'COMPLETED'];
 
 export default function OrderSearchPanel({ onSelectOrder, selectedOrderId, initialOrderId }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,28 +181,16 @@ export default function OrderSearchPanel({ onSelectOrder, selectedOrderId, initi
                 Tất cả
               </button>
               {isCustomer && (
-                <>
-                  <button
-                    onClick={() => setStatusFilter("PENDING_PAYMENT")}
-                    className={`px-2.5 py-1 rounded-full ring-1 ${
-                      statusFilter === "PENDING_PAYMENT"
-                        ? "ring-blue-300 bg-blue-50 text-blue-700"
-                        : "ring-slate-200 bg-white text-slate-700"
-                    }`}
-                  >
-                    Chờ thanh toán
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter("PAID")}
-                    className={`px-2.5 py-1 rounded-full ring-1 ${
-                      statusFilter === "PAID"
-                        ? "ring-blue-300 bg-blue-50 text-blue-700"
-                        : "ring-slate-200 bg-white text-slate-700"
-                    }`}
-                  >
-                    Đã thanh toán
-                  </button>
-                </>
+                <button
+                  onClick={() => setStatusFilter("PAID")}
+                  className={`px-2.5 py-1 rounded-full ring-1 ${
+                    statusFilter === "PAID"
+                      ? "ring-blue-300 bg-blue-50 text-blue-700"
+                      : "ring-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  Đã thanh toán
+                </button>
               )}
               <button
                 onClick={() => setStatusFilter("ACCEPTED")}

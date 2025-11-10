@@ -1,7 +1,28 @@
-import express from "express";
+// QUAN TRỌNG: Load .env TRƯỚC tất cả các import khác
 import dotenv from "dotenv";
-import cors from "cors";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env từ thư mục backend TRƯỚC KHI import bất kỳ module nào
+const envPath = path.resolve(__dirname, ".env");
+dotenv.config({ path: envPath });
+
+// Log để debug
+if (process.env.NODE_ENV === "development") {
+  const cs = process.env.PSQLDB_CONNECTIONSTRING;
+  if (cs) {
+    const match = cs.match(/@([^\/]+)/);
+    const host = match ? match[1] : "N/A";
+    console.log(`📋 [server.js] Loaded .env from: ${envPath}`);
+    console.log(`📋 [server.js] Database host: ${host}`);
+  }
+}
+
+import express from "express";
+import cors from "cors";
 // Test router removed for production
 // import testRouter from "./src/routes/testRouter.js";
 
@@ -52,8 +73,6 @@ import {
 import authRouter from "./src/routes/authRoutes.js";
 import { cleanupPendingPaymentOrders } from "./src/utils/cleanupPendingOrders.js";
 
-dotenv.config();
-
 // Validate required environment variables on startup
 const requiredEnvVars = {
   PSQLDB_CONNECTIONSTRING: process.env.PSQLDB_CONNECTIONSTRING,
@@ -96,7 +115,7 @@ if (warnings.length > 0) {
 }
 
 const PORT = process.env.PORT || 5001;
-const __dirname = path.resolve();
+// __dirname đã được khai báo ở đầu file
 
 const app = express();
 

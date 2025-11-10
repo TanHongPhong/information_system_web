@@ -1,6 +1,25 @@
 import { Pool } from "pg";
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env từ thư mục backend (2 level up từ src/config)
+const envPath = path.resolve(__dirname, "../../.env");
+dotenv.config({ path: envPath });
+
+// Log để debug
+if (process.env.NODE_ENV === "development") {
+  const cs = process.env.PSQLDB_CONNECTIONSTRING;
+  if (cs) {
+    const match = cs.match(/@([^\/]+)/);
+    const host = match ? match[1] : "N/A";
+    console.log(`📋 [db.js] Loaded .env from: ${envPath}`);
+    console.log(`📋 [db.js] Database host: ${host}`);
+  }
+}
 
 // Validate database connection string
 const connectionString = process.env.PSQLDB_CONNECTIONSTRING;

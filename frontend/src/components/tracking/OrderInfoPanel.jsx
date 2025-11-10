@@ -42,18 +42,52 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
     }).format(amount);
   };
 
-  // Format date
+  // Format date - hiển thị đẹp hơn với múi giờ UTC+7 (TP.HCM)
   const formatDate = (dateString) => {
     if (!dateString) return "—";
     try {
       const date = new Date(dateString);
-      return date.toLocaleString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      // Chuyển đổi sang múi giờ UTC+7 (TP.HCM)
+      const utc7Date = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+      const now = new Date();
+      const nowUtc7 = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+      const diffMs = nowUtc7 - utc7Date;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      // Format ngày tháng năm theo múi giờ UTC+7
+      const day = String(utc7Date.getUTCDate()).padStart(2, '0');
+      const month = String(utc7Date.getUTCMonth() + 1).padStart(2, '0');
+      const year = utc7Date.getUTCFullYear();
+      const hours = String(utc7Date.getUTCHours()).padStart(2, '0');
+      const minutes = String(utc7Date.getUTCMinutes()).padStart(2, '0');
+      
+      // Thêm thông tin tương đối nếu là hôm nay hoặc hôm qua
+      let relative = "";
+      if (diffDays === 0) {
+        relative = " (Hôm nay)";
+      } else if (diffDays === 1) {
+        relative = " (Hôm qua)";
+      } else if (diffDays > 1 && diffDays <= 7) {
+        relative = ` (${diffDays} ngày trước)`;
+      }
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}${relative}`;
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Format date short - chỉ ngày tháng năm (UTC+7)
+  const formatDateShort = (dateString) => {
+    if (!dateString) return "—";
+    try {
+      const date = new Date(dateString);
+      // Chuyển đổi sang múi giờ UTC+7 (TP.HCM)
+      const utc7Date = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+      const day = String(utc7Date.getUTCDate()).padStart(2, '0');
+      const month = String(utc7Date.getUTCMonth() + 1).padStart(2, '0');
+      const year = utc7Date.getUTCFullYear();
+      return `${day}/${month}/${year}`;
     } catch {
       return dateString;
     }
@@ -112,21 +146,21 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
 
           {/* Scrollable content */}
           <div className="space-y-4">
-            {/* Thông tin khách hàng */}
+            {/* Thông tin người đặt hàng */}
             <section className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
               <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2 text-sm">
                 <IconUser className="w-4 h-4 text-blue-600" />
-                Thông tin khách hàng
+                Thông tin người đặt hàng
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Tên khách hàng</span>
-                  <span className="font-medium text-slate-900">{order.customer_name || "—"}</span>
+                  <span className="text-slate-600">Tên người đặt</span>
+                  <span className="font-medium text-slate-900">{order.contact_name || order.customer_name || "—"}</span>
                 </div>
-                {order.customer_phone && (
+                {(order.contact_phone || order.customer_phone) && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Số điện thoại</span>
-                    <span className="font-medium text-slate-900">{order.customer_phone}</span>
+                    <span className="font-medium text-slate-900">{order.contact_phone || order.customer_phone}</span>
                   </div>
                 )}
                 {order.customer_email && (
@@ -137,6 +171,30 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
                 )}
               </div>
             </section>
+
+            {/* Thông tin người nhận */}
+            {(order.recipient_name || order.recipient_phone) && (
+              <section className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2 text-sm">
+                  <IconUser className="w-4 h-4 text-green-600" />
+                  Thông tin người nhận
+                </h3>
+                <div className="space-y-2 text-sm">
+                  {order.recipient_name && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Tên người nhận</span>
+                      <span className="font-medium text-slate-900">{order.recipient_name}</span>
+                    </div>
+                  )}
+                  {order.recipient_phone && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Số điện thoại</span>
+                      <span className="font-medium text-slate-900">{order.recipient_phone}</span>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Địa chỉ giao nhận */}
             <section className="bg-white rounded-xl p-4 border border-slate-200">
@@ -191,8 +249,8 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
               <div className="space-y-2 text-sm">
                 {order.cargo_name && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Loại hàng</span>
-                    <span className="font-medium text-slate-900">{order.cargo_name}</span>
+                    <span className="text-slate-600">Tên hàng hóa</span>
+                    <span className="font-medium text-slate-900 text-right max-w-[60%]">{order.cargo_name}</span>
                   </div>
                 )}
                 {order.cargo_type && (
@@ -204,19 +262,41 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
                 {order.weight_kg && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Khối lượng</span>
-                    <span className="font-medium text-slate-900">{order.weight_kg} kg</span>
+                    <span className="font-medium text-slate-900">{Number(order.weight_kg).toLocaleString("vi-VN")} kg</span>
                   </div>
                 )}
                 {order.volume_m3 && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Thể tích</span>
-                    <span className="font-medium text-slate-900">{order.volume_m3} m³</span>
+                    <span className="font-medium text-slate-900">{Number(order.volume_m3).toFixed(3)} m³</span>
+                  </div>
+                )}
+                {/* Parse kích thước từ note nếu có */}
+                {order.note && (() => {
+                  const dimsMatch = order.note.match(/Kích thước \(cm\):\s*([\d—]+)\s*x\s*([\d—]+)\s*x\s*([\d—]+)/i);
+                  if (dimsMatch) {
+                    const [len, wid, hei] = dimsMatch.slice(1);
+                    if (len !== "—" && wid !== "—" && hei !== "—") {
+                      return (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Kích thước (D×R×C)</span>
+                          <span className="font-medium text-slate-900">{len} × {wid} × {hei} cm</span>
+                        </div>
+                      );
+                    }
+                  }
+                  return null;
+                })()}
+                {order.declared_value_vnd && Number(order.declared_value_vnd) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Giá trị khai báo</span>
+                    <span className="font-medium text-slate-900">{formatCurrency(order.declared_value_vnd)}</span>
                   </div>
                 )}
                 {order.value_vnd && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Giá trị hàng hóa</span>
-                    <span className="font-medium text-slate-900">{formatCurrency(order.value_vnd)}</span>
+                    <span className="text-slate-600">Tổng phí vận chuyển</span>
+                    <span className="font-medium text-blue-700">{formatCurrency(order.value_vnd)}</span>
                   </div>
                 )}
               </div>
@@ -244,7 +324,7 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
             </section>
 
             {/* Thông tin xe và công ty */}
-            {(order.license_plate || order.vehicle_type || order.company_name) && (
+            {(order.license_plate || order.vehicle_type || order.company_name || order.driver_name) && (
               <section className="bg-white rounded-xl p-4 border border-slate-200">
                 <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2 text-sm">
                   <IconTruck className="w-4 h-4 text-slate-600" />
@@ -260,13 +340,31 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
                   {order.license_plate && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">Biển số xe</span>
-                      <span className="font-medium text-slate-900">{order.license_plate}</span>
+                      <span className="font-medium text-slate-900 font-mono">{order.license_plate}</span>
                     </div>
                   )}
                   {order.vehicle_type && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">Loại xe</span>
                       <span className="font-medium text-slate-900">{order.vehicle_type}</span>
+                    </div>
+                  )}
+                  {order.capacity_ton && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Tải trọng</span>
+                      <span className="font-medium text-slate-900">{order.capacity_ton} tấn</span>
+                    </div>
+                  )}
+                  {order.driver_name && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Tài xế</span>
+                      <span className="font-medium text-slate-900">{order.driver_name}</span>
+                    </div>
+                  )}
+                  {order.driver_phone && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">SĐT tài xế</span>
+                      <span className="font-medium text-slate-900">{order.driver_phone}</span>
                     </div>
                   )}
                 </div>
@@ -279,29 +377,50 @@ export default function OrderInfoPanel({ order, onHeightChange }) {
                 <IconClock className="w-4 h-4 text-slate-600" />
                 Thông tin thời gian
               </h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm">
                 {order.created_at && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Ngày tạo đơn</span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-slate-500">Ngày tạo đơn</span>
                     <span className="font-medium text-slate-900">{formatDate(order.created_at)}</span>
                   </div>
                 )}
                 {order.pickup_time && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Thời gian lấy hàng</span>
+                  <div className="flex flex-col gap-1 pt-2 border-t border-slate-100">
+                    <span className="text-xs text-slate-500">Thời gian lấy hàng</span>
                     <span className="font-medium text-slate-900">{formatDate(order.pickup_time)}</span>
                   </div>
                 )}
                 {order.estimated_delivery_time && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Dự kiến giao hàng</span>
+                  <div className="flex flex-col gap-1 pt-2 border-t border-slate-100">
+                    <span className="text-xs text-slate-500">Dự kiến giao hàng</span>
                     <span className="font-medium text-green-600">{formatDate(order.estimated_delivery_time)}</span>
+                    {(() => {
+                      try {
+                        const estimated = new Date(order.estimated_delivery_time);
+                        const now = new Date();
+                        const diffMs = estimated - now;
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const diffDays = Math.floor(diffHours / 24);
+                        
+                        if (diffMs < 0) {
+                          return <span className="text-xs text-red-600">(Đã quá hạn)</span>;
+                        } else if (diffDays > 0) {
+                          return <span className="text-xs text-slate-500">(Còn {diffDays} ngày)</span>;
+                        } else if (diffHours > 0) {
+                          return <span className="text-xs text-slate-500">(Còn {diffHours} giờ)</span>;
+                        } else {
+                          return <span className="text-xs text-orange-600">(Sắp đến hạn)</span>;
+                        }
+                      } catch {
+                        return null;
+                      }
+                    })()}
                   </div>
                 )}
                 {order.updated_at && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Cập nhật lần cuối</span>
-                    <span className="font-medium text-slate-900">{formatDate(order.updated_at)}</span>
+                  <div className="flex flex-col gap-1 pt-2 border-t border-slate-100">
+                    <span className="text-xs text-slate-500">Cập nhật lần cuối</span>
+                    <span className="font-medium text-slate-700 text-xs">{formatDate(order.updated_at)}</span>
                   </div>
                 )}
               </div>

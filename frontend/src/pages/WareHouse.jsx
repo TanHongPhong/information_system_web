@@ -87,24 +87,123 @@ export default function WarehouseInOutPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load data từ API - chỉ lấy đơn hàng đã tới kho (STORED, SHIPPED) và đã xuất kho (SHIPPED)
+  // Load data từ API - lấy warehouse operations
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load inventory - chỉ lấy đơn hàng đã tới kho (STORED) và đã xuất kho (SHIPPED)
-      const inventoryData = await warehouseAPI.getInventory({
+      // Load operations từ WarehouseOperations
+      const operationsData = await warehouseAPI.getOperations({
         limit: 1000,
       });
       
-      // Filter chỉ lấy STORED và SHIPPED (đã tới kho và đã xuất kho)
-      const filteredInventory = (inventoryData.inventory || []).filter(
-        item => item.inventory_status === 'STORED' || item.inventory_status === 'SHIPPED'
+      // Format dữ liệu để hiển thị
+      // Trang này hiển thị: INCOMING, STORED, OUTGOING (tất cả đơn hàng đang trong kho)
+      const formattedOperations = (operationsData.operations || []).map(op => {
+        const isInOperation = op.type === 'in' || op.operation_type === 'IN';
+        const isOutOperation = op.type === 'out' || op.operation_type === 'OUT';
+        
+        // Xác định inventory_status dựa trên operation_type và status
+        // INCOMING: operation IN với status PENDING
+        // STORED: operation IN với status COMPLETED hoặc IN_PROGRESS
+        // OUTGOING: operation OUT với status PENDING
+        // SHIPPED: operation OUT với status COMPLETED (không hiển thị ở trang này)
+        let inventoryStatus = 'INCOMING';
+        let displayStatus = 'Đang chờ nhập kho';
+        
+        // Kiểm tra status từ backend (có thể là text hoặc status code)
+        const statusText = op.status || '';
+        const isPending = statusText.includes('PENDING') || statusText.includes('Chờ') || statusText.includes('Đang nhập') || statusText.includes('Đang xuất');
+        const isInProgress = statusText.includes('IN_PROGRESS') || statusText.includes('Đang xử lý') || statusText.includes('Lưu kho');
+        const isCompleted = statusText.includes('COMPLETED') || statusText.includes('Đã xuất');
+        
+        if (isInOperation) {
+          if (isPending) {
+            inventoryStatus = 'INCOMING';
+            displayStatus = 'Đang chờ nhập kho';
+          } else if (isInProgress || isCompleted) {
+            inventoryStatus = 'STORED';
+            displayStatus = 'Đang lưu kho';
+          } else {
+            // Mặc định cho IN operation
+            inventoryStatus = 'INCOMING';
+            displayStatus = 'Đang chờ nhập kho';
+          }
+        } else if (isOutOperation) {
+          if (isPending) {
+            inventoryStatus = 'OUTGOING';
+            displayStatus = 'Chuẩn bị xuất kho';
+          } else {
+            // SHIPPED - không hiển thị ở trang này
+            inventoryStatus = 'SHIPPED';
+            displayStatus = 'Đã xuất kho';
+          }
+        }
+        
+        // Lấy ngày từ actual_time hoặc created_at
+        const operationDate = op.actual_time || op.created_at || op.eta || null;
+        
+        // Format ngày nếu có
+        const formatDate = (dateStr) => {
+          if (!dateStr) return '';
+          try {
+            if (typeof dateStr === 'string' && dateStr.includes('/')) {
+              return dateStr;
+            }
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('vi-VN', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return '';
+          }
+        };
+
+        return {
+          ...op,
+          operation_id: op.operation_id,
+          id: op.id || op.order_id,
+          order_id: op.order_id || op.id,
+          type: op.type || (op.operation_type === 'IN' ? 'in' : 'out'),
+          operation_type: op.operation_type,
+          status: displayStatus,
+          customer: op.customer || 'Khách hàng',
+          from: op.from || 'Chưa xác định',
+          to: op.to || 'Chưa xác định',
+          weight: op.weight || 0,
+          pallets: op.pallets || 0,
+          docks: op.docks || 'D1',
+          carrier: op.carrier || 'N/A',
+          eta: formatDate(operationDate),
+          temp: op.temp || 'Thường',
+          cargo_name: op.cargo_name || '—',
+          cargo_type: op.cargo_type || '—',
+          warehouse_name: op.warehouse_name || '—',
+          // Ngày tới kho: có khi là INCOMING hoặc STORED
+          entered_at: (inventoryStatus === 'INCOMING' || inventoryStatus === 'STORED') ? formatDate(operationDate) : '',
+          entered_at_datetime: (inventoryStatus === 'INCOMING' || inventoryStatus === 'STORED') ? operationDate : null,
+          // Ngày xuất kho: có khi là OUTGOING
+          shipped_at: inventoryStatus === 'OUTGOING' ? formatDate(operationDate) : '',
+          shipped_at_datetime: inventoryStatus === 'OUTGOING' ? operationDate : null,
+          stored_at: inventoryStatus === 'STORED' ? formatDate(operationDate) : '',
+          stored_at_datetime: inventoryStatus === 'STORED' ? operationDate : null,
+          inventory_status: inventoryStatus
+        };
+      });
+      
+      // Filter: chỉ hiển thị INCOMING, STORED, OUTGOING (không hiển thị SHIPPED)
+      const filteredOperations = formattedOperations.filter(item => 
+        item.inventory_status === 'INCOMING' || 
+        item.inventory_status === 'STORED' || 
+        item.inventory_status === 'OUTGOING'
       );
       
-      setAllOperations(filteredInventory);
-      setOperations(filteredInventory);
+      setAllOperations(filteredOperations);
+      setOperations(filteredOperations);
 
       // Load KPIs
       const kpisData = await warehouseAPI.getKPIs();
@@ -150,8 +249,8 @@ export default function WarehouseInOutPage() {
       today.setHours(0, 0, 0, 0);
       
       filtered = filtered.filter(item => {
-        // Try to get date from stored_at or entered_at (format: DD/MM/YYYY or ISO)
-        let entryDate = item.stored_at || item.entered_at;
+        // Try to get date from entered_at (format: DD/MM/YYYY or ISO)
+        let entryDate = item.entered_at;
         if (!entryDate) return false;
         
         // Parse date (handle both DD/MM/YYYY and ISO format)
@@ -282,11 +381,40 @@ export default function WarehouseInOutPage() {
           filters.month = value; // YYYY-MM
         }
 
-        const inventoryData = await warehouseAPI.getInventory(filters);
-        // Chỉ lấy đơn hàng đã tới kho (STORED) và đã xuất kho (SHIPPED)
-        data = (inventoryData.inventory || []).filter(
-          item => item.inventory_status === 'STORED' || item.inventory_status === 'SHIPPED'
-        );
+        // Dùng operations thay vì inventory
+        const operationsData = await warehouseAPI.getOperations(filters);
+        // Format operations giống như loadData
+        data = (operationsData.operations || []).map(op => {
+          const isInOperation = op.type === 'in' || op.operation_type === 'IN';
+          const isOutOperation = op.type === 'out' || op.operation_type === 'OUT';
+          const operationDate = op.actual_time || op.created_at || op.eta || null;
+          
+          const formatDate = (dateStr) => {
+            if (!dateStr) return '';
+            try {
+              if (typeof dateStr === 'string' && dateStr.includes('/')) {
+                return dateStr;
+              }
+              const date = new Date(dateStr);
+              if (isNaN(date.getTime())) return '';
+              return date.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              });
+            } catch {
+              return '';
+            }
+          };
+          
+          return {
+            ...op,
+            status: isInOperation ? 'Nhập kho' : 'Xuất kho',
+            entered_at: isInOperation ? formatDate(operationDate) : '',
+            shipped_at: isOutOperation ? formatDate(operationDate) : '',
+            inventory_status: isInOperation ? 'INCOMING' : 'SHIPPED'
+          };
+        });
       } else {
         // Export dữ liệu đang filter hiện tại (rows đã được filter)
         data = rows;
@@ -323,7 +451,7 @@ export default function WarehouseInOutPage() {
         item.volume_m3 || 0,
         item.temp || "",
         item.status || "",
-        item.entered_at || item.stored_at || "",
+        item.entered_at || "",
         item.shipped_at || "",
         item.to || ""
       ]);

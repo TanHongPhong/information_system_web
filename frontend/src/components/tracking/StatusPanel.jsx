@@ -1,10 +1,11 @@
 // src/components/theo doi don hang/StatusPanel.jsx
 import React, { useMemo, useCallback } from "react";
 import { IconCalendar, IconClock } from "./IconsFeather";
+import { getTimeLeftFromAddresses } from "../../utils/transportTimeCalculator";
 
 export default function StatusPanel({ order, mapHeight }) {
   // Tính progress và steps dựa trên order status
-  const { progress, steps, locations } = useMemo(() => {
+  const { progress: progressPercent, steps, locations } = useMemo(() => {
     if (!order) {
       return {
         progress: 0,
@@ -224,32 +225,35 @@ export default function StatusPanel({ order, mapHeight }) {
     };
   }, [order]);
 
-  // Tính ETA còn lại (nếu có pickup_time)
+  // Tính ETA còn lại tự động dựa trên tuyến đường
   const timeLeft = useMemo(() => {
-    if (!order || !order.pickup_time || order.status === "COMPLETED") {
+    if (!order || order.status === "COMPLETED" || order.status === "PENDING_PAYMENT") {
       return null;
     }
 
     try {
-      const pickupTime = new Date(order.pickup_time);
-      const now = new Date();
-      const diffMs = pickupTime.getTime() - now.getTime();
+      // Sử dụng hàm tính toán tự động từ địa chỉ
+      const calculatedTime = getTimeLeftFromAddresses(
+        order.pickup_address,
+        order.dropoff_address,
+        order.status,
+        progressPercent
+      );
       
-      if (diffMs <= 0) return null;
+      console.log("⏱️ StatusPanel - Calculated time left:", {
+        pickup: order.pickup_address,
+        dropoff: order.dropoff_address,
+        status: order.status,
+        progress: progressPercent,
+        timeLeft: calculatedTime
+      });
       
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (hours > 0) {
-        return `${hours} Giờ`;
-      } else if (minutes > 0) {
-        return `${minutes} Phút`;
-      }
-      return null;
-    } catch {
+      return calculatedTime;
+    } catch (error) {
+      console.error("Error calculating time left:", error);
       return null;
     }
-  }, [order]);
+  }, [order, progressPercent]);
 
   if (!order) {
     return (
@@ -292,7 +296,7 @@ export default function StatusPanel({ order, mapHeight }) {
       )}
 
       {/* Thanh tiến độ */}
-      <ProgressBar pct={progress} timeLeft={timeLeft} />
+      <ProgressBar pct={progressPercent} timeLeft={timeLeft} />
 
       {/* Danh sách các chặng với đường line dọc */}
       <div className="mt-4 relative">
@@ -328,7 +332,17 @@ function ProgressBar({ pct, timeLeft }) {
 
   // Badge time left - hiển thị nếu có timeLeft, nếu không thì hiển thị mặc định "12 Hrs Left"
   const showBadge = pct > 0 && pct < 100;
-  const badgeText = timeLeft ? `${timeLeft} Left` : "12 Hrs Left";
+  
+  // Format badge text: nếu có timeLeft thì dùng nó, nếu không thì dùng mặc định
+  let badgeText = "12 Hrs Left";
+  if (timeLeft) {
+    // timeLeft đã được format sẵn từ getTimeLeftFromAddresses (VD: "2 Giờ 30 Phút")
+    // Thêm "Left" vào cuối
+    badgeText = `${timeLeft} Left`;
+  }
+  
+  console.log("⏱️ ProgressBar - Badge text:", { timeLeft, badgeText, pct });
+  
   // Căn về phía bên phải (sử dụng right thay vì left)
   const badgeRight = "8px"; // Khoảng cách từ bên phải
 
