@@ -49,6 +49,30 @@ export default function CompanyDirectory({ keyword }) {
     fetchRegions();
   }, []);
 
+  // Tự động set activeRoute khi có đủ from và to
+  useEffect(() => {
+    if (from && to && from !== to) {
+      const route = { from, to };
+      setActiveRoute(prev => {
+        // Chỉ set nếu khác với activeRoute hiện tại để tránh loop
+        if (!prev || prev.from !== from || prev.to !== to) {
+          console.log("📍 CompanyDirectory: Auto-setting activeRoute", route);
+          return route;
+        }
+        return prev;
+      });
+    } else if ((!from || !to)) {
+      // Reset activeRoute nếu thiếu from hoặc to
+      setActiveRoute(prev => {
+        if (prev) {
+          console.log("📍 CompanyDirectory: Resetting activeRoute");
+          return null;
+        }
+        return prev;
+      });
+    }
+  }, [from, to]);
+
   // Load companies from API với filter theo route
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -57,17 +81,25 @@ export default function CompanyDirectory({ keyword }) {
         setError(null);
         
         // Build query params
-        // QUAN TRỌNG: only apply filter khi đã nhấn tìm kiếm (activeRoute có giá trị)
+        // Sử dụng activeRoute nếu có, nếu không thì dùng from/to trực tiếp
         const params = new URLSearchParams();
         if (keyword) params.append("q", keyword);
-        if (activeRoute?.from && activeRoute?.to) {
-          params.append("origin_region", activeRoute.from);      // Điểm đi
-          params.append("destination_region", activeRoute.to);   // Điểm đến
+        
+        const originRegion = activeRoute?.from || from || "";
+        const destRegion = activeRoute?.to || to || "";
+        
+        if (originRegion && destRegion) {
+          params.append("origin_region", originRegion);
+          params.append("destination_region", destRegion);
         }
         
         const query = params.toString();
         console.log("🔍 CompanyDirectory: Fetching companies", {
           activeRoute,
+          from,
+          to,
+          originRegion,
+          destRegion,
           params: query
         });
         
@@ -105,7 +137,9 @@ export default function CompanyDirectory({ keyword }) {
         }
         
         setCompanies(transformedData);
-        console.log(`✅ CompanyDirectory: Found ${transformedData.length} companies`);
+        console.log(`✅ CompanyDirectory: Found ${transformedData.length} companies`, {
+          companies: transformedData.map(c => ({ name: c.name, areas: c.areas }))
+        });
       } catch (err) {
         console.error("Error fetching companies:", err);
         setError("Không thể tải danh sách công ty. Vui lòng kiểm tra backend server.");
@@ -115,7 +149,7 @@ export default function CompanyDirectory({ keyword }) {
     };
 
     fetchCompanies();
-  }, [activeRoute, keyword]);
+  }, [activeRoute, from, to, keyword]);
 
   // Load recent from localStorage
   useEffect(() => {
@@ -142,16 +176,30 @@ export default function CompanyDirectory({ keyword }) {
   const strip = (s) => (s || "").toString().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
   const filtered = useMemo(() => {
-    const activeFrom = activeRoute?.from || "";
-    const activeTo = activeRoute?.to || "";
+    const activeFrom = activeRoute?.from || from || "";
+    const activeTo = activeRoute?.to || to || "";
     const k = strip(keyword);
     
-    return companies
+    console.log("🔍 CompanyDirectory: Filtering companies", {
+      totalCompanies: companies.length,
+      activeFrom,
+      activeTo,
+      keyword: k
+    });
+    
+    const result = companies
       .filter((c) => {
-        // Nếu có chọn điểm đi và điểm đến, kiểm tra công ty có CẢ HAI điểm trong khu vực hoạt động
+        // QUAN TRỌNG: API đã filter theo route rồi, nên không cần filter lại ở frontend
+        // Chỉ filter theo keyword nếu có
+        // Nếu muốn filter lại theo areas, có thể bật lại logic dưới đây
+        
+        // Nếu có chọn điểm đi và điểm đến, API đã filter rồi, chỉ cần kiểm tra keyword
         let areaOK = true;
+        
+        // Bỏ filter areas ở frontend vì API đã filter rồi
+        // Nếu muốn filter thêm, có thể bật lại:
+        /*
         if (activeFrom && activeTo) {
-          // Công ty phải có CẢ điểm đi VÀ điểm đến trong danh sách areas
           const companyAreas = Array.isArray(c.areas) ? c.areas.map(a => a.trim()) : [];
           const hasFrom = companyAreas.some(area => 
             strip(area) === strip(activeFrom) || 
@@ -163,18 +211,9 @@ export default function CompanyDirectory({ keyword }) {
             strip(area).includes(strip(activeTo)) ||
             strip(activeTo).includes(strip(area))
           );
-          // Chỉ hiển thị nếu có CẢ HAI
           areaOK = hasFrom && hasTo;
-        } else if (activeFrom || activeTo) {
-          // Nếu chỉ có một trong hai, kiểm tra có ít nhất một điểm
-          const companyAreas = Array.isArray(c.areas) ? c.areas.map(a => a.trim()) : [];
-          const checkPoint = activeFrom || activeTo;
-          areaOK = companyAreas.some(area => 
-            strip(area) === strip(checkPoint) || 
-            strip(area).includes(strip(checkPoint)) ||
-            strip(checkPoint).includes(strip(area))
-          );
         }
+        */
 
         // Tìm kiếm keyword
         const kwOK =
@@ -182,7 +221,12 @@ export default function CompanyDirectory({ keyword }) {
           strip(c.name).includes(k) ||
           strip(c.area).includes(k) ||
           c.sizes.some((x) => strip(x).includes(k));
-        return areaOK && kwOK;
+        
+        const passed = areaOK && kwOK;
+        if (!passed && activeFrom && activeTo) {
+          console.log(`   ❌ Filtered out: ${c.name}`, { areaOK, kwOK, areas: c.areas });
+        }
+        return passed;
       })
       .sort((a, b) => {
         switch (sortKey) {
@@ -196,7 +240,10 @@ export default function CompanyDirectory({ keyword }) {
             return b.rating * 1000 - b.cost - (a.rating * 1000 - a.cost);
         }
       });
-  }, [companies, activeRoute, sortKey, keyword]);
+    
+    console.log(`✅ CompanyDirectory: Filtered to ${result.length} companies`);
+    return result;
+  }, [companies, activeRoute, from, to, sortKey, keyword]);
 
   const handleSwap = () => {
     setFrom(to);
