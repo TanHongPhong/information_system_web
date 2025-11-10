@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import { getApiUrl } from "../lib/utils.js";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_URL = getApiUrl();
 
 import TitleControls from "../components/warehouse/TitleControls";
 import KpiStrip from "../components/warehouse/KpiStrip";

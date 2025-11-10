@@ -1,9 +1,10 @@
 import axios from "axios";
 import { clearAuth } from "./auth.js";
+import { getApiUrl } from "./utils.js";
 
 // Axios instance để gọi backend API
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api",
+  baseURL: getApiUrl(),
   headers: {
     "Content-Type": "application/json",
   },

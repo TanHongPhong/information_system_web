@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import AppLayout from "../components/layout/AppLayout.jsx";
+import { getApiUrl } from "../lib/utils.js";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_URL = getApiUrl();
 
 import KpiStrip from "../components/warehouse/KpiStrip";
 import WarehouseTable from "../components/warehouse/WarehouseTable";

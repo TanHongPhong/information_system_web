@@ -1,5 +1,7 @@
 // API Helper để gọi backend
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { getApiUrl } from "./utils.js";
+
+const API_URL = getApiUrl();
 
 export const authAPI = {
   signup: async (name, phone, email, password, role) => {
