@@ -105,8 +105,18 @@ export default function CompanyDirectory({ keyword }) {
         
         const response = await api.get(`/transport-companies${query ? `?${query}` : ""}`);
         
+        // Kiểm tra response data
+        if (!response || !response.data) {
+          console.error("❌ CompanyDirectory: Invalid response", response);
+          throw new Error("Invalid response from server");
+        }
+        
+        // Đảm bảo response.data là array
+        const companiesData = Array.isArray(response.data) ? response.data : [];
+        console.log(`📦 CompanyDirectory: Received ${companiesData.length} companies from API`);
+        
         // Transform API data to match UI format
-        let transformedData = response.data.map((company) => ({
+        let transformedData = companiesData.map((company) => ({
           id: company.company_id,
           name: company.name,
           area: Array.isArray(company.areas) ? company.areas.join(", ") : "Chưa cập nhật",
@@ -148,10 +158,23 @@ export default function CompanyDirectory({ keyword }) {
           hasRoute: !!(activeRoute?.from && activeRoute?.to) || !!(originRegion && destRegion)
         });
       } catch (err) {
-        console.error("Error fetching companies:", err);
-        setError("Không thể tải danh sách công ty. Vui lòng kiểm tra backend server.");
+        console.error("❌ CompanyDirectory: Error fetching companies:", err);
+        console.error("Error details:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          url: err.config?.url
+        });
+        
+        // Set empty array để tránh crash
+        setCompanies([]);
+        
+        // Hiển thị error message chi tiết hơn
+        const errorMessage = err.response?.data?.message || err.message || "Không thể tải danh sách công ty";
+        setError(`${errorMessage}. Vui lòng kiểm tra backend server hoặc thử lại sau.`);
       } finally {
         setLoading(false);
+        console.log("🏁 CompanyDirectory: Fetch completed, loading = false");
       }
     };
 
@@ -457,8 +480,20 @@ export default function CompanyDirectory({ keyword }) {
               </div>
             ) : (
               <>
-                {console.log("🎨 CompanyDirectory: Rendering", filtered.length, "companies")}
-                {filtered.map((c) => <CompanyRow key={c.id || c.name} c={c} onView={() => setSelected(c)} />)}
+                {console.log("🎨 CompanyDirectory: Rendering", filtered.length, "companies", {
+                  companies: filtered.map(c => c.name),
+                  loading,
+                  error,
+                  companiesLength: companies.length,
+                  filteredLength: filtered.length
+                })}
+                {filtered.map((c) => {
+                  if (!c || !c.id) {
+                    console.warn("⚠️ CompanyDirectory: Invalid company data", c);
+                    return null;
+                  }
+                  return <CompanyRow key={c.id || c.name} c={c} onView={() => setSelected(c)} />;
+                })}
               </>
             )}
           </div>
