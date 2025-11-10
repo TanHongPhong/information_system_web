@@ -130,7 +130,7 @@ export default function CompanyDirectory({ keyword }) {
         }));
 
         // Nếu chưa chọn tuyến, hiển thị top 10 công ty rating cao nhất
-        if (!(activeRoute?.from && activeRoute?.to)) {
+        if (!(activeRoute?.from && activeRoute?.to) && !(originRegion && destRegion)) {
           transformedData = transformedData
             .sort((a, b) => b.rating - a.rating)
             .slice(0, 10);
@@ -138,7 +138,14 @@ export default function CompanyDirectory({ keyword }) {
         
         setCompanies(transformedData);
         console.log(`✅ CompanyDirectory: Found ${transformedData.length} companies`, {
-          companies: transformedData.map(c => ({ name: c.name, areas: c.areas }))
+          companies: transformedData.map(c => ({ 
+            id: c.id,
+            name: c.name, 
+            areas: c.areas,
+            cost: c.cost,
+            rating: c.rating
+          })),
+          hasRoute: !!(activeRoute?.from && activeRoute?.to) || !!(originRegion && destRegion)
         });
       } catch (err) {
         console.error("Error fetching companies:", err);
@@ -184,47 +191,46 @@ export default function CompanyDirectory({ keyword }) {
       totalCompanies: companies.length,
       activeFrom,
       activeTo,
-      keyword: k
+      keyword: k,
+      activeRoute,
+      from,
+      to
     });
+    
+    // Nếu không có companies, trả về mảng rỗng
+    if (!companies || companies.length === 0) {
+      console.log("⚠️ CompanyDirectory: No companies to filter");
+      return [];
+    }
     
     const result = companies
       .filter((c) => {
         // QUAN TRỌNG: API đã filter theo route rồi, nên không cần filter lại ở frontend
         // Chỉ filter theo keyword nếu có
-        // Nếu muốn filter lại theo areas, có thể bật lại logic dưới đây
         
         // Nếu có chọn điểm đi và điểm đến, API đã filter rồi, chỉ cần kiểm tra keyword
         let areaOK = true;
         
         // Bỏ filter areas ở frontend vì API đã filter rồi
-        // Nếu muốn filter thêm, có thể bật lại:
-        /*
-        if (activeFrom && activeTo) {
-          const companyAreas = Array.isArray(c.areas) ? c.areas.map(a => a.trim()) : [];
-          const hasFrom = companyAreas.some(area => 
-            strip(area) === strip(activeFrom) || 
-            strip(area).includes(strip(activeFrom)) ||
-            strip(activeFrom).includes(strip(area))
-          );
-          const hasTo = companyAreas.some(area => 
-            strip(area) === strip(activeTo) || 
-            strip(area).includes(strip(activeTo)) ||
-            strip(activeTo).includes(strip(area))
-          );
-          areaOK = hasFrom && hasTo;
-        }
-        */
+        // Chỉ hiển thị tất cả companies mà API trả về
 
         // Tìm kiếm keyword
         const kwOK =
           !k ||
-          strip(c.name).includes(k) ||
-          strip(c.area).includes(k) ||
-          c.sizes.some((x) => strip(x).includes(k));
+          strip(c.name || "").includes(k) ||
+          strip(c.area || "").includes(k) ||
+          (Array.isArray(c.sizes) && c.sizes.some((x) => strip(x).includes(k)));
         
         const passed = areaOK && kwOK;
-        if (!passed && activeFrom && activeTo) {
-          console.log(`   ❌ Filtered out: ${c.name}`, { areaOK, kwOK, areas: c.areas });
+        if (!passed) {
+          console.log(`   ❌ Filtered out: ${c.name}`, { 
+            areaOK, 
+            kwOK, 
+            keyword: k,
+            name: c.name,
+            area: c.area,
+            sizes: c.sizes
+          });
         }
         return passed;
       })
@@ -241,7 +247,9 @@ export default function CompanyDirectory({ keyword }) {
         }
       });
     
-    console.log(`✅ CompanyDirectory: Filtered to ${result.length} companies`);
+    console.log(`✅ CompanyDirectory: Filtered to ${result.length} companies`, {
+      result: result.map(c => ({ id: c.id, name: c.name, areas: c.areas }))
+    });
     return result;
   }, [companies, activeRoute, from, to, sortKey, keyword]);
 
@@ -427,10 +435,31 @@ export default function CompanyDirectory({ keyword }) {
               </div>
             ) : filtered.length === 0 ? (
               <div className="px-5 py-10 text-center text-slate-500">
-                Không có kết quả phù hợp. Hãy chỉnh bộ lọc hoặc thử tuyến khác.
+                <p className="mb-2">Không có kết quả phù hợp.</p>
+                <p className="text-sm mb-4">Companies: {companies.length}, Filtered: {filtered.length}</p>
+                <p className="text-sm mb-4">ActiveRoute: {activeRoute ? `${activeRoute.from} → ${activeRoute.to}` : 'null'}</p>
+                <p className="text-sm mb-4">From: {from || 'empty'}, To: {to || 'empty'}</p>
+                <button 
+                  onClick={() => {
+                    console.log("Debug info:", {
+                      companies,
+                      filtered,
+                      activeRoute,
+                      from,
+                      to,
+                      keyword
+                    });
+                  }} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm"
+                >
+                  Debug Info (check console)
+                </button>
               </div>
             ) : (
-              filtered.map((c) => <CompanyRow key={c.id || c.name} c={c} onView={() => setSelected(c)} />)
+              <>
+                {console.log("🎨 CompanyDirectory: Rendering", filtered.length, "companies")}
+                {filtered.map((c) => <CompanyRow key={c.id || c.name} c={c} onView={() => setSelected(c)} />)}
+              </>
             )}
           </div>
         </div>
